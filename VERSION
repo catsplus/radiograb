@@ -1,0 +1,1 @@
+2025-07-24 23:37:00 - CSRF & DEBUG FIXES - Fixed CSRF token validation issues, added browser debug tools, updated deployment documentation, and resolved test recording functionality with proper session management.

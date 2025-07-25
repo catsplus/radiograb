@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-your_root_password}
+      MYSQL_DATABASE: radiograb
+      MYSQL_USER: radiograb
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-your_db_password}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/migrations:/docker-entrypoint-initdb.d/migrations
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    networks:
+      - radiograb_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+
+  web:
+    build: .
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=radiograb
+      - DB_PASSWORD=${DB_PASSWORD:-your_db_password}
+      - DB_NAME=radiograb
+      - SSL_DOMAIN=${SSL_DOMAIN:-your-domain.com}
+      - SSL_EMAIL=${SSL_EMAIL:-admin@your-domain.com}
+    volumes:
+      - recordings:/var/radiograb/recordings
+      - feeds:/var/radiograb/feeds
+      - logs:/var/radiograb/logs
+      - temp:/var/radiograb/temp
+      - letsencrypt:/etc/letsencrypt
+      - letsencrypt_lib:/var/lib/letsencrypt
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - radiograb_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  recorder:
+    build: .
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=radiograb
+      - DB_PASSWORD=${DB_PASSWORD:-your_db_password}
+      - DB_NAME=radiograb
+    volumes:
+      - recordings:/var/radiograb/recordings
+      - logs:/var/radiograb/logs
+      - temp:/var/radiograb/temp
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - radiograb_network
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  rss-updater:
+    build: .
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=radiograb
+      - DB_PASSWORD=${DB_PASSWORD:-your_db_password}
+      - DB_NAME=radiograb
+    volumes:
+      - recordings:/var/radiograb/recordings
+      - feeds:/var/radiograb/feeds
+      - logs:/var/radiograb/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - radiograb_network
+
+  housekeeping:
+    build: .
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=radiograb
+      - DB_PASSWORD=${DB_PASSWORD:-your_db_password}
+      - DB_NAME=radiograb
+    volumes:
+      - recordings:/var/radiograb/recordings
+      - logs:/var/radiograb/logs
+      - temp:/var/radiograb/temp
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - radiograb_network
+
+volumes:
+  mysql_data:
+  recordings:
+  feeds:
+  logs:
+  temp:
+  letsencrypt:
+  letsencrypt_lib:
+
+networks:
+  radiograb_network:
+    driver: bridge
