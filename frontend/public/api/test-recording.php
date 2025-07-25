@@ -54,6 +54,12 @@ try {
         exit;
     }
     
+    if (!$station['call_letters']) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Station has no call letters configured']);
+        exit;
+    }
+    
     if (!$station['stream_url']) {
         http_response_code(400);
         echo json_encode(['error' => 'Station has no stream URL configured']);
@@ -74,12 +80,13 @@ try {
         $show_name = $call_letters . ' On-Demand Recording';
     }
     
-    // Generate filename with timestamp
+    // Generate filename with timestamp using call letters
     $timestamp = date('Y-m-d-His');
+    $call_letters = strtoupper($station['call_letters']);
     if ($action === 'test_recording') {
-        $filename = "{$station['id']}_test_{$timestamp}.mp3";
+        $filename = "{$call_letters}_test_{$timestamp}.mp3";
     } else {
-        $filename = "{$station['id']}_on-demand_{$timestamp}.mp3";
+        $filename = "{$call_letters}_on-demand_{$timestamp}.mp3";
     }
     
     // Build Python command to start recording

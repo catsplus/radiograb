@@ -387,9 +387,10 @@ class ShowManager:
             if not show.station.stream_url:
                 return {'success': False, 'error': 'No stream URL configured'}
             
-            # Generate test filename
+            # Generate test filename using call letters
             timestamp = datetime.now()
-            filename = f"{show.station_id}_test_{timestamp.strftime('%Y-%m-%d-%H%M%S')}"
+            call_letters = show.station.call_letters or f"ST{show.station_id:02d}"  # Fallback if no call letters
+            filename = f"{call_letters.upper()}_test_{timestamp.strftime('%Y-%m-%d-%H%M%S')}"
             
             # Record test
             result = self.recorder.record_stream(

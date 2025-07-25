@@ -51,10 +51,15 @@ function listTestRecordings() {
                 $size = filesize($file);
                 $created = filemtime($file);
                 
-                // Parse filename to extract info (format: {station_id}_test_{timestamp}.mp3)
-                if (preg_match('/^(\d+)_test_(\d{4}-\d{2}-\d{2}-\d{6})\.mp3$/', $filename, $matches)) {
-                    $stationId = (int)$matches[1];
+                // Parse filename to extract info (format: {call_letters}_test_{timestamp}.mp3)
+                if (preg_match('/^([A-Z]{4})_test_(\d{4}-\d{2}-\d{2}-\d{6})\.mp3$/', $filename, $matches)) {
+                    $callLetters = $matches[1];
                     $timestamp = $matches[2];
+                    
+                    // Get station ID from call letters
+                    global $db;
+                    $station = $db->fetchOne("SELECT id FROM stations WHERE call_letters = ?", [$callLetters]);
+                    $stationId = $station ? (int)$station['id'] : null;
                     
                     // Convert timestamp to readable format
                     $dateTime = DateTime::createFromFormat('Y-m-d-His', $timestamp);
@@ -63,6 +68,7 @@ function listTestRecordings() {
                     $recordings[] = [
                         'filename' => $filename,
                         'station_id' => $stationId,
+                        'call_letters' => $callLetters,
                         'timestamp' => $timestamp,
                         'readable_date' => $readableDate,
                         'size' => $size,
@@ -97,8 +103,8 @@ function deleteTestRecording() {
         return;
     }
     
-    // Validate filename format for security
-    if (!preg_match('/^\d+_test_\d{4}-\d{2}-\d{2}-\d{6}\.mp3$/', $filename)) {
+    // Validate filename format for security (support both old and new formats)
+    if (!preg_match('/^([A-Z]{4}|\d+)_test_\d{4}-\d{2}-\d{2}-\d{6}\.mp3$/', $filename)) {
         http_response_code(400);
         echo json_encode(['error' => 'Invalid filename format']);
         return;

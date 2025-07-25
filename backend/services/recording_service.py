@@ -408,7 +408,9 @@ class RecordingScheduler:
             
             # Generate filename
             timestamp = datetime.now()
-            filename = f"{show.station_id}_{show.name}_{timestamp.strftime('%Y%m%d_%H%M')}"
+            call_letters = show.station.call_letters or f"ST{show.station_id:02d}"  # Fallback if no call letters
+            show_name_clean = ''.join(c for c in show.name if c.isalnum() or c in '_-')  # Clean show name
+            filename = f"{call_letters.upper()}_{show_name_clean}_{timestamp.strftime('%Y%m%d_%H%M')}"
             
             # Start recording
             logger.info(f"Starting scheduled recording for '{show.name}'")
