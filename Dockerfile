@@ -54,7 +54,7 @@ RUN chown -R www-data:www-data /opt/radiograb /var/radiograb && \
 
 # Configure Nginx
 COPY docker/nginx.conf /etc/nginx/sites-available/default
-COPY docker/radiograb-locations.conf /etc/nginx/conf.d/radiograb-locations.conf
+COPY docker/radiograb-locations.conf /etc/nginx/radiograb-locations.conf
 RUN rm -f /etc/nginx/sites-enabled/default && \
     ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
