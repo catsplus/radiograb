@@ -5,6 +5,7 @@
 
 class Database {
     private $host;
+    private $port;
     private $username;
     private $password;
     private $database;
@@ -13,6 +14,7 @@ class Database {
     public function __construct() {
         // Load configuration from environment or config file
         $this->host = $_ENV['DB_HOST'] ?? 'localhost';
+        $this->port = $_ENV['DB_PORT'] ?? '3306';
         $this->username = $_ENV['DB_USER'] ?? 'radiograb';
         $this->password = $_ENV['DB_PASSWORD'] ?? 'radiograb_password';
         $this->database = $_ENV['DB_NAME'] ?? 'radiograb';
@@ -21,7 +23,7 @@ class Database {
     public function connect() {
         if ($this->connection === null) {
             try {
-                $dsn = "mysql:host={$this->host};port=3306;dbname={$this->database};charset=utf8mb4";
+                $dsn = "mysql:host={$this->host};port={$this->port};dbname={$this->database};charset=utf8mb4";
                 $this->connection = new PDO($dsn, $this->username, $this->password, [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
