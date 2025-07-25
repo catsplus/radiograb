@@ -144,9 +144,9 @@ The RadioGrab recording system consists of multiple components working together:
 - Database: Creates show and recording entries automatically
 
 ### File Naming Conventions
-- **Test recordings**: `{station_id}_test_YYYY-MM-DD-HHMMSS.mp3`
-- **On-demand recordings**: `{station_id}_on-demand_YYYY-MM-DD-HHMMSS.mp3`
-- **Scheduled recordings**: `{station_id}_{show_name}_YYYYMMDD_HHMM.mp3`
+- **Test recordings**: `{CALL_LETTERS}_test_YYYY-MM-DD-HHMMSS.mp3`
+- **On-demand recordings**: `{CALL_LETTERS}_on-demand_YYYY-MM-DD-HHMMSS.mp3`
+- **Scheduled recordings**: `{CALL_LETTERS}_{show_name}_YYYYMMDD_HHMM.mp3`
 
 ## Common Issues & Debugging
 

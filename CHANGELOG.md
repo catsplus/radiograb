@@ -63,10 +63,10 @@
 - **Recording tool optimization**: System stores and reuses optimal method per station
 
 ### 📁 File Organization
-- **Station-Prefixed Naming**: All files now include station ID for easy identification
-  - Test recordings: `{station_id}_test_YYYY-MM-DD-HHMMSS.mp3`
-  - On-demand recordings: `{station_id}_on-demand_YYYY-MM-DD-HHMMSS.mp3`
-  - Scheduled recordings: `{station_id}_{show_name}_YYYYMMDD_HHMM.mp3`
+- **Station Call Sign Naming**: All files now use 4-letter call signs for easy identification
+  - Test recordings: `{CALL_LETTERS}_test_YYYY-MM-DD-HHMMSS.mp3`
+  - On-demand recordings: `{CALL_LETTERS}_on-demand_YYYY-MM-DD-HHMMSS.mp3`
+  - Scheduled recordings: `{CALL_LETTERS}_{show_name}_YYYYMMDD_HHMM.mp3`
 
 ### 🚀 Deployment Automation
 - **Full Deployment Script**: `./deploy.sh` - Comprehensive system deployment with verification
