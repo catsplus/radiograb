@@ -720,7 +720,9 @@ try {
             `;
             
             try {
-                const response = await fetch('/api/test-recordings.php');
+                const response = await fetch('/api/test-recordings.php', {
+                    credentials: 'same-origin'
+                });
                 const result = await response.json();
                 console.log('Test recordings result:', result);
                 
@@ -733,7 +735,7 @@ try {
                                 <div class="card">
                                     <div class="card-body">
                                         <h6 class="card-title">
-                                            <i class="fas fa-microphone"></i> Station ${recording.station_id} Test
+                                            <i class="fas fa-microphone"></i> ${recording.call_letters || `Station ${recording.station_id}`} Test
                                         </h6>
                                         <p class="card-text">
                                             <small class="text-muted">
@@ -803,6 +805,7 @@ try {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
+                    credentials: 'same-origin',
                     body: new URLSearchParams({
                         action: 'delete',
                         filename: filename,
