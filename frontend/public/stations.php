@@ -745,7 +745,7 @@ try {
                                         </p>
                                         <div class="audio-controls">
                                             <audio controls class="w-100 mb-2">
-                                                <source src="/temp/${recording.filename}" type="audio/mpeg">
+                                                <source src="${recording.download_url}" type="audio/mpeg">
                                                 Your browser does not support the audio element.
                                             </audio>
                                             <div class="btn-group w-100">
