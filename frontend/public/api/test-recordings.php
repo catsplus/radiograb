@@ -29,6 +29,9 @@ try {
         case 'delete':
             deleteTestRecording();
             break;
+        case 'download':
+            downloadTestRecording();
+            break;
         default:
             http_response_code(400);
             echo json_encode(['error' => 'Invalid action']);
@@ -51,7 +54,12 @@ function listTestRecordings() {
                 $size = filesize($file);
                 $created = filemtime($file);
                 
-                // Parse filename to extract info (format: {call_letters}_test_{timestamp}.mp3)
+                // Parse filename to extract info (support both formats)
+                $callLetters = null;
+                $stationId = null;
+                $timestamp = null;
+                
+                // New format: {call_letters}_test_{timestamp}.mp3
                 if (preg_match('/^([A-Z]{4})_test_(\d{4}-\d{2}-\d{2}-\d{6})\.mp3$/', $filename, $matches)) {
                     $callLetters = $matches[1];
                     $timestamp = $matches[2];
@@ -60,6 +68,19 @@ function listTestRecordings() {
                     global $db;
                     $station = $db->fetchOne("SELECT id FROM stations WHERE call_letters = ?", [$callLetters]);
                     $stationId = $station ? (int)$station['id'] : null;
+                }
+                // Old format: {station_id}_test_{timestamp}.mp3  
+                else if (preg_match('/^(\d+)_test_(\d{4}-\d{2}-\d{2}-\d{6})\.mp3$/', $filename, $matches)) {
+                    $stationId = (int)$matches[1];
+                    $timestamp = $matches[2];
+                    
+                    // Get call letters from station ID
+                    global $db;
+                    $station = $db->fetchOne("SELECT call_letters FROM stations WHERE id = ?", [$stationId]);
+                    $callLetters = $station['call_letters'] ?? null;
+                }
+                
+                if ($timestamp && $stationId) {
                     
                     // Convert timestamp to readable format
                     $dateTime = DateTime::createFromFormat('Y-m-d-His', $timestamp);
@@ -123,6 +144,42 @@ function deleteTestRecording() {
         http_response_code(404);
         echo json_encode(['error' => 'File not found']);
     }
+}
+
+function downloadTestRecording() {
+    $filename = $_GET['file'] ?? '';
+    
+    if (!$filename) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Filename required']);
+        return;
+    }
+    
+    // Validate filename format for security (support both old and new formats)
+    if (!preg_match('/^([A-Z]{4}|\d+)_test_\d{4}-\d{2}-\d{2}-\d{6}\.mp3$/', $filename)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid filename format']);
+        return;
+    }
+    
+    $filePath = '/var/radiograb/temp/' . $filename;
+    
+    if (!file_exists($filePath)) {
+        http_response_code(404);
+        echo json_encode(['error' => 'File not found']);
+        return;
+    }
+    
+    // Set headers for MP3 download
+    header('Content-Type: audio/mpeg');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Content-Length: ' . filesize($filePath));
+    header('Accept-Ranges: bytes');
+    header('Cache-Control: no-cache');
+    
+    // Output file contents
+    readfile($filePath);
+    exit;
 }
 
 function formatBytes($size, $precision = 2) {

@@ -747,7 +747,7 @@ try {
                                                 Your browser does not support the audio element.
                                             </audio>
                                             <div class="btn-group w-100">
-                                                <a href="/temp/${recording.filename}" class="btn btn-outline-primary btn-sm" download>
+                                                <a href="${recording.download_url}" class="btn btn-outline-primary btn-sm" download>
                                                     <i class="fas fa-download"></i> Download
                                                 </a>
                                                 <button class="btn btn-outline-danger btn-sm delete-test-recording" 
