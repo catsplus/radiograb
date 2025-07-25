@@ -37,23 +37,22 @@ COPY . /opt/radiograb/
 
 ## ✅ STREAMLINED DEPLOYMENT WORKFLOW
 
-### 🚨 CRITICAL LIMITATION: Server Cannot Pull from GitHub  
-**THE PRODUCTION SERVER CANNOT EXECUTE `git pull` DUE TO AUTHENTICATION RESTRICTIONS.**
+### ✅ PUBLIC REPOSITORY: Direct GitHub Deployment
+**THE PRODUCTION SERVER CAN NOW PULL FROM THE PUBLIC RADIOGRAB REPOSITORY.**
 
-This is the **#1 source of deployment failures** - understanding this is crucial:
+The RadioGrab repository is now public, which simplifies deployment:
 
-#### The Problem:
-- Error: `fatal: could not read Username for 'https://github.com': No such device or address`
-- The `./deploy-from-git.sh` script does NOT actually pull from GitHub - it only uses local files on server
-- Server git repository is often behind the latest commits by hours/days
-- **CRITICAL**: When deploy script shows "Using local git repository (GitHub pull requires authentication setup)" it means your latest changes are NOT deployed
+#### Benefits of Public Repository:
+- No authentication required for `git pull`
+- The `./deploy-from-git.sh` script can pull latest changes directly from GitHub
+- Server repository stays synchronized with latest commits
+- **CRITICAL**: Deployment workflow is now streamlined and reliable
 
-#### Why This Causes Failures:
-- You push changes to GitHub ✅
-- You run `./deploy-from-git.sh` ❌ (uses old local files)
-- Container rebuilds with old code ❌
-- Your changes don't work because they weren't actually deployed ❌
-- Functions/files you added locally don't exist on server ❌
+#### Simple Deployment Process:
+- Push changes to GitHub ✅
+- Run `./deploy-from-git.sh` ✅ (pulls from GitHub automatically)
+- Container rebuilds with latest code ✅
+- Changes are deployed and working ✅
 
 ### ✅ PREFERRED: Git-Based Deployment
 ```bash
@@ -64,40 +63,34 @@ git add . && git commit -m "Update files" && git push origin main
 ssh radiograb@167.71.84.143 "cd /opt/radiograb && ./deploy-from-git.sh"
 ```
 
-### ✅ CORRECT DEPLOYMENT WORKFLOW (Required 99% of the time)
+### ✅ SIMPLE DEPLOYMENT WORKFLOW
 
-**THIS IS THE WORKFLOW YOU MUST FOLLOW FOR RELIABLE DEPLOYMENTS:**
+**STREAMLINED PROCESS FOR PUBLIC REPOSITORY:**
 
 ```bash
 # 1. Local changes and push to GitHub
 git add . && git commit -m "Update files" && git push origin main
 
-# 2. Try deploy script first (but expect it to fail to pull)
+# 2. Deploy using the automated script (pulls from GitHub automatically)
 ssh radiograb@167.71.84.143 "cd /opt/radiograb && ./deploy-from-git.sh"
 
-# 3. WATCH THE OUTPUT - if you see "Using local git repository" you MUST manually copy files:
+# 3. Script automatically:
+#    - Pulls latest changes from GitHub
+#    - Rebuilds containers with new code
+#    - Restarts all services
 
-# 3a. Copy ALL changed files to server (replace with your actual files):
-scp frontend/public/api/test-recording.php radiograb@167.71.84.143:/opt/radiograb/frontend/public/api/
-scp frontend/includes/functions.php radiograb@167.71.84.143:/opt/radiograb/frontend/includes/
-scp VERSION radiograb@167.71.84.143:/opt/radiograb/
-
-# 3b. Or copy entire directories:
-scp -r frontend/public/ radiograb@167.71.84.143:/opt/radiograb/frontend/public/
-
-# 4. Rebuild containers (ABSOLUTELY REQUIRED!)
-ssh radiograb@167.71.84.143 "cd /opt/radiograb && docker compose down && docker compose up -d --build"
-
-# 5. Test that your changes actually work
+# 4. Verify deployment worked
+curl -I https://radiograb.svaha.com/
 ```
 
-### 🚨 CRITICAL DEPLOYMENT CHECKLIST
+### ✅ DEPLOYMENT VERIFICATION CHECKLIST
 
-**BEFORE assuming your deployment worked:**
-- [ ] Did you see "Using local git repository" in deploy output? If YES → manually copy files
-- [ ] Did you run `docker compose down && docker compose up -d --build`? If NO → your changes aren't live
-- [ ] Did you test your changes work on the live site? If NO → they might not be deployed
-- [ ] Are you getting "function not found" errors? → You didn't copy the file with the function
+**VERIFY your deployment worked:**
+- [ ] Did you push changes to GitHub first?
+- [ ] Did the deploy script show "Pulling from GitHub" (not "Using local repository")?
+- [ ] Did containers rebuild successfully?
+- [ ] Did you test your changes work on the live site?
+- [ ] Check logs if something seems wrong: `docker logs radiograb-web-1 --tail 20`
 
 ### Alternative: Direct Server File Management
 ```bash
@@ -292,11 +285,11 @@ curl -s -b /tmp/cookies.txt -X POST "https://radiograb.svaha.com/api/test-record
 ## 🚨 CRITICAL SUCCESS FACTORS
 
 ### Deployment Requirements
-- ✅ **TRY `./deploy-from-git.sh` script first, but often requires manual file copying**
+- ✅ **Use `./deploy-from-git.sh` script for all deployments (public repo = no auth required)**
 - ✅ Commit and push to GitHub before deploying: `git add . && git commit -m "..." && git push origin main`
 - ✅ Deploy with: `ssh radiograb@167.71.84.143 "cd /opt/radiograb && ./deploy-from-git.sh"`
-- ⚠️ **If deploy shows "Using local git repository" - manually copy changed files with `scp`**
-- ✅ Always rebuild containers after file changes: `docker compose down && docker compose up -d --build`
+- ✅ **Script automatically pulls from GitHub and rebuilds containers**
+- ✅ Verify deployment worked by testing the live site
 - ✅ Use `/opt/radiograb/venv/bin/python` for all Python execution
 - ✅ Set `PYTHONPATH=/opt/radiograb` for proper module imports
 - ✅ Update VERSION file with each deployment
@@ -324,8 +317,8 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git status && git stash && git
 ---
 
 **🔄 Remember: Docker containers = isolated filesystem. Host file copies ≠ live site updates!**
-**🚨 DEPLOYMENT REALITY: `./deploy-from-git.sh` will show "Using local git repository" - you MUST manually copy files!**
-**📋 DEPLOYMENT CHECKLIST: 1) git push 2) deploy script 3) manually copy files 4) docker rebuild 5) test**
+**✅ PUBLIC REPOSITORY: `./deploy-from-git.sh` pulls from GitHub automatically - no manual file copying needed!**
+**📋 DEPLOYMENT CHECKLIST: 1) git push 2) deploy script 3) verify site works**
 **🐍 Always: `/opt/radiograb/venv/bin/python` for Python execution**
 **🔒 SSL: Persistent volumes ensure certificates survive container rebuilds**
-**⚠️ "Function not found" errors = you forgot to copy the file containing the function!**
+**🚨 Database: All MySQL connections must use environment variables (DB_HOST=mysql, DB_PORT=3306)**
