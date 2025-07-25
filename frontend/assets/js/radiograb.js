@@ -269,30 +269,68 @@ class RadioGrab {
     
     async testRecording(e) {
         const btn = e.target.closest('.test-recording');
+        // Handle both show-based and station-based test recordings
         const showId = btn.dataset.showId;
+        const stationId = btn.dataset.stationId;
+        const stationName = btn.dataset.stationName || 'Station';
         const originalText = btn.textContent;
         
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Testing...';
         
         try {
+            // Get CSRF token with session credentials
+            const csrfResponse = await fetch('/api/get-csrf-token.php', {
+                credentials: 'same-origin'
+            });
+            const csrfData = await csrfResponse.json();
+            
+            if (!csrfData.csrf_token) {
+                throw new Error('Failed to get CSRF token');
+            }
+            
+            // Prepare request body based on whether we have show_id or station_id
+            const requestBody = new URLSearchParams({
+                action: 'test_recording',
+                csrf_token: csrfData.csrf_token
+            });
+            
+            if (showId) {
+                requestBody.append('show_id', showId);
+            } else if (stationId) {
+                requestBody.append('station_id', stationId);
+            } else {
+                throw new Error('No show_id or station_id provided');
+            }
+            
             const response = await fetch('/api/test-recording.php', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: JSON.stringify({ show_id: showId })
+                credentials: 'same-origin',
+                body: requestBody
             });
             
             const result = await response.json();
             
             if (result.success) {
-                this.showAlert('success', 'Test recording completed successfully!');
+                this.showAlert('success', `Test recording completed successfully for ${stationName}!`);
+                
+                // Auto-refresh test recordings if we're on stations page
+                if (window.location.pathname === '/stations.php') {
+                    setTimeout(() => {
+                        if (typeof loadTestRecordings === 'function') {
+                            loadTestRecordings();
+                        }
+                    }, 2000);
+                }
             } else {
                 this.showAlert('danger', result.error || 'Test recording failed');
             }
         } catch (error) {
-            this.showAlert('danger', 'Test recording failed');
+            console.error('Test recording error:', error);
+            this.showAlert('danger', 'Test recording failed: ' + error.message);
         } finally {
             btn.disabled = false;
             btn.textContent = originalText;
