@@ -159,6 +159,29 @@ docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python /opt/radiograb/b
 docker exec radiograb-recorder-1 bash -c "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python backend/services/script.py"
 ```
 
+### Supervisor Configuration (CRITICAL!)
+**THE SUPERVISOR SERVICES REQUIRE SPECIFIC ENVIRONMENT VARIABLES TO FUNCTION:**
+
+```bash
+# ALL Python services in supervisor MUST include these environment variables:
+environment=PATH="/opt/radiograb/venv/bin",PYTHONPATH="/opt/radiograb",DB_HOST="mysql",DB_PORT="3306",DB_USER="radiograb",DB_PASSWORD="radiograb_pass_2024",DB_NAME="radiograb",TZ="America/New_York"
+
+# Critical Services:
+# - radiograb-recorder: runs recording_service.py --daemon (NOT recorder.py!)
+# - radiograb-rss: runs rss_manager.py --update-all every 15 minutes
+
+# ❌ WRONG supervisor config (missing environment):
+[program:radiograb-recorder]
+command=/opt/radiograb/venv/bin/python backend/services/recording_service.py --daemon
+
+# ✅ CORRECT supervisor config (with environment):
+[program:radiograb-recorder]
+command=/opt/radiograb/venv/bin/python backend/services/recording_service.py --daemon
+directory=/opt/radiograb
+user=www-data
+environment=PATH="/opt/radiograb/venv/bin",PYTHONPATH="/opt/radiograb",DB_HOST="mysql",DB_PORT="3306",DB_USER="radiograb",DB_PASSWORD="radiograb_pass_2024",DB_NAME="radiograb",TZ="America/New_York"
+```
+
 ### Database Connection
 ```bash
 # Environment Variables in Containers:
@@ -196,6 +219,36 @@ mysql-connector-python==9.4.0  # MySQL connector
 SQLAlchemy==2.0.41          # Database ORM
 requests==2.32.4            # HTTP client
 selenium==4.x               # JavaScript parsing (manually installed)
+```
+
+### Nginx Configuration (CRITICAL!)
+**NGINX CONFIGURATION MUST BE COMPLETE AND NOT REFERENCE MISSING FILES:**
+
+```nginx
+# ❌ WRONG - references non-existent file:
+include /etc/nginx/conf.d/radiograb-locations.conf;
+
+# ✅ CORRECT - complete nginx configuration with all location blocks:
+# PHP handling
+location ~ \.php$ {
+    try_files $uri =404;
+    fastcgi_pass 127.0.0.1:9000;
+    # ... full PHP configuration
+}
+
+# Test recordings directory access (CRITICAL for audio player!)
+location ^~ /temp/ {
+    alias /var/radiograb/temp/;
+    add_header Content-Type audio/mpeg;
+    add_header Access-Control-Allow-Origin "*";
+    add_header Accept-Ranges bytes;
+}
+
+# Key Configuration Notes:
+# - HTTP server on port 80 for development/testing
+# - HTTPS server uses nginx-ssl.conf for production
+# - /temp/ location block REQUIRED for test recording playback
+# - PHP-FPM on 127.0.0.1:9000 (NOT socket)
 ```
 
 ## 🔐 SSL/SECURITY CONFIGURATION
