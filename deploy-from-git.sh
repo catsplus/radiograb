@@ -30,8 +30,11 @@ git stash push -m "Auto-stash before deployment $(date)" || true
 
 # Pull latest changes
 echo "⬇️  Pulling latest changes from GitHub..."
-# For now, we'll use the local changes since we can't pull from GitHub without auth
-echo "   Using local git repository (GitHub pull requires authentication setup)"
+if git pull origin main --rebase; then
+    echo "   ✅ Successfully pulled latest changes from GitHub"
+else
+    echo "   ⚠️  Failed to pull from GitHub, using local repository"
+fi
 
 # Show what changed
 echo "📝 Recent commits:"
