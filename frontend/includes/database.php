@@ -13,11 +13,11 @@ class Database {
     
     public function __construct() {
         // Load configuration from environment or config file
-        $this->host = $_ENV['DB_HOST'] ?? 'localhost';
-        $this->port = $_ENV['DB_PORT'] ?? '3306';
-        $this->username = $_ENV['DB_USER'] ?? 'radiograb';
-        $this->password = $_ENV['DB_PASSWORD'] ?? 'radiograb_password';
-        $this->database = $_ENV['DB_NAME'] ?? 'radiograb';
+        $this->host = $_SERVER['DB_HOST'] ?? 'localhost';
+        $this->port = $_SERVER['DB_PORT'] ?? '3306';
+        $this->username = $_SERVER['DB_USER'] ?? 'radiograb';
+        $this->password = $_SERVER['DB_PASSWORD'] ?? 'radiograb_password';
+        $this->database = $_SERVER['DB_NAME'] ?? 'radiograb';
     }
     
     public function connect() {
