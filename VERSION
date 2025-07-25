@@ -1,1 +1,1 @@
-2025-07-24 23:37:00 - CSRF & DEBUG FIXES - Fixed CSRF token validation issues, added browser debug tools, updated deployment documentation, and resolved test recording functionality with proper session management.
+2025-07-25 07:05:00 - CALL SIGN IMPLEMENTATION v2.1.0 - Implemented 4-letter call sign filenames (WEHC, WERU, WTBR, WYSO), fixed timezone synchronization (UTC→EDT), resolved database environment variables ($_ENV→$_SERVER), enhanced download security with proper MP3 headers, and maintained backward compatibility for existing recordings.

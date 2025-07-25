@@ -296,6 +296,9 @@ curl -s -b /tmp/cookies.txt -X POST "https://radiograb.svaha.com/api/test-record
 6. **Enhanced Station Discovery**: Deep stream URL detection from JavaScript players
 7. **Database-Cached Parsing Methods**: Stores successful parsing strategies per station
 8. **Container-Based SSL**: Persistent certificates with automatic renewal
+9. **Call Sign File Naming**: Human-readable 4-letter call signs replace numeric station IDs
+10. **Timezone Synchronization**: All containers use America/New_York for consistent timestamps
+11. **Enhanced Download Security**: Proper MP3 headers with filename validation and security checks
 
 ## 🚨 CRITICAL SUCCESS FACTORS
 
@@ -329,6 +332,34 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && ./setup-container-ssl.sh radio
 ssh radiograb@167.71.84.143 "cd /opt/radiograb && git status && git stash && git pull origin main"
 ```
 
+## 🆕 RECENT UPDATES (July 2025)
+
+### ✅ Call Sign Implementation (Completed)
+- **Filename Format Change**: Recording files now use 4-letter call signs instead of numeric station IDs
+  - New format: `WEHC_test_2025-07-25-070014.mp3` (instead of `1_test_2025-07-25-070014.mp3`)
+  - Backward compatibility maintained for existing files
+  - All stations configured with proper call signs: WEHC, WERU, WTBR, WYSO
+
+### ✅ Timezone Fixes (Completed) 
+- **Container Timezone**: All Docker containers now use `America/New_York` (EDT)
+- **Timestamp Accuracy**: Recording timestamps now match local time instead of being 4 hours ahead
+- **Configuration**: Added `TZ=America/New_York` environment variable to all services
+
+### ✅ Download Security Enhancements (Completed)
+- **Proper MP3 Downloads**: Test recordings now download as MP3 files instead of HTML
+- **Security Validation**: Added filename format validation to prevent directory traversal
+- **Headers Fixed**: Proper `audio/mpeg` content-type and download headers
+- **API Enhancement**: Added dedicated download action to test-recordings.php API
+
+### ✅ Database Environment Variables (Completed)
+- **Critical Fix**: Changed from `$_ENV` to `$_SERVER` for PHP-FPM environment variable access
+- **Container Configuration**: Enabled `clear_env = no` in PHP-FPM for proper variable passing
+- **Connection Stability**: All MySQL connections now use environment variables correctly
+
+### 🔄 Known Outstanding Issues
+- **Frontend Auto-refresh**: Test recordings may not immediately appear in webpage interface (API works correctly)
+- **JavaScript Integration**: Frontend-backend integration needs refinement for real-time updates
+
 ---
 
 **🔄 Remember: Docker containers = isolated filesystem. Host file copies ≠ live site updates!**
@@ -337,3 +368,4 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git status && git stash && git
 **🐍 Always: `/opt/radiograb/venv/bin/python` for Python execution**
 **🔒 SSL: Persistent volumes ensure certificates survive container rebuilds**
 **🚨 Database: All MySQL connections must use environment variables (DB_HOST=mysql, DB_PORT=3306)**
+**📞 Call Signs: All new recordings use 4-letter call signs (WEHC, WERU, WTBR, WYSO) for easy identification**

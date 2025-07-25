@@ -1,5 +1,51 @@
 # RadioGrab Changelog
 
+## [2.1.0] - 2025-07-25 - Call Sign Implementation & System Fixes
+
+### 📞 Call Sign Implementation
+- **Human-Readable Filenames**: Recording files now use 4-letter call signs instead of numeric station IDs
+  - Test recordings: `WEHC_test_2025-07-25-070014.mp3` (was `1_test_2025-07-25-070014.mp3`)
+  - Scheduled recordings: `WEHC_Morning_Show_20250725_0800.mp3`
+  - On-demand recordings: `WEHC_on-demand_2025-07-25-070014.mp3`
+- **Station Configuration**: All stations configured with proper call signs
+  - WEHC 90.7 FM → WEHC
+  - WERU → WERU  
+  - WTBR - 89.7 FM → WTBR
+  - WYSO → WYSO
+- **Backward Compatibility**: Old numeric filename format still supported for existing recordings
+- **Database Enhancement**: Added `call_letters` field to stations table with proper indexing
+
+### ⏰ Timezone Synchronization
+- **Container Timezone Fix**: All Docker containers now use `America/New_York` (Eastern Time)
+- **Timestamp Accuracy**: Recording timestamps now match local time instead of being 4 hours ahead
+- **Dockerfile Updates**: Added `TZ=America/New_York` environment variable to all services
+- **docker-compose.yml**: Added timezone environment variables to all containers
+
+### 🔽 Download Security & Functionality
+- **Fixed MP3 Downloads**: Test recordings now download as proper MP3 files instead of HTML
+- **Security Validation**: Added comprehensive filename format validation to prevent directory traversal
+- **Proper Headers**: Fixed content-type headers (`audio/mpeg`) and download disposition
+- **API Enhancement**: Added dedicated download action to `test-recordings.php` API endpoint
+- **Session Management**: Downloads now work properly with session-based authentication
+
+### 🗄️ Database Environment Variables Fix
+- **Critical PHP-FPM Fix**: Changed from `$_ENV` to `$_SERVER` for environment variable access
+- **Container Configuration**: Enabled `clear_env = no` in PHP-FPM pool configuration
+- **Connection Stability**: All MySQL connections now use environment variables correctly
+- **Error Resolution**: Fixed `SQLSTATE[HY000] [2002] No such file or directory` database errors
+
+### 🔧 API Improvements
+- **Enhanced Test Recordings API**: Support for both old and new filename formats
+- **Improved Error Handling**: Better error messages and validation
+- **Response Format**: Added `call_letters` field to API responses for better frontend integration
+- **Download Endpoint**: New secure download functionality with proper file serving
+
+### 📚 Documentation Updates
+- **CLAUDE.md**: Added recent updates section with implementation details
+- **CHANGELOG.md**: Comprehensive changelog with technical details
+- **SYSTEM_ARCHITECTURE.md**: Updated filename conventions and technical specifications
+- **Container Documentation**: Updated with timezone and environment variable configurations
+
 ## [2.0.1] - 2025-07-23 - Security & SSL Fixes
 
 ### 🔒 Security Fixes

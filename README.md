@@ -9,6 +9,9 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically discovers schedules, records shows, and generates RSS feeds - all with a beautiful web interface.
 
+## 📅 Current Version: v2.1.0 (July 25, 2025)
+**Latest Features**: Call sign file naming, timezone synchronization, enhanced download security, and improved database connectivity. See [CHANGELOG.md](CHANGELOG.md) for full details.
+
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
@@ -19,10 +22,13 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **On-Demand Recording**: Manual 1-hour recordings with one click
 
 ### 🔧 **Technical Features**
+- **Call Sign File Naming**: Human-readable 4-letter call signs (WEHC, WERU, WTBR, WYSO) instead of numeric IDs
 - **Multi-Tool Recording**: Automatic tool selection (streamripper/ffmpeg/wget) for 100% stream compatibility
 - **JavaScript-Aware Parsing**: Selenium WebDriver handles dynamic calendar pages
 - **Docker Containerized**: Complete Docker setup with 5 specialized containers
 - **SSL/HTTPS Ready**: Automatic Let's Encrypt certificate management
+- **Timezone Synchronized**: All containers use Eastern Time for consistent timestamps
+- **Secure Downloads**: Proper MP3 file serving with security validation
 - **Responsive Web UI**: Modern Bootstrap interface with real-time updates
 
 ### 📊 **Smart Automation**
