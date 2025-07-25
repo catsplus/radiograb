@@ -4,6 +4,7 @@ services:
   mysql:
     image: mysql:8.0
     environment:
+      TZ: America/New_York
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-your_root_password}
       MYSQL_DATABASE: radiograb
       MYSQL_USER: radiograb
@@ -29,6 +30,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
+      - TZ=America/New_York
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=radiograb
@@ -58,6 +60,7 @@ services:
   recorder:
     build: .
     environment:
+      - TZ=America/New_York
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=radiograb
@@ -82,6 +85,7 @@ services:
   rss-updater:
     build: .
     environment:
+      - TZ=America/New_York
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=radiograb
@@ -101,6 +105,7 @@ services:
   housekeeping:
     build: .
     environment:
+      - TZ=America/New_York
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=radiograb

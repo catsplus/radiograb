@@ -172,6 +172,21 @@ DB_NAME=radiograb
 ssh radiograb@167.71.84.143 "docker exec -it radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 radiograb"
 ```
 
+### Timezone Configuration
+```bash
+# All containers use Eastern Time (America/New_York)
+TZ=America/New_York
+
+# Configured in:
+# - Dockerfile: ENV TZ=America/New_York
+# - docker-compose.yml: TZ=America/New_York for all services
+# - Ensures recording timestamps match local time zone
+
+# Verify timezone in containers:
+ssh radiograb@167.71.84.143 "docker exec radiograb-web-1 date"
+ssh radiograb@167.71.84.143 "docker exec radiograb-recorder-1 date"
+```
+
 ### Python Dependencies (Virtual Environment Required)
 ```bash
 # Critical packages (from requirements.txt):
