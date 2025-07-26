@@ -634,6 +634,11 @@ try {
                         // Show progress indication with countdown
                         showRecordingProgress(result.filename, result.duration, stationName);
                         
+                        // Immediate refresh to show the recording started
+                        setTimeout(() => {
+                            loadTestRecordings();
+                        }, 2000); // Quick refresh after 2 seconds
+                        
                         // Auto-refresh test recordings after completion
                         setTimeout(() => {
                             loadTestRecordings();
@@ -709,7 +714,7 @@ try {
         // Load and display test recordings
         async function loadTestRecordings() {
             const container = document.getElementById('testRecordingsContainer');
-            console.log('Loading test recordings...');
+            console.log('Loading test recordings...', new Date().toLocaleTimeString());
             container.innerHTML = `
                 <div class="text-center">
                     <div class="spinner-border" role="status">
@@ -720,11 +725,18 @@ try {
             `;
             
             try {
-                const response = await fetch('/api/test-recordings.php', {
-                    credentials: 'same-origin'
+                // Add cache-busting parameter to avoid stale responses
+                const response = await fetch('/api/test-recordings.php?_t=' + Date.now(), {
+                    credentials: 'same-origin',
+                    cache: 'no-cache'
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const result = await response.json();
-                console.log('Test recordings result:', result);
+                console.log('Test recordings result:', result, 'at', new Date().toLocaleTimeString());
                 
                 if (result.success && result.recordings.length > 0) {
                     let html = '<div class="row">';
