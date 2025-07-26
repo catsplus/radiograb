@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""
+RadioGrab Station Update Helper
+Functions to update station status when recordings succeed
+"""
+
+import sys
+import os
+from datetime import datetime
+
+# Add the project root to Python path
+sys.path.insert(0, '/opt/radiograb')
+
+try:
+    from backend.config.database import SessionLocal
+except ImportError as e:
+    print(f"Error importing database module: {e}")
+    sys.exit(1)
+
+def update_station_last_tested(station_id, success=True, error_msg=None):
+    """
+    Update station's last_tested timestamp when a recording occurs
+    Call this whenever a show recording succeeds for a station
+    """
+    try:
+        db = SessionLocal()
+        cursor = db.cursor()
+        
+        result = 'success' if success else 'failed'
+        test_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        cursor.execute("""
+            UPDATE stations 
+            SET last_tested = %s, 
+                last_test_result = %s, 
+                last_test_error = %s
+            WHERE id = %s
+        """, (test_time, result, error_msg, station_id))
+        
+        db.commit()
+        db.close()
+        
+        print(f"Updated station {station_id} last_tested to {test_time} (result: {result})")
+        return True
+        
+    except Exception as e:
+        print(f"Error updating station {station_id} last_tested: {e}")
+        return False
+
+def mark_station_recording_success(station_id):
+    """
+    Mark that a station had a successful recording
+    This should be called by the recording system when any show records successfully
+    """
+    return update_station_last_tested(station_id, success=True)
+
+def mark_station_recording_failure(station_id, error_msg):
+    """
+    Mark that a station recording failed
+    """
+    return update_station_last_tested(station_id, success=False, error_msg=error_msg)
+
+if __name__ == "__main__":
+    # Command line interface for manual testing
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Update station test status')
+    parser.add_argument('station_id', type=int, help='Station ID to update')
+    parser.add_argument('--success', action='store_true', help='Mark as success (default)')
+    parser.add_argument('--failed', action='store_true', help='Mark as failed')
+    parser.add_argument('--error', type=str, help='Error message for failed recordings')
+    
+    args = parser.parse_args()
+    
+    if args.failed:
+        result = update_station_last_tested(args.station_id, success=False, error_msg=args.error)
+    else:
+        result = update_station_last_tested(args.station_id, success=True)
+    
+    if result:
+        print("Station status updated successfully")
+    else:
+        print("Failed to update station status")
+        sys.exit(1)

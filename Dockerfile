@@ -62,8 +62,13 @@ RUN rm -f /etc/nginx/sites-enabled/default && \
 RUN sed -i 's/listen = \/run\/php\/php8.1-fpm.sock/listen = 127.0.0.1:9000/' /etc/php/8.1/fpm/pool.d/www.conf && \
     sed -i 's/;clear_env = no/clear_env = no/' /etc/php/8.1/fpm/pool.d/www.conf
 
-# Configure Supervisor
+# Configure Supervisor  
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Configure Station Health Monitoring Cron
+COPY docker/station-health-cron /etc/cron.d/station-health
+RUN chmod 0644 /etc/cron.d/station-health && \
+    crontab /etc/cron.d/station-health
 
 # Create startup script
 COPY docker/start.sh /start.sh
