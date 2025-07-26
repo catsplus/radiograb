@@ -31,8 +31,10 @@ def ensure_directory(directory):
         print(f"Error creating directory {directory}: {e}")
         return False
 
-def get_recording_tool():
-    """Determine the best available recording tool"""
+def get_recording_tool(stream_url=None):
+    """Determine the best available recording tool based on stream type"""
+    # Check if tools exist
+    tools_available = {}
     tools = [
         ('/usr/bin/streamripper', 'streamripper'),
         ('/usr/bin/ffmpeg', 'ffmpeg'),
@@ -41,16 +43,36 @@ def get_recording_tool():
     
     for tool_path, tool_name in tools:
         if os.path.exists(tool_path):
-            return tool_path, tool_name
+            tools_available[tool_name] = tool_path
+        else:
+            # Fallback - use which to find tools
+            try:
+                result = subprocess.run(['which', tool_name], capture_output=True, text=True)
+                if result.returncode == 0:
+                    tools_available[tool_name] = result.stdout.strip()
+            except:
+                continue
     
-    # Fallback - use which to find tools
-    for _, tool_name in tools:
-        try:
-            result = subprocess.run(['which', tool_name], capture_output=True, text=True)
-            if result.returncode == 0:
-                return result.stdout.strip(), tool_name
-        except:
-            continue
+    if not tools_available:
+        return None, None
+    
+    # Smart tool selection based on stream URL
+    if stream_url:
+        # StreamTheWorld streams work better with ffmpeg
+        if 'streamtheworld.com' in stream_url.lower() or 'live.streamtheworld.com' in stream_url.lower():
+            if 'ffmpeg' in tools_available:
+                return tools_available['ffmpeg'], 'ffmpeg'
+        
+        # .m3u8 streams require ffmpeg
+        if '.m3u8' in stream_url.lower():
+            if 'ffmpeg' in tools_available:
+                return tools_available['ffmpeg'], 'ffmpeg'
+    
+    # Default order preference
+    preferred_order = ['streamripper', 'ffmpeg', 'wget']
+    for tool_name in preferred_order:
+        if tool_name in tools_available:
+            return tools_available[tool_name], tool_name
     
     return None, None
 
@@ -110,12 +132,12 @@ def record_with_wget(stream_url, output_file, duration):
 
 def perform_recording(stream_url, output_file, duration):
     """Perform the actual recording using the best available tool"""
-    tool_path, tool_name = get_recording_tool()
+    tool_path, tool_name = get_recording_tool(stream_url)
     
     if not tool_path:
         return False, "No recording tools available (streamripper, ffmpeg, wget)"
     
-    print(f"Using {tool_name} at {tool_path}")
+    print(f"Using {tool_name} at {tool_path} for stream: {stream_url}")
     
     # Ensure output directory exists
     output_dir = os.path.dirname(output_file)
