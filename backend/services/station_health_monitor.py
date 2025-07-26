@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, '/opt/radiograb')
 
 try:
-    from backend.config.database import SessionLocal
+    import mysql.connector
     from backend.services.test_recording_service import perform_recording
     from backend.services.enhanced_discovery import AdvancedStationDiscovery
 except ImportError as e:
@@ -28,7 +28,17 @@ LOGS_DIR = '/var/radiograb/logs'
 
 class StationHealthMonitor:
     def __init__(self):
-        self.db = SessionLocal()
+        # Connect to MySQL using environment variables
+        db_config = {
+            'host': os.environ.get('DB_HOST', 'mysql'),
+            'port': int(os.environ.get('DB_PORT', '3306')),
+            'user': os.environ.get('DB_USER', 'radiograb'),
+            'password': os.environ.get('DB_PASSWORD', 'radiograb_pass_2024'),
+            'database': os.environ.get('DB_NAME', 'radiograb'),
+            'autocommit': True
+        }
+        
+        self.db = mysql.connector.connect(**db_config)
         self.results = {
             'timestamp': datetime.now().isoformat(),
             'stations_tested': 0,

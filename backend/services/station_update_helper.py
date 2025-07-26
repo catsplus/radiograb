@@ -12,7 +12,7 @@ from datetime import datetime
 sys.path.insert(0, '/opt/radiograb')
 
 try:
-    from backend.config.database import SessionLocal
+    import mysql.connector
 except ImportError as e:
     print(f"Error importing database module: {e}")
     sys.exit(1)
@@ -23,7 +23,17 @@ def update_station_last_tested(station_id, success=True, error_msg=None):
     Call this whenever a show recording succeeds for a station
     """
     try:
-        db = SessionLocal()
+        # Connect to MySQL using environment variables
+        db_config = {
+            'host': os.environ.get('DB_HOST', 'mysql'),
+            'port': int(os.environ.get('DB_PORT', '3306')),
+            'user': os.environ.get('DB_USER', 'radiograb'),
+            'password': os.environ.get('DB_PASSWORD', 'radiograb_pass_2024'),
+            'database': os.environ.get('DB_NAME', 'radiograb'),
+            'autocommit': True
+        }
+        
+        db = mysql.connector.connect(**db_config)
         cursor = db.cursor()
         
         result = 'success' if success else 'failed'
@@ -37,7 +47,6 @@ def update_station_last_tested(station_id, success=True, error_msg=None):
             WHERE id = %s
         """, (test_time, result, error_msg, station_id))
         
-        db.commit()
         db.close()
         
         print(f"Updated station {station_id} last_tested to {test_time} (result: {result})")
