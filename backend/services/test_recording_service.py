@@ -130,6 +130,71 @@ def record_with_wget(stream_url, output_file, duration):
     except Exception as e:
         return False, str(e)
 
+def convert_aac_to_mp3(input_file, output_file):
+    """Convert AAC file to MP3 using ffmpeg"""
+    try:
+        cmd = [
+            'ffmpeg',
+            '-i', input_file,
+            '-acodec', 'libmp3lame',
+            '-ab', '128k',
+            '-y',  # Overwrite output files
+            output_file
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        
+        if result.returncode == 0 and os.path.exists(output_file):
+            # Conversion successful, remove original AAC file
+            try:
+                os.remove(input_file)
+                print(f"Converted AAC to MP3: {output_file}")
+                return True, "AAC converted to MP3"
+            except Exception as e:
+                print(f"Warning: Could not remove original AAC file: {e}")
+                return True, "AAC converted to MP3 (original file remains)"
+        else:
+            return False, f"Conversion failed: {result.stderr}"
+            
+    except subprocess.TimeoutExpired:
+        return False, "Conversion timed out"
+    except Exception as e:
+        return False, f"Conversion error: {str(e)}"
+
+def post_process_recording(output_file):
+    """Post-process recording file (convert AAC to MP3 if needed)"""
+    if not os.path.exists(output_file):
+        return False, "File does not exist"
+    
+    # Check if file is AAC format (by extension or content)
+    is_aac = False
+    
+    # Check by extension
+    if output_file.endswith('.aac') or output_file.endswith('.mp3.aac'):
+        is_aac = True
+    else:
+        # Check by file content using file command
+        try:
+            result = subprocess.run(['file', output_file], capture_output=True, text=True)
+            if 'AAC' in result.stdout or 'ADTS' in result.stdout:
+                is_aac = True
+        except:
+            pass
+    
+    if is_aac:
+        # Create MP3 filename
+        if output_file.endswith('.mp3.aac'):
+            mp3_file = output_file[:-4]  # Remove .aac, keeping .mp3
+        elif output_file.endswith('.aac'):
+            mp3_file = output_file[:-4] + '.mp3'  # Replace .aac with .mp3
+        else:
+            mp3_file = output_file + '.mp3'  # Add .mp3 extension
+        
+        print(f"Detected AAC file, converting to MP3: {mp3_file}")
+        return convert_aac_to_mp3(output_file, mp3_file)
+    
+    return True, "No conversion needed"
+
 def perform_recording(stream_url, output_file, duration):
     """Perform the actual recording using the best available tool"""
     tool_path, tool_name = get_recording_tool(stream_url)
@@ -159,7 +224,21 @@ def perform_recording(stream_url, output_file, duration):
         file_size = os.path.getsize(output_file)
         if file_size > 0:
             print(f"Recording successful: {output_file} ({file_size} bytes)")
-            return True, f"Recorded {file_size} bytes"
+            
+            # Post-process the recording (convert AAC to MP3 if needed)
+            post_success, post_message = post_process_recording(output_file)
+            if post_success:
+                # Update output_file path if conversion happened
+                if output_file.endswith('.mp3.aac'):
+                    output_file = output_file[:-4]  # Remove .aac, keeping .mp3
+                elif output_file.endswith('.aac'):
+                    output_file = output_file[:-4] + '.mp3'  # Replace .aac with .mp3
+                
+                final_size = os.path.getsize(output_file) if os.path.exists(output_file) else file_size
+                return True, f"Recorded {final_size} bytes ({post_message})"
+            else:
+                print(f"Warning: Post-processing failed: {post_message}")
+                return True, f"Recorded {file_size} bytes (conversion failed: {post_message})"
         else:
             print(f"Recording failed: Empty file created")
             # Remove empty file

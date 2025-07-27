@@ -157,23 +157,52 @@ class AudioRecorder:
             if expected_output.exists():
                 file_size = expected_output.stat().st_size
                 if file_size > 0:  # Ensure file is not empty
-                    result.update({
-                        'success': True,
-                        'output_file': str(expected_output),
-                        'file_size': file_size,
-                        'duration': actual_duration,
-                        'tool_used': tool_to_use
-                    })
+                    # Post-process the recording (convert AAC to MP3 if needed)
+                    post_success, post_message, final_output = self._post_process_recording(expected_output)
                     
-                    # Save to database
-                    if show_id:
-                        recording_id = self._save_recording_to_db(
-                            show_id, safe_filename, title, description, 
-                            timestamp, file_size, actual_duration
-                        )
-                        result['recording_id'] = recording_id
-                    
-                    logger.info(f"Recording completed with {tool_to_use}: {expected_output} ({file_size} bytes)")
+                    if post_success:
+                        # Use the final output file (which may be converted)
+                        final_file_size = final_output.stat().st_size if final_output.exists() else file_size
+                        final_filename = final_output.name
+                        
+                        result.update({
+                            'success': True,
+                            'output_file': str(final_output),
+                            'file_size': final_file_size,
+                            'duration': actual_duration,
+                            'tool_used': tool_to_use,
+                            'post_processing': post_message
+                        })
+                        
+                        # Save to database with final filename
+                        if show_id:
+                            recording_id = self._save_recording_to_db(
+                                show_id, final_filename, title, description, 
+                                timestamp, final_file_size, actual_duration
+                            )
+                            result['recording_id'] = recording_id
+                        
+                        logger.info(f"Recording completed with {tool_to_use}: {final_output} ({final_file_size} bytes) - {post_message}")
+                    else:
+                        # Post-processing failed, but original recording might still be usable
+                        result.update({
+                            'success': True,
+                            'output_file': str(expected_output),
+                            'file_size': file_size,
+                            'duration': actual_duration,
+                            'tool_used': tool_to_use,
+                            'post_processing_warning': post_message
+                        })
+                        
+                        # Save to database with original filename
+                        if show_id:
+                            recording_id = self._save_recording_to_db(
+                                show_id, safe_filename, title, description, 
+                                timestamp, file_size, actual_duration
+                            )
+                            result['recording_id'] = recording_id
+                        
+                        logger.warning(f"Recording completed but post-processing failed: {expected_output} ({file_size} bytes) - {post_message}")
                 else:
                     result['error'] = f"Output file is empty (0 bytes). Tool: {tool_to_use}, Output: {process.stderr}"
                     logger.error(f"Recording failed: {result['error']}")
@@ -245,6 +274,72 @@ class AudioRecorder:
         ]
         
         return cmd
+    
+    def _convert_aac_to_mp3(self, input_file: Path, output_file: Path) -> tuple[bool, str]:
+        """Convert AAC file to MP3 using ffmpeg"""
+        try:
+            cmd = [
+                self.tools['ffmpeg'],
+                '-i', str(input_file),
+                '-acodec', 'libmp3lame',
+                '-ab', '128k',
+                '-y',  # Overwrite output files
+                str(output_file)
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            
+            if result.returncode == 0 and output_file.exists():
+                # Conversion successful, remove original AAC file
+                try:
+                    input_file.unlink()
+                    logger.info(f"Converted AAC to MP3: {output_file}")
+                    return True, "AAC converted to MP3"
+                except Exception as e:
+                    logger.warning(f"Could not remove original AAC file: {e}")
+                    return True, "AAC converted to MP3 (original file remains)"
+            else:
+                return False, f"Conversion failed: {result.stderr}"
+                
+        except subprocess.TimeoutExpired:
+            return False, "Conversion timed out"
+        except Exception as e:
+            return False, f"Conversion error: {str(e)}"
+    
+    def _post_process_recording(self, output_file: Path) -> tuple[bool, str, Path]:
+        """Post-process recording file (convert AAC to MP3 if needed)"""
+        if not output_file.exists():
+            return False, "File does not exist", output_file
+        
+        # Check if file is AAC format (by extension or content)
+        is_aac = False
+        
+        # Check by extension
+        if str(output_file).endswith('.aac') or str(output_file).endswith('.mp3.aac'):
+            is_aac = True
+        else:
+            # Check by file content using file command
+            try:
+                result = subprocess.run(['file', str(output_file)], capture_output=True, text=True)
+                if 'AAC' in result.stdout or 'ADTS' in result.stdout:
+                    is_aac = True
+            except:
+                pass
+        
+        if is_aac:
+            # Create MP3 filename
+            if str(output_file).endswith('.mp3.aac'):
+                mp3_file = Path(str(output_file)[:-4])  # Remove .aac, keeping .mp3
+            elif str(output_file).endswith('.aac'):
+                mp3_file = Path(str(output_file)[:-4] + '.mp3')  # Replace .aac with .mp3
+            else:
+                mp3_file = Path(str(output_file) + '.mp3')  # Add .mp3 extension
+            
+            logger.info(f"Detected AAC file, converting to MP3: {mp3_file}")
+            success, message = self._convert_aac_to_mp3(output_file, mp3_file)
+            return success, message, mp3_file if success else output_file
+        
+        return True, "No conversion needed", output_file
     
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize filename for filesystem safety"""
