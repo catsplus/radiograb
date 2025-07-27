@@ -251,6 +251,35 @@ def perform_recording(stream_url, output_file, duration):
         print(f"Recording failed: {error}")
         return False, error
 
+def update_station_test_status(station_id, success, error_message=None):
+    """Update station test status in database"""
+    try:
+        # Import database dependencies
+        sys.path.insert(0, '/opt/radiograb')
+        from backend.config.database import SessionLocal
+        from backend.models.station import Station
+        from datetime import datetime
+        
+        db = SessionLocal()
+        try:
+            station = db.query(Station).filter(Station.id == station_id).first()
+            if station:
+                station.last_tested = datetime.now()
+                station.last_test_result = 'success' if success else 'failed'
+                station.last_test_error = error_message if not success else None
+                
+                db.commit()
+                print(f"Updated station {station_id} test status: {'success' if success else 'failed'}")
+                return True
+            else:
+                print(f"Station {station_id} not found")
+                return False
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"Error updating station test status: {e}")
+        return False
+
 def main():
     parser = argparse.ArgumentParser(description='RadioGrab Test Recording Service')
     parser.add_argument('--station-id', type=int, required=True, help='Station ID')
@@ -279,6 +308,9 @@ def main():
     
     # Perform the recording
     success, message = perform_recording(args.stream_url, output_file, args.duration)
+    
+    # Update station test status
+    update_station_test_status(args.station_id, success, message if not success else None)
     
     if success:
         print(f"✅ Recording completed successfully: {message}")

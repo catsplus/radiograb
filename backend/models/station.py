@@ -25,6 +25,11 @@ class Station(Base):
     stream_test_results = Column(Text, nullable=True)               # JSON test results
     last_stream_test = Column(DateTime(timezone=True), nullable=True)
     
+    # Station testing tracking (updated on any recording or test)
+    last_tested = Column(DateTime(timezone=True), nullable=True)    # Last successful recording/test
+    last_test_result = Column(String(20), nullable=True)            # success, failed, error
+    last_test_error = Column(Text, nullable=True)                   # Error message if failed
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

@@ -165,13 +165,17 @@ class AudioRecorder:
                         final_file_size = final_output.stat().st_size if final_output.exists() else file_size
                         final_filename = final_output.name
                         
+                        # Validate recording quality
+                        quality_valid, quality_message = self._validate_recording_quality(final_output, actual_duration)
+                        
                         result.update({
                             'success': True,
                             'output_file': str(final_output),
                             'file_size': final_file_size,
                             'duration': actual_duration,
                             'tool_used': tool_to_use,
-                            'post_processing': post_message
+                            'post_processing': post_message,
+                            'quality_validation': quality_message
                         })
                         
                         # Save to database with final filename
@@ -181,8 +185,16 @@ class AudioRecorder:
                                 timestamp, final_file_size, actual_duration
                             )
                             result['recording_id'] = recording_id
+                            
+                            # Update station test status (successful recording, but note quality issues)
+                            station_id = self._get_station_id_from_show(show_id)
+                            if station_id:
+                                if quality_valid:
+                                    self._update_station_test_status(station_id, True)
+                                else:
+                                    self._update_station_test_status(station_id, False, f"Quality issue: {quality_message}")
                         
-                        logger.info(f"Recording completed with {tool_to_use}: {final_output} ({final_file_size} bytes) - {post_message}")
+                        logger.info(f"Recording completed with {tool_to_use}: {final_output} ({final_file_size} bytes) - {post_message} - Quality: {quality_message}")
                     else:
                         # Post-processing failed, but original recording might still be usable
                         result.update({
@@ -201,23 +213,91 @@ class AudioRecorder:
                                 timestamp, file_size, actual_duration
                             )
                             result['recording_id'] = recording_id
+                            
+                            # Update station test status on successful recording (even with post-processing warning)
+                            station_id = self._get_station_id_from_show(show_id)
+                            if station_id:
+                                self._update_station_test_status(station_id, True)
                         
                         logger.warning(f"Recording completed but post-processing failed: {expected_output} ({file_size} bytes) - {post_message}")
                 else:
                     result['error'] = f"Output file is empty (0 bytes). Tool: {tool_to_use}, Output: {process.stderr}"
                     logger.error(f"Recording failed: {result['error']}")
+                    
+                    # Update station test status on failure
+                    if show_id:
+                        station_id = self._get_station_id_from_show(show_id)
+                        if station_id:
+                            self._update_station_test_status(station_id, False, result['error'])
             else:
                 result['error'] = f"Output file not created. Tool: {tool_to_use}, Output: {process.stderr}"
                 logger.error(f"Recording failed: {result['error']}")
+                
+                # Update station test status on failure
+                if show_id:
+                    station_id = self._get_station_id_from_show(show_id)
+                    if station_id:
+                        self._update_station_test_status(station_id, False, result['error'])
         
         except subprocess.TimeoutExpired:
             result['error'] = "Recording timeout"
             logger.error("Recording timeout")
+            
+            # Update station test status on timeout
+            if show_id:
+                station_id = self._get_station_id_from_show(show_id)
+                if station_id:
+                    self._update_station_test_status(station_id, False, result['error'])
+                    
         except Exception as e:
             result['error'] = f"Recording error: {str(e)}"
             logger.error(f"Recording error: {str(e)}")
+            
+            # Update station test status on error
+            if show_id:
+                station_id = self._get_station_id_from_show(show_id)
+                if station_id:
+                    self._update_station_test_status(station_id, False, result['error'])
         
         return result
+    
+    def _update_station_test_status(self, station_id: int, success: bool, error_message: str = None):
+        """Update station test status in database"""
+        try:
+            from datetime import datetime
+            
+            db = SessionLocal()
+            try:
+                station = db.query(Station).filter(Station.id == station_id).first()
+                if station:
+                    station.last_tested = datetime.now()
+                    station.last_test_result = 'success' if success else 'failed'
+                    station.last_test_error = error_message if not success else None
+                    
+                    db.commit()
+                    logger.info(f"Updated station {station_id} test status: {'success' if success else 'failed'}")
+                    return True
+                else:
+                    logger.error(f"Station {station_id} not found")
+                    return False
+            finally:
+                db.close()
+        except Exception as e:
+            logger.error(f"Error updating station test status: {e}")
+            return False
+    
+    def _get_station_id_from_show(self, show_id: int) -> Optional[int]:
+        """Get station ID from show ID"""
+        try:
+            db = SessionLocal()
+            try:
+                show = db.query(Show).filter(Show.id == show_id).first()
+                return show.station_id if show else None
+            finally:
+                db.close()
+        except Exception as e:
+            logger.error(f"Error getting station ID from show {show_id}: {e}")
+            return None
     
     def _build_streamripper_command(self, 
                                    stream_url: str, 
@@ -340,6 +420,39 @@ class AudioRecorder:
             return success, message, mp3_file if success else output_file
         
         return True, "No conversion needed", output_file
+    
+    def _validate_recording_quality(self, output_file: Path, duration_seconds: int) -> tuple[bool, str]:
+        """Validate recording file quality"""
+        try:
+            if not output_file.exists():
+                return False, "File does not exist"
+            
+            file_size = output_file.stat().st_size
+            
+            # Basic size validation - expect at least 1KB per second for MP3
+            min_expected_size = duration_seconds * 1024  # 1KB per second minimum
+            if file_size < min_expected_size:
+                return False, f"File too small: {file_size} bytes (expected at least {min_expected_size} bytes for {duration_seconds}s)"
+            
+            # Check if file is actually audio format
+            try:
+                result = subprocess.run(['file', str(output_file)], capture_output=True, text=True, timeout=5)
+                file_type = result.stdout.lower()
+                
+                if any(format_type in file_type for format_type in ['mp3', 'audio', 'mpeg', 'aac']):
+                    return True, f"Valid audio file: {file_size} bytes"
+                else:
+                    return False, f"Not an audio file: {file_type}"
+                    
+            except subprocess.TimeoutExpired:
+                # If file command times out, just check size
+                return True, f"File exists with valid size: {file_size} bytes"
+            except Exception:
+                # If file command fails, just check size
+                return True, f"File exists with valid size: {file_size} bytes"
+                
+        except Exception as e:
+            return False, f"Validation error: {str(e)}"
     
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize filename for filesystem safety"""

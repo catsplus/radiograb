@@ -22,12 +22,15 @@ if ($_POST['action'] ?? '' === 'delete' && isset($_POST['station_id'])) {
     exit;
 }
 
-// Get stations with show counts
+// Get stations with show counts and last test information
 try {
     $stations = $db->fetchAll("
         SELECT s.*, 
                COUNT(sh.id) as show_count,
-               COUNT(r.id) as recording_count
+               COUNT(r.id) as recording_count,
+               s.last_tested,
+               s.last_test_result,
+               s.last_test_error
         FROM stations s 
         LEFT JOIN shows sh ON s.id = sh.station_id AND sh.active = 1
         LEFT JOIN recordings r ON sh.id = r.show_id
@@ -153,6 +156,35 @@ try {
                                             <small class="text-muted">Timezone: <?= h($station['timezone']) ?></small>
                                         </div>
                                     <?php endif; ?>
+                                    
+                                    <!-- Last Tested Information -->
+                                    <div class="mb-2">
+                                        <?php if ($station['last_tested']): ?>
+                                            <?php 
+                                            $test_icon = 'fas fa-check-circle text-success';
+                                            $test_text = 'success';
+                                            if ($station['last_test_result'] === 'failed') {
+                                                $test_icon = 'fas fa-times-circle text-danger';
+                                                $test_text = 'failed';
+                                            } elseif ($station['last_test_result'] === 'error') {
+                                                $test_icon = 'fas fa-exclamation-triangle text-warning';
+                                                $test_text = 'error';
+                                            }
+                                            ?>
+                                            <i class="<?= $test_icon ?>"></i>
+                                            <small class="text-muted">
+                                                Last tested: <?= timeAgo($station['last_tested']) ?> (<?= $test_text ?>)
+                                                <?php if ($station['last_test_error']): ?>
+                                                    <span class="text-danger" title="<?= h($station['last_test_error']) ?>">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </small>
+                                        <?php else: ?>
+                                            <i class="fas fa-question-circle text-muted"></i>
+                                            <small class="text-muted">Never tested</small>
+                                        <?php endif; ?>
+                                    </div>
                                     
                                     <div class="row text-center">
                                         <div class="col">
