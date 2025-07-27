@@ -58,12 +58,12 @@ function listTestRecordings() {
                 $size = filesize($file);
                 $created = filemtime($file);
                 
-                // Parse filename to extract info (support both formats)
+                // Parse filename to extract info (call letters format only)
                 $callLetters = null;
                 $stationId = null;
                 $timestamp = null;
                 
-                // New format: {call_letters}_test_{timestamp}.mp3 or .mp3.mp3 (AAC converted)
+                // Format: {call_letters}_test_{timestamp}.mp3 or .mp3.mp3 (AAC converted)
                 if (preg_match('/^([A-Z]{4})_test_(\d{4}-\d{2}-\d{2}-\d{6})\.mp3(\.mp3)?$/', $filename, $matches)) {
                     $callLetters = $matches[1];
                     $timestamp = $matches[2];
@@ -72,16 +72,6 @@ function listTestRecordings() {
                     global $db;
                     $station = $db->fetchOne("SELECT id FROM stations WHERE call_letters = ?", [$callLetters]);
                     $stationId = $station ? (int)$station['id'] : null;
-                }
-                // Old format: {station_id}_test_{timestamp}.mp3 or .mp3.mp3 (AAC converted)
-                else if (preg_match('/^(\d+)_test_(\d{4}-\d{2}-\d{2}-\d{6})\.mp3(\.mp3)?$/', $filename, $matches)) {
-                    $stationId = (int)$matches[1];
-                    $timestamp = $matches[2];
-                    
-                    // Get call letters from station ID
-                    global $db;
-                    $station = $db->fetchOne("SELECT call_letters FROM stations WHERE id = ?", [$stationId]);
-                    $callLetters = $station['call_letters'] ?? null;
                 }
                 
                 if ($timestamp && $stationId) {
@@ -128,8 +118,8 @@ function deleteTestRecording() {
         return;
     }
     
-    // Validate filename format for security (support both old and new formats, including .mp3.mp3)
-    if (!preg_match('/^([A-Z]{4}|\d+)_test_\d{4}-\d{2}-\d{2}-\d{6}\.mp3(\.mp3)?$/', $filename)) {
+    // Validate filename format for security (call letters format only, including .mp3.mp3)
+    if (!preg_match('/^([A-Z]{4})_test_\d{4}-\d{2}-\d{2}-\d{6}\.mp3(\.mp3)?$/', $filename)) {
         http_response_code(400);
         echo json_encode(['error' => 'Invalid filename format']);
         return;
@@ -159,8 +149,8 @@ function downloadTestRecording() {
         return;
     }
     
-    // Validate filename format for security (support both old and new formats, including .mp3.mp3)
-    if (!preg_match('/^([A-Z]{4}|\d+)_test_\d{4}-\d{2}-\d{2}-\d{6}\.mp3(\.mp3)?$/', $filename)) {
+    // Validate filename format for security (call letters format only, including .mp3.mp3)
+    if (!preg_match('/^([A-Z]{4})_test_\d{4}-\d{2}-\d{2}-\d{6}\.mp3(\.mp3)?$/', $filename)) {
         http_response_code(400);
         echo json_encode(['error' => 'Invalid filename format']);
         return;

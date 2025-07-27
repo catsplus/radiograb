@@ -436,12 +436,15 @@ curl -s -b /tmp/cookies.txt -X POST "https://radiograb.svaha.com/api/test-record
 
 #### Test Recordings
 - **Container Path**: `/var/radiograb/temp/` 
-- **File Format**: `{CALL_LETTERS}_test_{TIMESTAMP}.mp3`
+- **File Format**: `{CALL_LETTERS}_test_{TIMESTAMP}.mp3` (or `.mp3.mp3` after AAC conversion)
+- **Examples**: `WYSO_test_2025-07-27-094052.mp3`, `WEHC_test_2025-07-27-001928.mp3`
 - **Access URL**: `https://radiograb.svaha.com/temp/{filename}`
+- **Note**: AAC streams are automatically converted to MP3, creating `.mp3.mp3` files
 
 #### Main Recordings  
 - **Container Path**: `/var/radiograb/recordings/`
-- **File Format**: `{CALL_LETTERS}_{show}_{TIMESTAMP}.mp3`
+- **File Format**: `{CALL_LETTERS}_{show_name}_{TIMESTAMP}.mp3`
+- **Examples**: `WEHC_MorningShow_2025-07-27-0600.mp3`, `WYSO_NewsHour_2025-07-27-1800.mp3`
 
 #### RSS Feeds
 - **Container Path**: `/var/radiograb/feeds/`
