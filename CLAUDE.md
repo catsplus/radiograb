@@ -125,6 +125,15 @@ To enable proper git-based deployment, the server needs:
 - **Test & On-Demand Recording**: 30-second tests + 1-hour manual recordings
 - **RSS Feeds**: Individual show feeds + master feed (all shows combined)
 - **Automatic Housekeeping**: Cleans empty files every 6 hours
+- **Station Testing Tracking**: Last tested date, success/failure status on every recording
+- **Automated Station Testing**: Periodic testing service to verify all stations
+
+### Station Testing System
+- **Automatic Test Tracking**: Every successful recording updates station's `last_tested` timestamp
+- **Quality Validation**: File size and format verification on recording completion
+- **Status Tracking**: `last_test_result` (success/failed/error) and `last_test_error` fields
+- **Web Interface Display**: Last tested status with icons in stations page
+- **Automated Testing Service**: `station_auto_test.py` for periodic station verification
 
 ### Recording Tools (All in radiograb-recorder-1 container)
 - **streamripper** (`/usr/bin/streamripper`): Direct HTTP/MP3 streams
@@ -215,10 +224,16 @@ ssh radiograb@167.71.84.143 "docker exec radiograb-recorder-1 date"
 # Critical packages (from requirements.txt):
 APScheduler==3.11.0         # Job scheduling
 beautifulsoup4==4.13.4      # HTML parsing
-mysql-connector-python==9.4.0  # MySQL connector
+mysql-connector-python==9.4.0  # MySQL connector (main)
+pymysql>=1.0.0              # MySQL connector (SQLAlchemy driver)
 SQLAlchemy==2.0.41          # Database ORM
 requests==2.32.4            # HTTP client
 selenium==4.x               # JavaScript parsing (manually installed)
+
+# Database Connection Details:
+# - SQLAlchemy uses mysql+pymysql:// connection string
+# - Requires both mysql-connector-python AND pymysql packages
+# - Connection: mysql+pymysql://radiograb:radiograb_pass_2024@mysql:3306/radiograb
 ```
 
 ### Nginx Configuration (CRITICAL!)

@@ -9,6 +9,7 @@ webdriver-manager>=4.0.0
 
 # Database
 mysql-connector-python>=8.0.0
+pymysql>=1.0.0
 sqlalchemy>=1.4.0
 
 # Scheduling and background tasks

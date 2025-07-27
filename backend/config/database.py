@@ -18,7 +18,7 @@ DB_PASSWORD = os.getenv('DB_PASSWORD', 'radiograb')
 DB_NAME = os.getenv('DB_NAME', 'radiograb')
 
 # Create database URL
-DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Create engine
 engine = create_engine(DATABASE_URL, echo=False)
