@@ -88,6 +88,12 @@ def record_with_streamripper(stream_url, output_file, duration):
     
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=duration + 30)
+        
+        # Streamripper can return exit code 0 even on errors like HTTP 403
+        # Check stderr for error messages
+        if result.stderr and ('error' in result.stderr.lower() or 'forbidden' in result.stderr.lower()):
+            return False, result.stderr
+            
         return result.returncode == 0, result.stderr
     except subprocess.TimeoutExpired:
         return False, "Recording timed out"
@@ -349,7 +355,6 @@ def perform_recording(stream_url, output_file, duration, station_id=None):
             successful_user_agent = None  # Default User-Agent worked
     
     # Strategy 3: If HTTP 403 error, try with different User-Agents
-    print(f"DEBUG: success={success}, error='{error}', is_access_forbidden={is_access_forbidden_error(error)}")
     if not success and is_access_forbidden_error(error):
         print(f"HTTP 403 detected, trying different User-Agents...")
         
