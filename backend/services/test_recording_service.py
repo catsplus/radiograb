@@ -94,8 +94,8 @@ def record_with_streamripper(stream_url, output_file, duration):
     except Exception as e:
         return False, str(e)
 
-def record_with_ffmpeg(stream_url, output_file, duration):
-    """Record using ffmpeg"""
+def record_with_ffmpeg(stream_url, output_file, duration, user_agent=None):
+    """Record using ffmpeg with optional User-Agent"""
     cmd = [
         'ffmpeg',
         '-i', stream_url,
@@ -105,6 +105,11 @@ def record_with_ffmpeg(stream_url, output_file, duration):
         output_file
     ]
     
+    # Add User-Agent if specified
+    if user_agent:
+        cmd.insert(1, '-user_agent')
+        cmd.insert(2, user_agent)
+    
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=duration + 30)
         return result.returncode == 0, result.stderr
@@ -113,15 +118,20 @@ def record_with_ffmpeg(stream_url, output_file, duration):
     except Exception as e:
         return False, str(e)
 
-def record_with_wget(stream_url, output_file, duration):
-    """Record using wget with timeout"""
+def record_with_wget(stream_url, output_file, duration, user_agent=None):
+    """Record using wget with timeout and optional User-Agent"""
     cmd = [
         'timeout', str(duration),
         'wget', '-O', output_file,
         '--timeout=10',
-        '--tries=3',
-        stream_url
+        '--tries=3'
     ]
+    
+    # Add User-Agent if specified
+    if user_agent:
+        cmd.extend(['--user-agent', user_agent])
+    
+    cmd.append(stream_url)
     
     try:
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -195,29 +205,114 @@ def post_process_recording(output_file):
     
     return True, "No conversion needed"
 
+def get_user_agents():
+    """Get list of User-Agent strings to try for HTTP 403 errors"""
+    return [
+        None,  # Default (no User-Agent)
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'iTunes/12.0.0 (Macintosh; OS X 10.10.5) AppleWebKit/600.8.9',
+        'VLC/3.0.0 LibVLC/3.0.0',
+        'Radio-Browser/1.0',
+        'Winamp/5.0',
+        'foobar2000/1.4.8'
+    ]
+
+def is_access_forbidden_error(error_message):
+    """Check if error indicates HTTP 403 Access Forbidden"""
+    if not error_message:
+        return False
+    
+    error_lower = error_message.lower()
+    return any(indicator in error_lower for indicator in [
+        'http:403', 'access forbidden', 'forbidden', 'error -56',
+        '403 forbidden', 'access denied', 'authorization failed'
+    ])
+
+def _try_recording_with_tool(tool_name, stream_url, output_file, duration, user_agent=None):
+    """Try recording with a specific tool"""
+    if tool_name == 'streamripper':
+        return record_with_streamripper(stream_url, output_file, duration)
+    elif tool_name == 'ffmpeg':
+        return record_with_ffmpeg(stream_url, output_file, duration, user_agent)
+    elif tool_name == 'wget':
+        return record_with_wget(stream_url, output_file, duration, user_agent)
+    else:
+        return False, f"Unsupported tool: {tool_name}"
+
 def perform_recording(stream_url, output_file, duration):
-    """Perform the actual recording using the best available tool"""
-    tool_path, tool_name = get_recording_tool(stream_url)
-    
-    if not tool_path:
-        return False, "No recording tools available (streamripper, ffmpeg, wget)"
-    
-    print(f"Using {tool_name} at {tool_path} for stream: {stream_url}")
+    """Perform the actual recording using the best available tool with smart User-Agent handling"""
     
     # Ensure output directory exists
     output_dir = os.path.dirname(output_file)
     if not ensure_directory(output_dir):
         return False, f"Failed to create output directory {output_dir}"
     
-    # Record based on available tool
-    if tool_name == 'streamripper':
-        success, error = record_with_streamripper(stream_url, output_file, duration)
-    elif tool_name == 'ffmpeg':
-        success, error = record_with_ffmpeg(stream_url, output_file, duration)
-    elif tool_name == 'wget':
-        success, error = record_with_wget(stream_url, output_file, duration)
-    else:
-        return False, f"Unsupported tool: {tool_name}"
+    # Get all available tools for multi-tool strategy
+    tools_available = {}
+    tools = [
+        ('/usr/bin/streamripper', 'streamripper'),
+        ('/usr/bin/ffmpeg', 'ffmpeg'),
+        ('/usr/bin/wget', 'wget')
+    ]
+    
+    for tool_path, tool_name in tools:
+        if os.path.exists(tool_path):
+            tools_available[tool_name] = tool_path
+        else:
+            # Fallback - use which to find tools
+            try:
+                result = subprocess.run(['which', tool_name], capture_output=True, text=True)
+                if result.returncode == 0:
+                    tools_available[tool_name] = result.stdout.strip()
+            except:
+                continue
+    
+    if not tools_available:
+        return False, "No recording tools available (streamripper, ffmpeg, wget)"
+    
+    # Strategy 1: Try primary tool first
+    tool_path, tool_name = get_recording_tool(stream_url)
+    print(f"Strategy 1: Using {tool_name} at {tool_path} for stream: {stream_url}")
+    
+    success, error = _try_recording_with_tool(tool_name, stream_url, output_file, duration)
+    
+    # Strategy 2: If HTTP 403 error, try with different User-Agents
+    if not success and is_access_forbidden_error(error):
+        print(f"HTTP 403 detected, trying different User-Agents...")
+        
+        user_agents = get_user_agents()[1:]  # Skip default (already tried)
+        for user_agent in user_agents:
+            print(f"Trying with User-Agent: {user_agent[:50]}...")
+            
+            # Try with ffmpeg first for User-Agent support
+            if 'ffmpeg' in tools_available:
+                success, error = record_with_ffmpeg(stream_url, output_file, duration, user_agent)
+                if success:
+                    print(f"Success with ffmpeg + User-Agent")
+                    break
+            
+            # Try with wget if ffmpeg failed
+            if not success and 'wget' in tools_available:
+                success, error = record_with_wget(stream_url, output_file, duration, user_agent)
+                if success:
+                    print(f"Success with wget + User-Agent")
+                    break
+    
+    # Strategy 3: If still failing, try all available tools without User-Agent
+    if not success and not is_access_forbidden_error(error):
+        print(f"Primary tool failed, trying alternative tools...")
+        
+        tool_order = ['streamripper', 'ffmpeg', 'wget']
+        for alt_tool in tool_order:
+            if alt_tool in tools_available and alt_tool != tool_name:
+                print(f"Trying alternative tool: {alt_tool}")
+                alt_success, alt_error = _try_recording_with_tool(alt_tool, stream_url, output_file, duration)
+                if alt_success:
+                    success, error = alt_success, alt_error
+                    print(f"Success with alternative tool: {alt_tool}")
+                    break
     
     # Check if file was created and has content
     if success and os.path.exists(output_file):
