@@ -180,7 +180,7 @@ def convert_aac_to_mp3(input_file, output_file):
 def post_process_recording(output_file):
     """Post-process recording file (convert AAC to MP3 if needed)"""
     if not os.path.exists(output_file):
-        return False, "File does not exist"
+        return False, "File does not exist", output_file
     
     # Check if file is AAC format (by extension or content)
     is_aac = False
@@ -207,9 +207,10 @@ def post_process_recording(output_file):
             mp3_file = output_file + '.mp3'  # Add .mp3 extension
         
         print(f"Detected AAC file, converting to MP3: {mp3_file}")
-        return convert_aac_to_mp3(output_file, mp3_file)
+        success, message = convert_aac_to_mp3(output_file, mp3_file)
+        return success, message, mp3_file if success else output_file
     
-    return True, "No conversion needed"
+    return True, "No conversion needed", output_file
 
 def get_user_agents():
     """Get list of User-Agent strings to try for HTTP 403 errors"""
@@ -406,13 +407,10 @@ def perform_recording(stream_url, output_file, duration, station_id=None):
                 _save_user_agent(station_id, successful_user_agent)
             
             # Post-process the recording (convert AAC to MP3 if needed)
-            post_success, post_message = post_process_recording(output_file)
+            post_success, post_message, final_output_file = post_process_recording(output_file)
             if post_success:
-                # Update output_file path if conversion happened
-                if output_file.endswith('.mp3.aac'):
-                    output_file = output_file[:-4]  # Remove .aac, keeping .mp3
-                elif output_file.endswith('.aac'):
-                    output_file = output_file[:-4] + '.mp3'  # Replace .aac with .mp3
+                # Use the final output file path returned by post_process_recording
+                output_file = final_output_file
                 
                 final_size = os.path.getsize(output_file) if os.path.exists(output_file) else file_size
                 return True, f"Recorded {final_size} bytes ({post_message})"
