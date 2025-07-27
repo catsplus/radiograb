@@ -349,6 +349,7 @@ def perform_recording(stream_url, output_file, duration, station_id=None):
             successful_user_agent = None  # Default User-Agent worked
     
     # Strategy 3: If HTTP 403 error, try with different User-Agents
+    print(f"DEBUG: success={success}, error='{error}', is_access_forbidden={is_access_forbidden_error(error)}")
     if not success and is_access_forbidden_error(error):
         print(f"HTTP 403 detected, trying different User-Agents...")
         
