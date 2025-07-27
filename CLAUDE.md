@@ -367,6 +367,161 @@ curl -s -b /tmp/cookies.txt -X POST "https://radiograb.svaha.com/api/test-record
 9. **Call Sign File Naming**: Human-readable 4-letter call signs replace numeric station IDs
 10. **Timezone Synchronization**: All containers use America/New_York for consistent timestamps
 11. **Enhanced Download Security**: Proper MP3 headers with filename validation and security checks
+12. **🆕 Radio Browser API Integration**: Comprehensive US station database for stream discovery
+13. **🆕 Automated Station Testing**: Continuous monitoring with automatic rediscovery on failures
+14. **🆕 Intelligent Stream Matching**: Call letter extraction and confidence scoring for stream discovery
+
+## 📡 ENHANCED STREAM DISCOVERY & TESTING SYSTEM
+
+### 🔍 Radio Browser API Integration
+**COMPREHENSIVE US STATION DATABASE FOR STREAM DISCOVERY**
+
+The system now integrates with Radio Browser (radio-browser.info), a comprehensive database of radio stations worldwide with a focus on US stations.
+
+#### Key Features:
+- **Primary Source**: Radio Browser API serves as the first lookup method before traditional web scraping
+- **Comprehensive Coverage**: Database of 50,000+ radio stations with verified stream URLs
+- **Real-time Status**: Tracks which streams are currently working (lastcheckok status)
+- **Quality Metadata**: Bitrate, codec, and popularity information for stream selection
+
+#### Implementation:
+```python
+# Stream Discovery Service: backend/services/stream_discovery.py
+from backend.services.stream_discovery import RadioStreamDiscovery
+
+discovery = RadioStreamDiscovery()
+stream_info = discovery.find_best_stream_match("WERU Community Radio")
+
+# Returns structured stream information with confidence scoring
+{
+    'source': 'radio_browser',
+    'stream_url': 'https://stream.weru.org:8000/weru-128',
+    'confidence': 0.95,
+    'bitrate': 128,
+    'codec': 'MP3'
+}
+```
+
+### 🎯 Intelligent Stream Matching Algorithm
+**CONFIDENCE-BASED STREAM SELECTION**
+
+#### Matching Criteria (Weighted Scoring):
+1. **Exact Name Match**: 1.0 points (highest priority)
+2. **Call Letter Match**: 0.8 points (WERU, KTBR, etc.)
+3. **Word Similarity**: 0.6 points (based on common words)
+4. **US Location**: +0.2 bonus (countrycode: US)
+5. **Working Status**: +0.3 bonus (lastcheckok: 1)
+6. **High Quality**: +0.2 bonus (bitrate ≥ 128)
+7. **Popularity**: +0.1 bonus (clickcount > 100)
+
+#### Call Letter Extraction:
+- Detects 4-letter call signs: `WXYZ` pattern
+- Handles 3-letter with numbers: `KNX`, `WGN`
+- Fallback search by call letters if name search fails
+
+### 📊 Automated Station Testing System
+**CONTINUOUS MONITORING WITH AUTOMATIC REMEDIATION**
+
+#### Station Test Tracking:
+```sql
+-- New station fields for test tracking:
+last_tested        DATETIME     -- When station was last tested
+last_test_result   ENUM         -- 'success', 'failed', 'error'
+last_test_error    TEXT         -- Error details for failed tests
+```
+
+#### Testing Integration:
+- **All Recording Operations**: Test, scheduled, and on-demand recordings update station test status
+- **Quality Validation**: File size, format verification, and AAC-to-MP3 conversion
+- **Automatic Rediscovery**: Failed stations trigger stream rediscovery and retesting
+- **Web Interface Updates**: Visual status indicators with success/failure icons
+
+#### Automated Test Service:
+```bash
+# Manual testing of all stations:
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/station_auto_test.py
+
+# Test stations not tested in 24 hours:
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/station_auto_test.py --max-age 24
+
+# Daemon mode (test every 6 hours):
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/station_auto_test.py --daemon
+
+# Status summary only:
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/station_auto_test.py --summary-only
+```
+
+### 🔄 Automatic Stream Rediscovery
+**INTELLIGENT FAILURE RECOVERY**
+
+#### Rediscovery Workflow:
+1. **Test Failure Detection**: Station test fails with stream error
+2. **Radio Browser Lookup**: Search for updated stream URL
+3. **Stream Quality Assessment**: Validate new stream works better
+4. **Database Update**: Replace old stream with new URL + metadata
+5. **Retest**: Automatically retry test with new stream
+6. **Success Tracking**: Log rediscovery source and confidence
+
+#### Rediscovery Commands:
+```bash
+# Rediscover all failed stations:
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/stream_discovery.py --rediscover-failed
+
+# Rediscover specific station:
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/stream_discovery.py --station-id 2
+
+# Test search without updating:
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/stream_discovery.py --test-search "WERU Community Radio"
+```
+
+### 📈 Enhanced Recording Quality
+**AAC-TO-MP3 CONVERSION & VALIDATION**
+
+#### Audio Processing:
+- **Automatic AAC Detection**: Identifies AAC streams that need conversion
+- **FFmpeg Conversion**: Converts AAC to MP3 with proper headers
+- **Quality Validation**: Checks file size (minimum thresholds) and format verification
+- **Error Handling**: Failed conversions marked appropriately in database
+
+#### Recording Tool Selection:
+- **Multi-Tool Strategy**: streamripper → ffmpeg → wget fallback
+- **Stream Compatibility**: Different tools for different stream types
+- **Tool Persistence**: Successful tool saved per station for future recordings
+
+### 🌐 Web Interface Integration
+**VISUAL STATION STATUS MONITORING**
+
+#### Station List Enhancements:
+- **Test Status Icons**: ✅ Success, ❌ Failed, ⚠️ Never tested, 🕐 Outdated
+- **Last Tested Display**: Human-readable timestamps (e.g., "2 hours ago")
+- **Error Tooltips**: Hover details for failed test reasons
+- **Auto-refresh**: Real-time status updates during testing
+
+#### API Endpoints:
+- **Station Status**: Get current test status for all stations
+- **Test History**: Historical test results and trends
+- **Stream Metadata**: Discovery source and confidence information
+
+### 🛠️ System Maintenance
+**MONITORING & TROUBLESHOOTING**
+
+#### Health Monitoring:
+```bash
+# Check station test status summary:
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/station_auto_test.py --summary-only
+
+# Monitor container logs:
+docker logs radiograb-recorder-1 --tail 50 -f
+
+# Database connection test:
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python -c "from backend.config.database import SessionLocal; print('DB OK' if SessionLocal() else 'DB FAIL')"
+```
+
+#### Configuration Requirements:
+- **Environment Variables**: All services require proper DB_HOST, PYTHONPATH configuration
+- **Virtual Environment**: Critical `/opt/radiograb/venv/bin/python` usage
+- **Network Access**: Radio Browser API requires outbound HTTPS access
+- **Disk Space**: Test recordings in `/var/radiograb/temp/` (auto-cleanup on success)
 
 ## 🚨 CRITICAL SUCCESS FACTORS
 
@@ -423,6 +578,15 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git status && git stash && git
 - **Critical Fix**: Changed from `$_ENV` to `$_SERVER` for PHP-FPM environment variable access
 - **Container Configuration**: Enabled `clear_env = no` in PHP-FPM for proper variable passing
 - **Connection Stability**: All MySQL connections now use environment variables correctly
+
+### ✅ Enhanced Stream Discovery & Testing System (Completed)
+- **Radio Browser API Integration**: Primary stream discovery using comprehensive US station database
+- **Automated Station Testing**: Continuous monitoring with last_tested tracking for all stations
+- **Intelligent Stream Matching**: Call letter extraction and confidence-based stream selection
+- **Automatic Rediscovery**: Failed stations trigger Radio Browser lookup and stream replacement
+- **AAC-to-MP3 Conversion**: Automatic format conversion with quality validation
+- **Web Interface Updates**: Visual status indicators showing test results and last tested times
+- **Recording Quality Validation**: File size and format verification for all recordings
 
 ### 🔄 Known Outstanding Issues
 - **Frontend Auto-refresh**: Test recordings may not immediately appear in webpage interface (API works correctly)

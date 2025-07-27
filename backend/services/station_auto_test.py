@@ -62,7 +62,7 @@ class StationAutoTester:
             logger.error(f"Error getting stations to test: {e}")
             return []
     
-    def test_station(self, station):
+    def test_station(self, station, attempt_rediscovery=True):
         """Test a single station"""
         logger.info(f"Testing station {station.id}: {station.name}")
         
@@ -80,6 +80,41 @@ class StationAutoTester:
                 self.test_duration
             )
             
+            # If test failed and we haven't tried rediscovery yet, attempt stream rediscovery
+            if not success and attempt_rediscovery:
+                logger.info(f"Test failed for {station.name}, attempting stream rediscovery...")
+                
+                try:
+                    from backend.services.stream_discovery import RadioStreamDiscovery
+                    discovery = RadioStreamDiscovery()
+                    
+                    # Try to find a new stream
+                    stream_info = discovery.find_best_stream_match(station.name, station.stream_url)
+                    
+                    if stream_info and stream_info['stream_url'] != station.stream_url:
+                        logger.info(f"Found new stream for {station.name}: {stream_info['stream_url']}")
+                        
+                        # Update the station with new stream
+                        if discovery.update_station_stream(station.id, stream_info):
+                            logger.info(f"Updated {station.name} with new stream, retesting...")
+                            
+                            # Refresh station object with new stream URL
+                            db = SessionLocal()
+                            try:
+                                updated_station = db.query(Station).filter(Station.id == station.id).first()
+                                if updated_station and updated_station.stream_url != station.stream_url:
+                                    # Retry test with new stream (no rediscovery on retry)
+                                    return self.test_station(updated_station, attempt_rediscovery=False)
+                            finally:
+                                db.close()
+                    else:
+                        logger.warning(f"No better stream found for {station.name}")
+                        
+                except ImportError:
+                    logger.warning("Stream discovery service not available")
+                except Exception as e:
+                    logger.error(f"Stream rediscovery failed for {station.name}: {e}")
+            
             # Update station test status
             update_station_test_status(station.id, success, message if not success else None)
             
@@ -96,7 +131,8 @@ class StationAutoTester:
                 'station_name': station.name,
                 'success': success,
                 'message': message,
-                'filename': filename if not success else None
+                'filename': filename if not success else None,
+                'rediscovery_attempted': attempt_rediscovery
             }
             
             if success:
@@ -118,10 +154,11 @@ class StationAutoTester:
                 'station_name': station.name,
                 'success': False,
                 'message': error_message,
-                'filename': None
+                'filename': None,
+                'rediscovery_attempted': attempt_rediscovery
             }
     
-    def test_all_stations(self, max_age_hours=24, delay_between_tests=5):
+    def test_all_stations(self, max_age_hours=24, delay_between_tests=5, auto_rediscovery=True):
         """Test all stations that need testing"""
         logger.info(f"Starting automated station testing (max_age: {max_age_hours}h)")
         
@@ -136,7 +173,7 @@ class StationAutoTester:
         results = []
         
         for i, station in enumerate(stations):
-            result = self.test_station(station)
+            result = self.test_station(station, attempt_rediscovery=auto_rediscovery)
             results.append(result)
             
             # Add delay between tests to avoid overwhelming streams
@@ -211,6 +248,8 @@ def main():
                        help='Show status summary without testing')
     parser.add_argument('--daemon', action='store_true',
                        help='Run as daemon (test every 6 hours)')
+    parser.add_argument('--no-rediscovery', action='store_true',
+                       help='Disable automatic stream rediscovery for failed stations')
     
     args = parser.parse_args()
     
@@ -232,7 +271,7 @@ def main():
         logger.info("Starting station auto-test daemon (testing every 6 hours)")
         while True:
             try:
-                tester.test_all_stations(args.max_age, args.delay)
+                tester.test_all_stations(args.max_age, args.delay, auto_rediscovery=not args.no_rediscovery)
                 logger.info("Sleeping for 6 hours...")
                 time.sleep(6 * 60 * 60)  # 6 hours
             except KeyboardInterrupt:
@@ -244,7 +283,7 @@ def main():
                 time.sleep(60 * 60)  # 1 hour
     else:
         # Single run
-        tester.test_all_stations(args.max_age, args.delay)
+        tester.test_all_stations(args.max_age, args.delay, auto_rediscovery=not args.no_rediscovery)
 
 if __name__ == '__main__':
     main()
