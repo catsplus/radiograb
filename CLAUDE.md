@@ -337,11 +337,18 @@ curl -s -b /tmp/cookies.txt -X POST "https://radiograb.svaha.com/api/test-record
 2025-07-24 02:30:00 - SECURITY & SSL FIXES - Fixed CSRF token validation, implemented production SSL certificates with Let's Encrypt, resolved recording file access issues, and established proper Docker container deployment workflow with comprehensive debugging.
 ```
 
-## 🗂️ DOCUMENTATION REFERENCE
+## 🗂️ COMPLETE FILE STRUCTURE & DOCUMENTATION
 
-### Complete Documentation Files
+### Project Root Files
 - **CLAUDE.md** (this file) - Complete system reference (auto-read by Claude Code)
 - **README.md** - Project overview and quick start
+- **VERSION** - Current deployment version with timestamp and description
+- **requirements.txt** - Python dependencies (pymysql, sqlalchemy, requests, etc.)
+- **docker-compose.yml** - Container orchestration configuration
+- **deploy-from-git.sh** - Automated deployment script (pulls from GitHub)
+- **.env** - Environment variables (SSL_DOMAIN, SSL_EMAIL)
+
+### Documentation Files
 - **SYSTEM_ARCHITECTURE.md** - Detailed technical architecture
 - **DEPLOYMENT.md** - Installation and deployment guide
 - **CLAUDE_SERVER_CONFIG.md** - Server configuration details
@@ -354,6 +361,150 @@ curl -s -b /tmp/cookies.txt -X POST "https://radiograb.svaha.com/api/test-record
 - **RECORDING_TOOLS_GUIDE.md** - Multi-tool recording compatibility
 - **PROJECT_OVERVIEW.md** - High-level project overview
 - **CHANGELOG.md** - Version history and changes
+
+### 🐍 Backend Python Services (/opt/radiograb/backend/)
+
+#### Core Services (backend/services/)
+- **recording_service.py** - Main recording daemon with quality validation and AAC conversion
+- **test_recording_service.py** - 10-second test recordings and on-demand recordings
+- **station_auto_test.py** - Automated station testing with rediscovery (NEW)
+- **stream_discovery.py** - Multi-strategy stream discovery using Radio Browser API (NEW)
+- **rss_manager.py** - RSS feed generation (runs every 15 minutes)
+- **housekeeping_service.py** - Cleanup service (runs every 6 hours)
+
+#### Database Layer (backend/config/)
+- **database.py** - SQLAlchemy configuration with mysql+pymysql:// connection
+
+#### Models (backend/models/)
+- **station.py** - Station model with test tracking fields (last_tested, last_test_result, last_test_error)
+
+### 🌐 Frontend Web Interface (/opt/radiograb/frontend/public/)
+
+#### Main Pages
+- **index.php** - Dashboard homepage
+- **stations.php** - Station management with visual test status indicators
+- **shows.php** - Show management
+- **recordings.php** - Recording listings
+- **feeds.php** - RSS feed listings
+- **settings.php** - System settings
+- **add-station.php** - Add new station form
+- **add-show.php** - Add new show form
+
+#### API Endpoints (frontend/public/api/)
+- **test-recording.php** - Start test/on-demand recordings
+- **test-recordings.php** - List test recordings with download capability
+- **get-csrf-token.php** - CSRF token generation
+- **discover-station.php** - Station discovery from URLs
+- **import-schedule.php** - Schedule import functionality
+- **feeds.php** - RSS feed API
+- **master-feed.php** - Combined RSS feed
+- **system-info.php** - System information API
+- **debug-csrf.php** - CSRF debugging
+- **env-test.php** - Environment variable testing
+
+#### Debug/Admin Tools
+- **csrf-debug.php** - CSRF debugging interface
+
+#### Assets (frontend/public/assets/)
+- **css/radiograb.css** - Main stylesheet
+- **images/default-station-logo.png** - Default station logo
+
+### 🐳 Docker Configuration (/opt/radiograb/docker/)
+
+#### Container Configs
+- **nginx.conf** - Main nginx configuration
+- **nginx-ssl.conf** - SSL nginx configuration  
+- **radiograb-locations.conf** - Nginx location blocks
+- **supervisord.conf** - Supervisor service management
+- **station-health-cron** - Cron job for station monitoring
+- **start.sh** - Container startup script
+
+#### SSL Management Scripts (Root Directory)
+- **setup-container-ssl.sh** - SSL certificate setup
+- **check-domain.sh** - Domain verification
+- **backup-ssl.sh** - SSL backup utility
+
+### 📊 Critical File Locations
+
+#### Test Recordings
+- **Container Path**: `/var/radiograb/temp/` 
+- **File Format**: `{CALL_LETTERS}_test_{TIMESTAMP}.mp3`
+- **Access URL**: `https://radiograb.svaha.com/temp/{filename}`
+
+#### Main Recordings  
+- **Container Path**: `/var/radiograb/recordings/`
+- **File Format**: `{CALL_LETTERS}_{show}_{TIMESTAMP}.mp3`
+
+#### RSS Feeds
+- **Container Path**: `/var/radiograb/feeds/`
+- **Individual**: `{station_id}_feed.xml`
+- **Master**: `master_feed.xml`
+
+#### Logs
+- **Container Path**: `/var/radiograb/logs/`
+- **Test Recording Logs**: `test_recording_{station_id}_{timestamp}.log`
+
+### 🔍 User Interface Elements
+
+#### Station List Interface (stations.php)
+- **Test Status Icons**: ✅ Success, ❌ Failed, ⚠️ Never tested, 🕐 Outdated
+- **Last Tested Display**: Human-readable timestamps
+- **Error Tooltips**: Hover details for failed tests
+- **Action Buttons**: Test Recording, Import Schedule, Edit, Delete
+
+#### Test Recording Workflow
+1. **Test Button Click** → `/api/test-recording.php` (POST with CSRF)
+2. **Recording Service** → `test_recording_service.py` (10-second test)
+3. **File Creation** → `/var/radiograb/temp/{CALL_LETTERS}_test_{timestamp}.mp3`
+4. **Database Update** → Station test status tracking
+5. **Auto-Discovery** → On failure, triggers `stream_discovery.py`
+
+### 📈 Enhanced Discovery System Flow
+
+#### Multi-Strategy Search Process
+1. **Direct Name Search** → Radio Browser API exact match
+2. **Call Letters Search** → Extract and search WTBR, WEHC, etc.
+3. **Frequency Search** → Extract 89.7 FM, 90.7 FM and search
+4. **Location + Frequency** → "Pittsfield 89.7 FM" search
+5. **Simplified Name** → Remove descriptive words and retry
+6. **Location Only** → Final fallback for community stations
+
+#### Stream Quality Scoring
+- **Call Letter Match**: +0.8 points
+- **Frequency Match**: +0.7 points (exact), +0.4 points (close)
+- **Location Match**: +0.5 points
+- **Working Status**: +0.3 points (working), -0.2 points (broken)
+- **High Bitrate**: +0.15 points (≥128kbps)
+- **Recent Activity**: +0.1 points (<30 days)
+
+### 🛠️ Service Integration Points
+
+#### Supervisor Services (docker/supervisord.conf)
+```ini
+[program:radiograb-recorder]
+command=/opt/radiograb/venv/bin/python backend/services/recording_service.py --daemon
+environment=PATH="/opt/radiograb/venv/bin",PYTHONPATH="/opt/radiograb",DB_HOST="mysql"...
+
+[program:radiograb-rss]  
+command=/opt/radiograb/venv/bin/python backend/services/rss_manager.py --update-all
+environment=PATH="/opt/radiograb/venv/bin",PYTHONPATH="/opt/radiograb",DB_HOST="mysql"...
+```
+
+#### Database Schema (Key Tables)
+- **stations** - id, name, call_letters, stream_url, last_tested, last_test_result, last_test_error
+- **shows** - id, station_id, name, schedule_pattern, retention_days
+- **recordings** - id, show_id, filename, recorded_at, duration_seconds, file_size_bytes
+
+#### Environment Variables (All Containers)
+```bash
+DB_HOST=mysql
+DB_PORT=3306  
+DB_USER=radiograb
+DB_PASSWORD=radiograb_pass_2024
+DB_NAME=radiograb
+TZ=America/New_York
+PYTHONPATH=/opt/radiograb
+```
 
 ### Key Technical Insights from Documentation
 1. **JavaScript-Aware Schedule Parsing**: Selenium WebDriver handles dynamic calendars
