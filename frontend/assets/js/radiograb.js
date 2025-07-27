@@ -303,7 +303,8 @@ class RadioGrab {
                 throw new Error('No show_id or station_id provided');
             }
             
-            const response = await fetch('/api/test-recording.php', {
+            // Use the detailed status API for better error reporting
+            const response = await fetch('/api/test-recording-status.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -326,7 +327,8 @@ class RadioGrab {
                     }, 2000);
                 }
             } else {
-                this.showAlert('danger', result.error || 'Test recording failed');
+                // Show detailed error popup for test failures
+                this.showTestFailureDetails(stationName, result);
             }
         } catch (error) {
             console.error('Test recording error:', error);
@@ -380,6 +382,112 @@ class RadioGrab {
                 alertDiv.remove();
             }
         }, 5000);
+    }
+    
+    showTestFailureDetails(stationName, result) {
+        // Create modal if it doesn't exist
+        let modal = document.getElementById('testFailureModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'testFailureModal';
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-exclamation-triangle"></i> Test Recording Failed
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="testFailureContent"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        // Build detailed error content
+        let errorContent = `
+            <div class="mb-3">
+                <h6><i class="fas fa-radio"></i> Station: ${stationName}</h6>
+                <div class="alert alert-danger">
+                    <strong>Primary Error:</strong> ${result.error || 'Test recording failed'}
+                </div>
+            </div>
+        `;
+        
+        // Add detailed diagnostics if available
+        if (result.debug || result.details) {
+            errorContent += `
+                <div class="mb-3">
+                    <h6><i class="fas fa-info-circle"></i> Diagnostic Information</h6>
+                    <div class="card">
+                        <div class="card-body">
+                            <pre class="mb-0" style="white-space: pre-wrap; font-size: 0.9em;">${result.debug || result.details}</pre>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Add stream discovery information if available
+        if (result.stream_discovery_attempted) {
+            errorContent += `
+                <div class="mb-3">
+                    <h6><i class="fas fa-search"></i> Stream Discovery</h6>
+                    <div class="alert alert-info">
+                        <strong>Status:</strong> ${result.stream_discovery_attempted ? 'Attempted' : 'Not attempted'}<br>
+                        ${result.stream_discovery_result ? '<strong>Result:</strong> ' + result.stream_discovery_result : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Add User-Agent testing information if available
+        if (result.user_agent_tested) {
+            errorContent += `
+                <div class="mb-3">
+                    <h6><i class="fas fa-user-secret"></i> User-Agent Testing</h6>
+                    <div class="alert alert-warning">
+                        <strong>Status:</strong> ${result.user_agent_tested ? 'Multiple User-Agents tested' : 'Default User-Agent only'}<br>
+                        ${result.user_agent_result ? '<strong>Result:</strong> ' + result.user_agent_result : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Add suggested actions
+        errorContent += `
+            <div class="mb-3">
+                <h6><i class="fas fa-lightbulb"></i> Suggested Actions</h6>
+                <div class="card">
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            <li>Check if the stream URL is still valid</li>
+                            <li>Verify the station's website is accessible</li>
+                            <li>Try the "Discover Station" feature to find an updated stream URL</li>
+                            <li>Contact the station to confirm their streaming configuration</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Update modal content
+        document.getElementById('testFailureContent').innerHTML = errorContent;
+        
+        // Show modal
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+        
+        // Also show a brief alert
+        this.showAlert('danger', `Test recording failed for ${stationName}. Click for details.`);
     }
     
     autoRefresh() {

@@ -391,7 +391,8 @@ curl -s -b /tmp/cookies.txt -X POST "https://radiograb.svaha.com/api/test-record
 - **add-show.php** - Add new show form
 
 #### API Endpoints (frontend/public/api/)
-- **test-recording.php** - Start test/on-demand recordings
+- **test-recording.php** - Start test/on-demand recordings (async)
+- **test-recording-status.php** - Synchronous test recording with detailed diagnostics (NEW)
 - **test-recordings.php** - List test recordings with download capability
 - **get-csrf-token.php** - CSRF token generation
 - **discover-station.php** - Station discovery from URLs
@@ -405,8 +406,15 @@ curl -s -b /tmp/cookies.txt -X POST "https://radiograb.svaha.com/api/test-record
 #### Debug/Admin Tools
 - **csrf-debug.php** - CSRF debugging interface
 
-#### Assets (frontend/public/assets/)
+#### Assets (frontend/assets/)
 - **css/radiograb.css** - Main stylesheet
+- **js/radiograb.js** - Main JavaScript functionality including:
+  - Audio player controls with keyboard shortcuts (spacebar, arrow keys)
+  - Station/show form handling with CSRF protection  
+  - Test recording functionality with detailed error modal popups
+  - Station discovery from website URLs
+  - Auto-refresh dashboard statistics
+  - Bootstrap modal management for error diagnostics
 - **images/default-station-logo.png** - Default station logo
 
 ### 🐳 Docker Configuration (/opt/radiograb/docker/)
