@@ -268,6 +268,10 @@ def _save_user_agent(station_id, user_agent):
 def perform_recording(stream_url, output_file, duration, station_id=None):
     """Perform the actual recording using the best available tool with smart User-Agent handling"""
     
+    # Initialize variables
+    success = False
+    error = "Recording not attempted"
+    
     # Ensure output directory exists
     output_dir = os.path.dirname(output_file)
     if not ensure_directory(output_dir):
