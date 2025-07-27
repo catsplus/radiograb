@@ -241,13 +241,56 @@ def _try_recording_with_tool(tool_name, stream_url, output_file, duration, user_
     else:
         return False, f"Unsupported tool: {tool_name}"
 
-def perform_recording(stream_url, output_file, duration):
+def _save_user_agent(station_id, user_agent):
+    """Save successful User-Agent to database"""
+    try:
+        sys.path.insert(0, '/opt/radiograb')
+        from backend.config.database import SessionLocal
+        from backend.models.station import Station
+        
+        db = SessionLocal()
+        try:
+            station = db.query(Station).filter(Station.id == station_id).first()
+            if station:
+                station.user_agent = user_agent
+                db.commit()
+                print(f"Saved User-Agent for station {station_id}: {user_agent[:50]}...")
+                return True
+            else:
+                print(f"Station {station_id} not found for User-Agent save")
+                return False
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"Error saving User-Agent for station {station_id}: {e}")
+        return False
+
+def perform_recording(stream_url, output_file, duration, station_id=None):
     """Perform the actual recording using the best available tool with smart User-Agent handling"""
     
     # Ensure output directory exists
     output_dir = os.path.dirname(output_file)
     if not ensure_directory(output_dir):
         return False, f"Failed to create output directory {output_dir}"
+    
+    # Get saved User-Agent for this station if available
+    saved_user_agent = None
+    if station_id:
+        try:
+            sys.path.insert(0, '/opt/radiograb')
+            from backend.config.database import SessionLocal
+            from backend.models.station import Station
+            
+            db = SessionLocal()
+            try:
+                station = db.query(Station).filter(Station.id == station_id).first()
+                if station and station.user_agent:
+                    saved_user_agent = station.user_agent
+                    print(f"Using saved User-Agent for station {station_id}: {saved_user_agent[:50]}...")
+            finally:
+                db.close()
+        except Exception as e:
+            print(f"Warning: Could not get saved User-Agent: {e}")
     
     # Get all available tools for multi-tool strategy
     tools_available = {}
@@ -272,18 +315,44 @@ def perform_recording(stream_url, output_file, duration):
     if not tools_available:
         return False, "No recording tools available (streamripper, ffmpeg, wget)"
     
-    # Strategy 1: Try primary tool first
-    tool_path, tool_name = get_recording_tool(stream_url)
-    print(f"Strategy 1: Using {tool_name} at {tool_path} for stream: {stream_url}")
+    successful_user_agent = None
     
-    success, error = _try_recording_with_tool(tool_name, stream_url, output_file, duration)
+    # Strategy 1: Try saved User-Agent first if available
+    if saved_user_agent:
+        print(f"Strategy 1: Using saved User-Agent for station {station_id}")
+        
+        # Try with ffmpeg first for User-Agent support
+        if 'ffmpeg' in tools_available:
+            success, error = record_with_ffmpeg(stream_url, output_file, duration, saved_user_agent)
+            if success:
+                print(f"Success with saved User-Agent + ffmpeg")
+                successful_user_agent = saved_user_agent
+        
+        # Try with wget if ffmpeg failed
+        if not success and 'wget' in tools_available:
+            success, error = record_with_wget(stream_url, output_file, duration, saved_user_agent)
+            if success:
+                print(f"Success with saved User-Agent + wget")
+                successful_user_agent = saved_user_agent
     
-    # Strategy 2: If HTTP 403 error, try with different User-Agents
+    # Strategy 2: Try primary tool with default User-Agent if saved User-Agent failed or doesn't exist
+    if not success:
+        tool_path, tool_name = get_recording_tool(stream_url)
+        print(f"Strategy 2: Using {tool_name} at {tool_path} for stream: {stream_url}")
+        
+        success, error = _try_recording_with_tool(tool_name, stream_url, output_file, duration)
+        if success:
+            successful_user_agent = None  # Default User-Agent worked
+    
+    # Strategy 3: If HTTP 403 error, try with different User-Agents
     if not success and is_access_forbidden_error(error):
         print(f"HTTP 403 detected, trying different User-Agents...")
         
         user_agents = get_user_agents()[1:]  # Skip default (already tried)
         for user_agent in user_agents:
+            if user_agent == saved_user_agent:
+                continue  # Already tried
+                
             print(f"Trying with User-Agent: {user_agent[:50]}...")
             
             # Try with ffmpeg first for User-Agent support
@@ -291,6 +360,7 @@ def perform_recording(stream_url, output_file, duration):
                 success, error = record_with_ffmpeg(stream_url, output_file, duration, user_agent)
                 if success:
                     print(f"Success with ffmpeg + User-Agent")
+                    successful_user_agent = user_agent
                     break
             
             # Try with wget if ffmpeg failed
@@ -298,6 +368,7 @@ def perform_recording(stream_url, output_file, duration):
                 success, error = record_with_wget(stream_url, output_file, duration, user_agent)
                 if success:
                     print(f"Success with wget + User-Agent")
+                    successful_user_agent = user_agent
                     break
     
     # Strategy 3: If still failing, try all available tools without User-Agent
@@ -319,6 +390,10 @@ def perform_recording(stream_url, output_file, duration):
         file_size = os.path.getsize(output_file)
         if file_size > 0:
             print(f"Recording successful: {output_file} ({file_size} bytes)")
+            
+            # Save successful User-Agent to database for future use
+            if station_id and successful_user_agent is not None and successful_user_agent != saved_user_agent:
+                _save_user_agent(station_id, successful_user_agent)
             
             # Post-process the recording (convert AAC to MP3 if needed)
             post_success, post_message = post_process_recording(output_file)
@@ -402,7 +477,7 @@ def main():
     print(f"  Show: {args.show_name or 'Test Recording'}")
     
     # Perform the recording
-    success, message = perform_recording(args.stream_url, output_file, args.duration)
+    success, message = perform_recording(args.stream_url, output_file, args.duration, args.station_id)
     
     # Update station test status
     update_station_test_status(args.station_id, success, message if not success else None)

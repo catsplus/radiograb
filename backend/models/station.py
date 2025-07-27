@@ -24,6 +24,7 @@ class Station(Base):
     stream_compatibility = Column(String(20), default='unknown')    # compatible, incompatible, unknown
     stream_test_results = Column(Text, nullable=True)               # JSON test results
     last_stream_test = Column(DateTime(timezone=True), nullable=True)
+    user_agent = Column(String(500), nullable=True)                # Required User-Agent for this stream
     
     # Station testing tracking (updated on any recording or test)
     last_tested = Column(DateTime(timezone=True), nullable=True)    # Last successful recording/test

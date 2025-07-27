@@ -77,7 +77,8 @@ class StationAutoTester:
             success, message = perform_recording(
                 station.stream_url, 
                 str(output_file), 
-                self.test_duration
+                self.test_duration,
+                station.id
             )
             
             # If test failed and we haven't tried rediscovery yet, attempt stream rediscovery
