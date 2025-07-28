@@ -179,10 +179,30 @@ try {
                                                         <i class="fas fa-info-circle"></i>
                                                     </span>
                                                 <?php endif; ?>
+                                                <?php if ($station['stream_url']): ?>
+                                                    <button class="btn btn-sm btn-outline-success ms-2 test-stream"
+                                                            data-station-id="<?= $station['id'] ?>"
+                                                            data-station-name="<?= h($station['name']) ?>"
+                                                            data-stream-url="<?= h($station['stream_url']) ?>"
+                                                            title="Re-check stream now">
+                                                        <i class="fas fa-sync"></i> Re-check
+                                                    </button>
+                                                <?php endif; ?>
                                             </small>
                                         <?php else: ?>
                                             <i class="fas fa-question-circle text-muted"></i>
-                                            <small class="text-muted">Never tested</small>
+                                            <small class="text-muted">
+                                                Never tested
+                                                <?php if ($station['stream_url']): ?>
+                                                    <button class="btn btn-sm btn-outline-success ms-2 test-stream"
+                                                            data-station-id="<?= $station['id'] ?>"
+                                                            data-station-name="<?= h($station['name']) ?>"
+                                                            data-stream-url="<?= h($station['stream_url']) ?>"
+                                                            title="Test stream now">
+                                                        <i class="fas fa-sync"></i> Re-check
+                                                    </button>
+                                                <?php endif; ?>
+                                            </small>
                                         <?php endif; ?>
                                     </div>
                                     
@@ -235,14 +255,7 @@ try {
                                     
                                     <!-- Recording Actions -->
                                     <?php if ($station['stream_url']): ?>
-                                    <div class="btn-group" role="group">
-                                        <button type="button" 
-                                                class="btn btn-warning btn-sm test-recording"
-                                                data-station-id="<?= $station['id'] ?>"
-                                                data-station-name="<?= h($station['name']) ?>"
-                                                data-stream-url="<?= h($station['stream_url']) ?>">
-                                            <i class="fas fa-play-circle"></i> Test (10s)
-                                        </button>
+                                    <div class="d-grid">
                                         <button type="button" 
                                                 class="btn btn-danger btn-sm record-now"
                                                 data-station-id="<?= $station['id'] ?>"
@@ -625,20 +638,20 @@ try {
             }
         }
         
-        // Handle test recording buttons
-        document.querySelectorAll('.test-recording').forEach(btn => {
+        // Handle test stream buttons (Re-check buttons)
+        document.querySelectorAll('.test-stream').forEach(btn => {
             btn.addEventListener('click', async function() {
                 const stationId = this.dataset.stationId;
                 const stationName = this.dataset.stationName;
                 const streamUrl = this.dataset.streamUrl;
                 
-                if (!confirm(`Start 10-second test recording for ${stationName}?`)) {
+                if (!confirm(`Test stream for ${stationName}?`)) {
                     return;
                 }
                 
                 // Disable button and show loading
                 this.disabled = true;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recording...';
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
                 
                 try {
                     // Get fresh CSRF token from API
@@ -699,7 +712,7 @@ try {
                 } finally {
                     // Re-enable button
                     this.disabled = false;
-                    this.innerHTML = '<i class="fas fa-play-circle"></i> Test (10s)';
+                    this.innerHTML = '<i class="fas fa-sync"></i> Re-check';
                 }
             });
         });
@@ -979,6 +992,62 @@ try {
                 }
             }, 1000);
         }
+        
+        // Handle calendar verification buttons
+        document.querySelectorAll('.verify-calendar').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const stationId = this.dataset.stationId;
+                const stationName = this.dataset.stationName;
+                
+                if (!confirm(`Re-check calendar schedule for ${stationName}?`)) {
+                    return;
+                }
+                
+                // Disable button and show loading
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+                
+                try {
+                    const csrfToken = await getCSRFToken();
+                    if (!csrfToken) {
+                        throw new Error('Failed to get CSRF token');
+                    }
+                    
+                    const response = await fetch('/api/schedule-verification.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        credentials: 'same-origin',
+                        body: new URLSearchParams({
+                            action: 'verify_single',
+                            station_id: stationId,
+                            csrf_token: csrfToken
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert(`Calendar verification completed for ${stationName}!\n\nResult: ${result.message || 'Verification completed successfully'}`);
+                        // Refresh page to show updated verification status
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        alert(`Calendar verification failed: ${result.error}`);
+                    }
+                    
+                } catch (error) {
+                    console.error('Calendar verification error:', error);
+                    alert('Network error occurred during calendar verification');
+                } finally {
+                    // Re-enable button
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-sync"></i> Re-check';
+                }
+            });
+        });
         
         // Load test recordings when page loads
         document.addEventListener('DOMContentLoaded', function() {
