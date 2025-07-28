@@ -107,6 +107,7 @@ try {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/assets/css/radiograb.css" rel="stylesheet">
+    <link href="/assets/css/on-air.css" rel="stylesheet">
 </head>
 <body>
     <!-- Navigation -->
@@ -273,7 +274,7 @@ try {
             <div class="row">
                 <?php foreach ($shows as $show): ?>
                     <div class="col-lg-6 col-xl-4 mb-4">
-                        <div class="card h-100">
+                        <div class="card h-100 show-card" data-show-id="<?= $show['id'] ?>" data-station-call="<?= h($show['call_letters']) ?>">
                             <div class="card-body">
                                 <div class="d-flex align-items-start mb-3">
                                     <img src="<?= h(getStationLogo(['logo_url' => $show['logo_url']])) ?>" 
@@ -491,6 +492,7 @@ try {
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/assets/js/radiograb.js"></script>
+    <script src="/assets/js/on-air-status.js"></script>
     <script>
         let countdownIntervals = [];
         let nextRecordingsData = [];

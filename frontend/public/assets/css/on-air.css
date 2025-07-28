@@ -1,0 +1,175 @@
+/* ON-AIR Indicator Styles */
+
+.on-air-badge {
+    background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+    color: white;
+    font-weight: bold;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(255, 68, 68, 0.3);
+    animation: onAirPulse 2s ease-in-out infinite;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.on-air-badge::before {
+    content: "●";
+    color: #fff;
+    animation: onAirBlink 1s ease-in-out infinite;
+}
+
+@keyframes onAirPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(255, 68, 68, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(255, 68, 68, 0.5);
+    }
+}
+
+@keyframes onAirBlink {
+    0%, 50% {
+        opacity: 1;
+    }
+    51%, 100% {
+        opacity: 0.3;
+    }
+}
+
+/* Recording Progress Bar */
+.recording-progress {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.recording-progress-bar {
+    background: linear-gradient(90deg, #ff4444 0%, #ff6666 50%, #ff4444 100%);
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    animation: progressShimmer 2s ease-in-out infinite;
+}
+
+@keyframes progressShimmer {
+    0%, 100% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Recording Status Card */
+.recording-status-card {
+    border-left: 4px solid #ff4444;
+    background: linear-gradient(135deg, #fff 0%, #fff5f5 100%);
+    transition: all 0.3s ease;
+}
+
+.recording-status-card:hover {
+    box-shadow: 0 4px 8px rgba(255, 68, 68, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Recording Time Display */
+.recording-time {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.recording-time.elapsed {
+    color: #28a745;
+}
+
+.recording-time.remaining {
+    color: #dc3545;
+}
+
+/* Large ON-AIR Banner */
+.on-air-banner {
+    background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 15px;
+    animation: onAirPulse 2s ease-in-out infinite;
+    box-shadow: 0 4px 8px rgba(255, 68, 68, 0.3);
+}
+
+.on-air-banner .recording-icon {
+    font-size: 1.2em;
+    margin-right: 8px;
+    animation: onAirBlink 1s ease-in-out infinite;
+}
+
+/* Station Card with Recording Status */
+.station-card.recording {
+    border: 2px solid #ff4444;
+    box-shadow: 0 0 20px rgba(255, 68, 68, 0.2);
+    position: relative;
+}
+
+.station-card.recording::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #ff4444, #ff6666, #ff4444);
+    border-radius: 8px;
+    z-index: -1;
+    animation: onAirPulse 3s ease-in-out infinite;
+}
+
+/* Show Card with Recording Status */
+.show-card.recording {
+    background: linear-gradient(135deg, #fff 0%, #fff5f5 100%);
+    border-left: 4px solid #ff4444;
+}
+
+/* Recording Indicator in Lists */
+.recording-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 6px;
+    background: rgba(255, 68, 68, 0.1);
+    border-radius: 12px;
+    font-size: 0.7rem;
+    color: #cc0000;
+}
+
+.recording-indicator::before {
+    content: "🔴";
+    animation: onAirBlink 1.5s ease-in-out infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .on-air-badge {
+        font-size: 0.65rem;
+        padding: 3px 6px;
+    }
+    
+    .on-air-banner {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .recording-time {
+        font-size: 0.75rem;
+    }
+}
