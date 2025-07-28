@@ -9,18 +9,19 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v2.6.0 (July 28, 2025)
-**Latest Features**: Complete automatic recording system with APScheduler integration, schedule management interface, real-time scheduler synchronization, and web-based monitoring. Shows are now automatically recorded at scheduled times. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v2.7.0 (July 28, 2025)
+**Latest Features**: Enhanced show management system with active/inactive toggle, tags functionality, next recordings display (top 3), automated test recording cleanup (4 hour limit), enhanced shows interface with AJAX operations, and comprehensive database-driven features. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
 - **Automatic Show Recording**: APScheduler-based system that automatically records shows at scheduled times
-- **Enhanced Recording Service v2.5**: Database-driven recording with proven architecture and duplicate prevention
+- **Enhanced Show Management**: Active/inactive toggle, tags functionality, and AJAX-powered interface
+- **Next Recordings Display**: Dashboard widget showing top 3 upcoming scheduled recordings
 - **Schedule Management**: Web interface for adding/editing show schedules with automatic scheduler integration
 - **Smart Discovery**: Extract streaming URLs and schedules from station websites with User-Agent support
 - **Podcast Generation**: Create RSS feeds for individual shows or all recordings
-- **Test Recording**: 30-second test recordings that now appear properly in web interface
+- **Test Recording**: 30-second test recordings with automated cleanup (4 hour retention)
 - **On-Demand Recording**: Manual 1-hour recordings with quality validation
 
 ### 🔧 **Technical Features**
@@ -38,6 +39,10 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 ### 📊 **Smart Automation**
 - **APScheduler Integration**: Cron-based automatic recording of shows at scheduled times
 - **Schedule Synchronization**: Real-time scheduler updates when shows are added/modified
+- **Show Management**: Active/inactive toggle with automatic scheduler integration
+- **Tags System**: Categorize shows with custom tags for better organization
+- **Test Recording Cleanup**: Automated cleanup of test recordings after 4 hours
+- **Next Recordings Widget**: Dashboard display of upcoming 3 scheduled recordings
 - **Enhanced Recording Service**: Database-driven recording with 30-minute duplicate prevention window
 - **Quality Validation**: File size and format verification (2KB/sec minimum for recordings)
 - **User-Agent Persistence**: Automatically saves working User-Agents for stations with HTTP 403 issues

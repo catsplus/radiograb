@@ -2,8 +2,8 @@
 # Runs daily at 6:00 AM to test all station streams
 0 6 * * * /opt/radiograb/venv/bin/python /opt/radiograb/backend/services/station_health_monitor.py >> /var/radiograb/logs/station_health_cron.log 2>&1
 
-# Clean up old test recordings (runs every 4 hours)
-0 */4 * * * find /var/radiograb/temp -name "*_test_*" -mtime +1 -delete
+# Clean up old test recordings (runs every hour, deletes files older than 4 hours)
+0 * * * * cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python /opt/radiograb/backend/services/test_cleanup_service.py --max-age 4 >> /var/radiograb/logs/test_cleanup.log 2>&1
 
 # Clean up old health check logs (keep last 30 days)
 0 2 * * * find /var/radiograb/logs -name "station_health_*.json" -mtime +30 -delete

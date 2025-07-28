@@ -325,6 +325,42 @@ try {
                                             </small>
                                         </div>
                                     <?php endif; ?>
+                                    
+                                    <!-- Tags Display -->
+                                    <div class="mt-2">
+                                        <div id="tags-display-<?= $show['id'] ?>">
+                                            <?php if ($show['tags']): ?>
+                                                <?php foreach (explode(',', $show['tags']) as $tag): ?>
+                                                    <span class="badge bg-light text-dark me-1"><?= h(trim($tag)) ?></span>
+                                                <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <small class="text-muted">No tags</small>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div id="tags-edit-<?= $show['id'] ?>" style="display: none;">
+                                            <div class="input-group input-group-sm">
+                                                <input type="text" class="form-control" 
+                                                       id="tags-input-<?= $show['id'] ?>" 
+                                                       value="<?= h($show['tags'] ?? '') ?>"
+                                                       placeholder="Enter tags separated by commas"
+                                                       maxlength="255">
+                                                <button class="btn btn-success" type="button" 
+                                                        onclick="saveTags(<?= $show['id'] ?>)">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-secondary" type="button" 
+                                                        onclick="cancelEditTags(<?= $show['id'] ?>)">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <small class="text-muted">Use commas to separate tags</small>
+                                        </div>
+                                        <button class="btn btn-sm btn-link p-0 mt-1" 
+                                                onclick="editTags(<?= $show['id'] ?>)"
+                                                id="edit-tags-btn-<?= $show['id'] ?>">
+                                            <i class="fas fa-edit"></i> Edit tags
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -426,8 +462,100 @@ try {
         
         // Toggle show status
         function toggleShowStatus(showId) {
-            document.getElementById('toggleShowId').value = showId;
-            document.getElementById('toggleStatusForm').submit();
+            // Use AJAX for better UX
+            const toggle = document.getElementById(`toggle${showId}`);
+            const active = toggle.checked;
+            
+            fetch('/api/show-management.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'toggle_active',
+                    show_id: showId,
+                    active: active,
+                    csrf_token: '<?= generateCSRFToken() ?>'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update badge
+                    const badge = toggle.parentElement.querySelector('.badge');
+                    if (active) {
+                        badge.className = 'badge bg-success';
+                        badge.textContent = 'Active';
+                    } else {
+                        badge.className = 'badge bg-secondary';
+                        badge.textContent = 'Inactive';
+                    }
+                } else {
+                    // Revert toggle on error
+                    toggle.checked = !active;
+                    alert('Failed to update show status: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                // Revert toggle on error
+                toggle.checked = !active;
+                alert('Network error: ' + error.message);
+            });
+        }
+        
+        // Tags editing functions
+        function editTags(showId) {
+            document.getElementById(`tags-display-${showId}`).style.display = 'none';
+            document.getElementById(`tags-edit-${showId}`).style.display = 'block';
+            document.getElementById(`edit-tags-btn-${showId}`).style.display = 'none';
+            document.getElementById(`tags-input-${showId}`).focus();
+        }
+        
+        function cancelEditTags(showId) {
+            document.getElementById(`tags-display-${showId}`).style.display = 'block';
+            document.getElementById(`tags-edit-${showId}`).style.display = 'none';
+            document.getElementById(`edit-tags-btn-${showId}`).style.display = 'inline-block';
+        }
+        
+        function saveTags(showId) {
+            const input = document.getElementById(`tags-input-${showId}`);
+            const tags = input.value.trim();
+            
+            fetch('/api/show-management.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'update_tags',
+                    show_id: showId,
+                    tags: tags,
+                    csrf_token: '<?= generateCSRFToken() ?>'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update tags display
+                    const tagsDisplay = document.getElementById(`tags-display-${showId}`);
+                    if (tags) {
+                        const tagList = tags.split(',').map(tag => 
+                            `<span class="badge bg-light text-dark me-1">${tag.trim()}</span>`
+                        ).join('');
+                        tagsDisplay.innerHTML = tagList;
+                    } else {
+                        tagsDisplay.innerHTML = '<small class="text-muted">No tags</small>';
+                    }
+                    
+                    // Hide edit mode
+                    cancelEditTags(showId);
+                } else {
+                    alert('Failed to update tags: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Network error: ' + error.message);
+            });
         }
     </script>
 

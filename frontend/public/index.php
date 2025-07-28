@@ -191,6 +191,26 @@ try {
             </div>
         </div>
 
+        <!-- Next Recordings -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-calendar-alt"></i> Next Recordings</h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshNextRecordings()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="next-recordings-loading" class="text-center py-3">
+                            <i class="fas fa-spinner fa-spin"></i> Loading next recordings...
+                        </div>
+                        <div id="next-recordings-content" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <!-- Recent Recordings -->
             <div class="col-lg-8">
@@ -309,5 +329,89 @@ try {
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/assets/js/radiograb.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load next recordings on page load
+            loadNextRecordings();
+        });
+
+        function loadNextRecordings() {
+            const loading = document.getElementById('next-recordings-loading');
+            const content = document.getElementById('next-recordings-content');
+            
+            loading.style.display = 'block';
+            content.style.display = 'none';
+            
+            fetch('/api/show-management.php?action=get_next_recordings&limit=3')
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    content.style.display = 'block';
+                    
+                    if (data.success && data.recordings && data.recordings.length > 0) {
+                        displayNextRecordings(data.recordings);
+                    } else {
+                        content.innerHTML = `
+                            <div class="text-center py-3">
+                                <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-0">No upcoming recordings scheduled</p>
+                                <small class="text-muted">Add shows with schedules to see upcoming recordings</small>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    content.style.display = 'block';
+                    content.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Unable to load next recordings: ${error.message}
+                        </div>
+                    `;
+                });
+        }
+
+        function displayNextRecordings(recordings) {
+            const content = document.getElementById('next-recordings-content');
+            
+            let html = '<div class="row">';
+            
+            recordings.forEach((recording, index) => {
+                const colClass = recordings.length === 1 ? 'col-12' : recordings.length === 2 ? 'col-md-6' : 'col-md-4';
+                
+                html += `
+                    <div class="${colClass} mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <h6 class="card-title">${recording.title}</h6>
+                                <p class="card-text">
+                                    <i class="fas fa-clock text-primary"></i> 
+                                    <strong>${recording.next_run}</strong>
+                                </p>
+                                ${recording.tags ? `
+                                    <div class="mb-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-tags"></i> ${recording.tags}
+                                        </small>
+                                    </div>
+                                ` : ''}
+                                <div class="badge bg-primary">
+                                    ${index === 0 ? 'Next' : index === 1 ? '2nd' : '3rd'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        function refreshNextRecordings() {
+            loadNextRecordings();
+        }
+    </script>
 </body>
 </html>
