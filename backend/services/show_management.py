@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 import argparse
 import glob
+import pytz
 
 # Add project root to path
 sys.path.insert(0, '/opt/radiograb')
@@ -58,7 +59,11 @@ class ShowManagementService:
                 Show.schedule_pattern.isnot(None)
             ).all()
             
-            now = datetime.now()
+            # Use timezone-aware datetime
+            eastern = pytz.timezone('America/New_York')
+            now = datetime.now(eastern)
+            
+            logger.debug(f"Current time: {now} ({now.strftime('%A')})")
             
             for show in active_shows:
                 if not show.schedule_pattern:
@@ -72,6 +77,9 @@ class ShowManagementService:
                         
                     minute, hour, day, month, day_of_week = cron_parts
                     
+                    # Debug logging for troubleshooting
+                    logger.info(f"Processing show {show.id} ({show.name}): pattern={show.schedule_pattern}")
+                    
                     # Create trigger to find next run time
                     trigger = CronTrigger(
                         minute=minute,
@@ -82,8 +90,23 @@ class ShowManagementService:
                         timezone='America/New_York'
                     )
                     
-                    # Get next run time
+                    # Get next run time - ensure we get FUTURE runs only
                     next_run = trigger.get_next_fire_time(None, now)
+                    
+                    logger.info(f"Show {show.id} ({show.name}) calculated next_run: {next_run}")
+                    
+                    # Additional validation: make sure this is actually in the future
+                    if next_run:
+                        # Ensure next_run is at least 1 minute in the future
+                        time_diff = (next_run - now).total_seconds()
+                        logger.info(f"Show {show.id} time_diff: {time_diff:.0f} seconds")
+                        
+                        if time_diff < 60:  # Less than 1 minute in future
+                            logger.info(f"Show {show.id} ({show.name}) next_run {next_run} is too soon (in {time_diff:.0f}s), getting next occurrence")
+                            # Get the occurrence after this one
+                            next_run = trigger.get_next_fire_time(next_run, next_run)
+                            if next_run:
+                                logger.info(f"Show {show.id} updated next_run: {next_run}")
                     
                     if next_run:
                         upcoming.append({
