@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'station_id' => $station_id,
                         'name' => $name,
                         'description' => $description ?: null,
-                        'schedule_cron' => $schedule_data['cron'],
+                        'schedule_pattern' => $schedule_data['cron'],
                         'schedule_description' => $schedule_data['description'] ?? $schedule_text,
                         'duration_minutes' => $duration_minutes,
                         'host' => $host ?: null,
@@ -84,7 +84,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'auto_imported' => 0
                     ]);
                     
-                    redirectWithMessage('/shows.php', 'success', 'Show added successfully!');
+                    // Add the show to the recording scheduler
+                    try {
+                        $python_script = dirname(dirname(__DIR__)) . '/backend/services/schedule_manager.py';
+                        $schedule_command = "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python $python_script --add-show $show_id 2>&1";
+                        $schedule_output = shell_exec($schedule_command);
+                        
+                        // Log the scheduling result but don't fail if it doesn't work
+                        error_log("Show scheduling result for show $show_id: $schedule_output");
+                    } catch (Exception $e) {
+                        // Log but don't fail the show creation
+                        error_log("Failed to schedule show $show_id: " . $e->getMessage());
+                    }
+                    
+                    redirectWithMessage('/shows.php', 'success', 'Show added and scheduled successfully!');
                 }
             }
         } catch (Exception $e) {

@@ -6,9 +6,11 @@
 
 - **Domain**: https://radiograb.svaha.com
 - **Server IP**: 167.71.84.143
-- **SSH User**: `radiograb` (SSH key authentication)
+- **SSH Access**: `root@167.71.84.143` (SSH key authentication only, password auth disabled)
+- **Alternative SSH**: `radiograb@167.71.84.143` (limited privileges)
 - **Project Directory**: `/opt/radiograb/` (owned by `radiograb:radiograb`)
-- **Platform**: Ubuntu 22.04 on DigitalOcean droplet
+- **Platform**: AlmaLinux 9 on DigitalOcean droplet
+- **Firewall**: CSF (ConfigServer Security & Firewall) - allows only ports 22, 80, 443
 
 ## 🚨 CRITICAL DEPLOYMENT ARCHITECTURE 🚨
 
@@ -118,8 +120,10 @@ To enable proper git-based deployment, the server needs:
 ## 🎯 SYSTEM CAPABILITIES & FEATURES
 
 ### Core Functionality
-- **TiVo for Radio**: Automatically record radio shows and generate podcast feeds
-- **Enhanced Recording Service v2.0**: Database-driven recording with proven architecture
+- **TiVo for Radio**: Automatically record radio shows based on configured schedules and generate podcast feeds
+- **Enhanced Recording Service v2.5**: Database-driven recording with APScheduler integration for automatic scheduling
+- **Automatic Show Recording**: APScheduler-based cron scheduling system that automatically records shows at scheduled times
+- **Schedule Management**: Web interface for adding/editing show schedules with automatic scheduler integration
 - **Station Discovery**: Extract streaming URLs, logos, schedules from website URLs
 - **JavaScript-Aware Parsing**: Selenium WebDriver for dynamic calendars
 - **Multi-Tool Recording**: streamripper/wget/ffmpeg with automatic tool selection and User-Agent support
@@ -145,6 +149,178 @@ To enable proper git-based deployment, the server needs:
 - **APScheduler**: Cron-based show scheduling with timezone support
 - **Call Letters Format**: WYSO_ShowName_20250727_1400.mp3 naming convention
 - **Retention Policies**: Automatic cleanup based on show-specific retention days
+
+## 🕐 AUTOMATIC RECORDING SYSTEM
+
+### ✅ Complete Implementation Status
+**AUTOMATIC SHOW RECORDING IS FULLY IMPLEMENTED AND OPERATIONAL**
+
+The RadioGrab system includes a complete automatic recording system that records shows based on configured schedules. Here's how it works:
+
+### 🏗️ Architecture Overview
+
+#### Core Components:
+1. **RecordingScheduler** (`recording_service.py`) - APScheduler-based cron job management
+2. **ScheduleManager** (`schedule_manager.py`) - Web interface integration for schedule management  
+3. **Show Database** - Stores `schedule_pattern` (cron format) and `schedule_description` fields
+4. **Supervisor Process** - Runs `recording_service.py --daemon` continuously in radiograb-recorder-1 container
+
+### 📋 How Automatic Recording Works
+
+#### 1. Show Creation & Scheduling
+```php
+// When a show is added via add-show.php:
+1. User enters schedule in plain English: "every Tuesday at 7 PM"
+2. schedule_parser.py converts to cron: "0 19 * * 2"  
+3. Show saved to database with schedule_pattern field
+4. schedule_manager.py --add-show automatically schedules the job
+5. APScheduler creates recurring cron job for the show
+```
+
+#### 2. Daemon Process (radiograb-recorder-1)
+```ini
+# Supervisor runs this continuously:
+[program:radiograb-recorder]
+command=/opt/radiograb/venv/bin/python backend/services/recording_service.py --daemon
+# This starts APScheduler and schedules all active shows
+```
+
+#### 3. Automatic Recording Execution
+```python
+# At scheduled time, APScheduler triggers:
+def _recording_job(self, show_id: int):
+    # 1. Load show and station from database
+    # 2. Check for duplicate recordings (30-min window)
+    # 3. Generate filename: WYSO_ShowName_20250728_1900.mp3
+    # 4. Call perform_recording() with stream URL and User-Agent
+    # 5. Validate recording quality (file size, format)
+    # 6. Save recording to database with metadata
+    # 7. Update station test status
+    # 8. Apply retention policy cleanup
+```
+
+### 🎛️ Schedule Management Interface
+
+#### Web Interface Integration:
+- **Add Show** (`/add-show.php`): Automatically schedules shows after creation
+- **Show List** (`/shows.php`): Shows schedule status indicators  
+- **Schedule Test** (`/schedule-test.php`): Monitor and test scheduler status
+- **API Endpoints** (`/api/schedule-manager.php`): Programmatic schedule management
+
+#### Schedule Status Indicators:
+- ✅ **Green "Scheduled for automatic recording"** - Show has valid schedule_pattern
+- ⚠️ **Yellow "No schedule configured"** - Show exists but no schedule_pattern
+- 🕐 **Schedule Button** - Manage individual show schedules
+
+### 🔧 Schedule Management Commands
+
+#### Python CLI Commands:
+```bash
+# View all scheduled jobs and status
+/opt/radiograb/venv/bin/python backend/services/recording_service.py --schedule-status
+
+# Refresh all schedules (reschedule all active shows)
+/opt/radiograb/venv/bin/python backend/services/schedule_manager.py --refresh-all
+
+# Add specific show to scheduler
+/opt/radiograb/venv/bin/python backend/services/schedule_manager.py --add-show 5
+
+# Update show schedule (remove old, add new)
+/opt/radiograb/venv/bin/python backend/services/schedule_manager.py --update-show 5
+
+# Remove show from scheduler
+/opt/radiograb/venv/bin/python backend/services/schedule_manager.py --remove-show 5
+
+# Get detailed scheduling status
+/opt/radiograb/venv/bin/python backend/services/schedule_manager.py --status
+```
+
+### 📊 Database Schema Integration
+
+#### Shows Table Fields:
+```sql
+schedule_pattern VARCHAR(255) NOT NULL    -- Cron pattern: "0 19 * * 2" 
+schedule_description VARCHAR(500) NULL    -- Human readable: "every Tuesday at 7 PM"
+active BOOLEAN DEFAULT TRUE               -- Only active shows are scheduled
+retention_days INT DEFAULT 30             -- Auto-cleanup policy
+```
+
+#### Automatic Scheduling Flow:
+```
+User Input → schedule_parser.py → Database → ScheduleManager → APScheduler → Recording
+"Tuesday 7PM" → "0 19 * * 2" → shows.schedule_pattern → add_show_schedule() → CronTrigger → _recording_job()
+```
+
+### 🔄 Real-Time Schedule Synchronization
+
+#### When Shows Are Modified:
+- **Add Show**: Automatically calls `schedule_manager.py --add-show`
+- **Edit Show**: Should call `schedule_manager.py --update-show` (integration point)
+- **Delete Show**: Should call `schedule_manager.py --remove-show` (integration point)
+- **Deactivate Show**: APScheduler automatically excludes inactive shows
+
+#### Scheduler Persistence:
+- **Container Restart**: `recording_service.py --daemon` reschedules all active shows on startup
+- **Database Changes**: Manual refresh via `--refresh-all` or web interface
+- **Error Recovery**: Scheduler continues running even if individual jobs fail
+
+### 🧪 Testing Automatic Recording
+
+#### Test Interface (`/schedule-test.php`):
+- **Real-time Status**: Shows active shows, scheduled jobs, next run times
+- **Manual Testing**: Test individual show recordings without waiting for schedule  
+- **Schedule Refresh**: Force reload all schedules from database
+- **Job Monitoring**: See which shows are scheduled vs. unscheduled
+
+#### Verification Commands:
+```bash
+# Check if recording service daemon is running
+docker exec radiograb-recorder-1 ps aux | grep recording_service
+
+# View scheduler logs
+docker logs radiograb-recorder-1 --tail 50 | grep -i schedule
+
+# Test manual recording
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/recording_service.py --test-show 5
+
+# Check APScheduler job status
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/recording_service.py --schedule-status
+```
+
+### ⚠️ Common Issues & Solutions
+
+#### Issue: "Show not scheduled" despite having schedule_pattern
+**Solution**: Run schedule refresh:
+```bash
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/schedule_manager.py --refresh-all
+```
+
+#### Issue: Recording service not running
+**Solution**: Check supervisor and restart if needed:
+```bash
+docker exec radiograb-recorder-1 supervisorctl status radiograb-recorder
+docker exec radiograb-recorder-1 supervisorctl restart radiograb-recorder
+```
+
+#### Issue: Scheduled recordings not happening
+**Solution**: Check timezone configuration and cron parsing:
+```bash
+# Verify timezone
+docker exec radiograb-recorder-1 date
+# Should show America/New_York time
+
+# Test schedule parsing
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/schedule_parser.py "every Tuesday at 7 PM"
+```
+
+### 🎯 Key Success Indicators
+
+✅ **Scheduler Status**: `--schedule-status` shows active jobs  
+✅ **Web Integration**: Shows display "Scheduled for automatic recording"  
+✅ **Automatic Recording**: Files appear in `/var/radiograb/recordings/` at scheduled times  
+✅ **Database Updates**: Recording entries created with proper metadata  
+✅ **RSS Integration**: New recordings automatically added to RSS feeds  
+✅ **Quality Validation**: Recordings pass file size and format checks
 
 ### Key Directories
 ```bash

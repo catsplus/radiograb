@@ -282,6 +282,23 @@ try {
                                         </div>
                                     <?php endif; ?>
                                     
+                                    <!-- Schedule Status -->
+                                    <?php if ($show['schedule_pattern']): ?>
+                                        <div class="mt-1">
+                                            <small class="text-success">
+                                                <i class="fas fa-check-circle"></i> 
+                                                Scheduled for automatic recording
+                                            </small>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="mt-1">
+                                            <small class="text-warning">
+                                                <i class="fas fa-exclamation-triangle"></i> 
+                                                No schedule configured
+                                            </small>
+                                        </div>
+                                    <?php endif; ?>
+                                    
                                     <?php if ($show['timezone'] || $show['station_timezone']): ?>
                                         <div class="mt-1">
                                             <small class="text-muted">
@@ -321,6 +338,13 @@ try {
                                        class="btn btn-outline-info btn-sm">
                                         <i class="fas fa-file-audio"></i> Recordings
                                     </a>
+                                    <button type="button" 
+                                            class="btn btn-outline-secondary btn-sm schedule-manager"
+                                            data-show-id="<?= $show['id'] ?>"
+                                            data-show-name="<?= h($show['name']) ?>"
+                                            title="Manage Schedule">
+                                        <i class="fas fa-clock"></i>
+                                    </button>
                                     <?php if ($show['recording_count'] > 0): ?>
                                         <a href="/feeds.php#show-<?= $show['id'] ?>" 
                                            class="btn btn-outline-success btn-sm"
