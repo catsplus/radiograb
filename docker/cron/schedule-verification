@@ -1,0 +1,7 @@
+# Weekly schedule verification for all radio stations
+# Runs every Sunday at 2:00 AM Eastern Time
+0 2 * * 0 cd /opt/radiograb && /opt/radiograb/venv/bin/python backend/services/schedule_verification_service.py --verify-all --daemon >> /var/radiograb/logs/schedule_verification_cron.log 2>&1
+
+# Monthly forced verification (first Sunday of each month at 3:00 AM)
+# This forces verification of all stations regardless of when they were last checked
+0 3 1-7 * 0 cd /opt/radiograb && /opt/radiograb/venv/bin/python backend/services/schedule_verification_service.py --verify-all --force --daemon >> /var/radiograb/logs/schedule_verification_cron.log 2>&1

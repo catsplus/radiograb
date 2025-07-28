@@ -189,6 +189,31 @@ try {
             </div>
         </div>
 
+        <!-- Schedule Verification Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-sync-alt"></i> Schedule Verification</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-dark me-2" onclick="refreshVerificationStatus()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                            <button class="btn btn-sm btn-dark" onclick="runVerification()">
+                                <i class="fas fa-play"></i> Verify All Now
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="verification-loading" class="text-center py-3">
+                            <i class="fas fa-spinner fa-spin"></i> Loading verification status...
+                        </div>
+                        <div id="verification-content" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Filters -->
         <div class="card mb-4">
             <div class="card-body">
@@ -721,6 +746,207 @@ try {
         function refreshNextRecordings() {
             loadNextRecordings();
         }
+
+        // Schedule verification functions
+        function loadVerificationStatus() {
+            const loading = document.getElementById('verification-loading');
+            const content = document.getElementById('verification-content');
+            
+            loading.style.display = 'block';
+            content.style.display = 'none';
+            
+            fetch('/api/schedule-verification.php?action=get_verification_status')
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    content.style.display = 'block';
+                    
+                    if (data.success) {
+                        displayVerificationStatus(data);
+                    } else {
+                        content.innerHTML = `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                Unable to load verification status: ${data.error || 'Unknown error'}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    content.style.display = 'block';
+                    content.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Network error: ${error.message}
+                        </div>
+                    `;
+                });
+        }
+
+        function displayVerificationStatus(data) {
+            const content = document.getElementById('verification-content');
+            
+            // Summary row
+            let html = `
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-success">${data.summary.current}</h5>
+                                <p class="card-text">Current</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-warning">${data.summary.due_soon}</h5>
+                                <p class="card-text">Due Soon</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-danger">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-danger">${data.summary.overdue}</h5>
+                                <p class="card-text">Overdue</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-secondary">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-secondary">${data.summary.never}</h5>
+                                <p class="card-text">Never Checked</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Stations needing attention
+            const needsAttention = data.stations.filter(s => s.verification_status !== 'current');
+            if (needsAttention.length > 0) {
+                html += `
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Stations Needing Attention</h6>
+                        <div class="row">
+                `;
+                
+                needsAttention.slice(0, 6).forEach(station => {
+                    const statusClass = {
+                        'never': 'secondary',
+                        'overdue': 'danger',
+                        'due_soon': 'warning'
+                    }[station.verification_status] || 'secondary';
+                    
+                    const statusText = {
+                        'never': 'Never checked',
+                        'overdue': `${station.days_since_check} days ago`,
+                        'due_soon': `${station.days_since_check} days ago`
+                    }[station.verification_status] || 'Unknown';
+                    
+                    html += `
+                        <div class="col-md-4 mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">${station.name}</span>
+                                <span class="badge bg-${statusClass}">${statusText}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if (needsAttention.length > 6) {
+                    html += `
+                        <div class="col-12">
+                            <small class="text-muted">... and ${needsAttention.length - 6} more stations</small>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> All stations have been verified recently!
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = html;
+        }
+
+        function refreshVerificationStatus() {
+            loadVerificationStatus();
+        }
+
+        function runVerification() {
+            const content = document.getElementById('verification-content');
+            
+            // Show loading state
+            content.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-spinner fa-spin"></i> Running schedule verification for all stations...
+                    <div class="progress mt-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                    </div>
+                </div>
+            `;
+            
+            fetch('/api/schedule-verification.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'manual_verify',
+                    csrf_token: '<?= generateCSRFToken() ?>'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const changesText = data.total_changes || 0;
+                    const stationsText = data.stations_checked || 0;
+                    
+                    content.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> 
+                            Verification completed! Checked ${stationsText} stations and found ${changesText} changes.
+                        </div>
+                    `;
+                    
+                    // Refresh the status after a short delay
+                    setTimeout(() => {
+                        loadVerificationStatus();
+                    }, 2000);
+                } else {
+                    content.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Verification failed: ${data.error || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Network error: ${error.message}
+                    </div>
+                `;
+            });
+        }
+
+        // Load verification status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadVerificationStatus();
+        });
     </script>
 
     <!-- Footer -->
