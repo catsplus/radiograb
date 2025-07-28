@@ -18,7 +18,7 @@ sys.path.insert(0, '/opt/radiograb')
 
 from backend.config.database import SessionLocal
 from backend.models.station import Station, Show
-from backend.services.schedule_parser import ScheduleParser
+from backend.services.js_calendar_parser import JavaScriptCalendarParser
 
 # Set up logging
 logging.basicConfig(
@@ -33,7 +33,7 @@ class ScheduleVerificationService:
     """
     
     def __init__(self):
-        self.parser = ScheduleParser()
+        self.parser = JavaScriptCalendarParser()
         self.verification_log_path = Path('/var/radiograb/logs/schedule_verification.log')
         self.changes_log_path = Path('/var/radiograb/logs/schedule_changes.json')
         
@@ -101,14 +101,14 @@ class ScheduleVerificationService:
             try:
                 parsed_schedule = self.parser.parse_station_schedule(
                     station.calendar_url,
-                    station.calendar_parsing_method
+                    station.id
                 )
                 
-                if not parsed_schedule or not parsed_schedule.get('shows'):
+                if not parsed_schedule:
                     result['errors'].append("No shows found in current schedule")
                     return result
                     
-                result['shows_found'] = len(parsed_schedule['shows'])
+                result['shows_found'] = len(parsed_schedule)
                 
                 # Get existing shows for this station
                 existing_shows = {
@@ -117,14 +117,15 @@ class ScheduleVerificationService:
                 }
                 
                 # Process each show found in the schedule
-                for show_data in parsed_schedule['shows']:
-                    show_name = show_data.get('name', '').strip()
+                for show_data in parsed_schedule:
+                    show_name = show_data.name.strip() if show_data.name else ''
                     if not show_name:
                         continue
                         
                     show_key = show_name.lower()
-                    schedule_pattern = show_data.get('schedule_pattern')
-                    schedule_description = show_data.get('schedule_description', '')
+                    # Convert ShowSchedule object to schedule pattern format
+                    schedule_pattern = f"{show_data.start_time} on {', '.join(show_data.days)}"
+                    schedule_description = show_data.description or ''
                     
                     if show_key in existing_shows:
                         # Update existing show if schedule changed
@@ -159,7 +160,7 @@ class ScheduleVerificationService:
                             schedule_pattern=schedule_pattern,
                             schedule_description=schedule_description,
                             description=f"{station.name} program: {show_name}",
-                            duration_minutes=show_data.get('duration_minutes', 60),
+                            duration_minutes=show_data.duration_minutes or 60,
                             active=True,
                             created_at=datetime.now(),
                             updated_at=datetime.now()
