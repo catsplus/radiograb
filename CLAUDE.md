@@ -750,9 +750,15 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git status && git stash && git
 - **Web Interface Updates**: Visual status indicators showing test results and last tested times
 - **Recording Quality Validation**: File size and format verification for all recordings
 
+### ✅ Test Recording Interface Fixes (Completed) 
+- **Issue Resolved**: Test recordings now appear properly in web interface after creation
+- **Root Cause Fixed**: AAC conversion was creating `.mp3.mp3` files that weren't found by original glob pattern
+- **Duplicate Prevention**: Fixed duplicate recordings appearing by separating `.mp3` and `.mp3.mp3` file patterns
+- **Clean Extensions**: Fixed AAC conversion to use same filename when file already has `.mp3` extension
+- **Call Letters Only**: Cleaned up all code to only support call letters format, removed legacy station ID format
+
 ### 🔄 Known Outstanding Issues
-- **Frontend Auto-refresh**: Test recordings may not immediately appear in webpage interface (API works correctly)
-- **JavaScript Integration**: Frontend-backend integration needs refinement for real-time updates
+- **JavaScript Integration**: Frontend-backend integration could be enhanced for real-time updates
 
 ---
 
