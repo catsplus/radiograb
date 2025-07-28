@@ -1022,8 +1022,44 @@ Recent recordings (7 days): 1
 - **Stream Discovery**: Full integration with Radio Browser API and stream rediscovery
 - **File Management**: Proper call letters naming, AAC-to-MP3 conversion, quality validation
 
+### ✅ WYSO Schedule Fixes & Day-of-Week Calculation Bug (Completed - July 28, 2025)
+- **Critical Bug Fixed**: APScheduler day-of-week numbering conflict resolved 
+  - Issue: APScheduler uses 0=Monday, cron uses 0=Sunday
+  - Fix: Added conversion function `apscheduler_day = (cron_day - 1) % 7`
+  - Result: Next recordings now show correct times instead of all showing same 9 AM
+- **WYSO Schedule Research**: Researched actual WYSO schedules via web search
+  - "The Dear Green Place": Fixed from weekdays 9 AM to Sunday 1-3 PM
+  - "Down Home Bluegrass": Fixed from weekdays 9 AM to Saturday 6-8 PM  
+  - "Rise When the Rooster Crows": Fixed from weekdays 9 AM to Sunday 6-8 AM
+- **Production Verification**: All changes deployed and working correctly
+
+### ✅ Weekly Schedule Verification System (Completed - July 28, 2025)
+- **Automated Verification**: Created `schedule_verification_service.py` with weekly automated checking
+- **Schedule Change Detection**: Automatically detects schedule changes, adds new shows, deactivates removed ones
+- **Web Interface Integration**: Added schedule verification widget to shows page with real-time status
+- **Verification Status Tracking**: Database tracking of last_tested, last_test_result, last_test_error per station
+- **Manual Verification**: "Verify All Now" button for immediate schedule checking
+- **Comprehensive Logging**: JSON change tracking and detailed verification logs
+- **Cron Integration**: Weekly verification every Sunday at 2 AM, monthly forced verification
+
+### ✅ Database Backup System (Completed - July 28, 2025) 
+- **Automated Weekly Backups**: Every Sunday at 3 AM with 3-week retention
+- **Backup Format**: Timestamped and gzipped (`radiograb_backup_YYYYMMDD_HHMMSS.sql.gz`)
+- **Storage Location**: `/var/radiograb/backups/` with automatic cleanup
+- **Manual Backup Capability**: Script can be run manually for immediate backups
+- **Comprehensive Logging**: Backup operations logged to `/var/radiograb/backups/backup.log`
+- **Error Handling**: Complete error checking and validation of backup integrity
+- **Local Download**: Manual database backup completed and downloaded locally
+
+### ✅ Enhanced Station Management (In Progress - July 28, 2025)
+- **Calendar Verification Status**: Added "Calendar verified" display to stations page
+- **Manual Re-check Buttons**: "Re-check calendar now" buttons for each station
+- **Git Repository Permissions**: Fixed radiograb user git permissions for proper deployment workflow
+- **File Permissions**: Corrected ownership issues to enable non-root deployment operations
+
 ### 🔄 Known Outstanding Issues
-- **JavaScript Integration**: Frontend-backend integration could be enhanced for real-time updates
+- **Schedule Parser Integration**: Need to fix `parse_station_schedule` method for full verification functionality
+- **Calendar URL Configuration**: Some stations lack calendar URLs for automated verification
 
 ---
 

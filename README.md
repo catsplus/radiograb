@@ -9,8 +9,8 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v2.7.0 (July 28, 2025)
-**Latest Features**: Enhanced show management system with active/inactive toggle, tags functionality, next recordings display (top 3), automated test recording cleanup (4 hour limit), enhanced shows interface with AJAX operations, and comprehensive database-driven features. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v2.8.0 (July 28, 2025)
+**Latest Features**: WYSO schedule fixes & day-of-week calculation bug resolved, weekly automated schedule verification system, database backup system with 3-week retention, enhanced station management with calendar verification status, and comprehensive cron job automation. All show scheduling conflicts resolved and next recordings display working correctly. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
@@ -37,12 +37,14 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **Responsive Web UI**: Modern Bootstrap interface with real-time updates
 
 ### 📊 **Smart Automation**
-- **APScheduler Integration**: Cron-based automatic recording of shows at scheduled times
+- **APScheduler Integration**: Cron-based automatic recording of shows at scheduled times with proper day-of-week conversion
 - **Schedule Synchronization**: Real-time scheduler updates when shows are added/modified
+- **Weekly Schedule Verification**: Automated verification of all station schedules with change detection
 - **Show Management**: Active/inactive toggle with automatic scheduler integration
 - **Tags System**: Categorize shows with custom tags for better organization
 - **Test Recording Cleanup**: Automated cleanup of test recordings after 4 hours
-- **Next Recordings Widget**: Dashboard display of upcoming 3 scheduled recordings
+- **Next Recordings Widget**: Dashboard display of upcoming 3 scheduled recordings with real-time countdown timers
+- **Database Backup System**: Automated weekly backups with 3-week retention and compressed storage
 - **Enhanced Recording Service**: Database-driven recording with 30-minute duplicate prevention window
 - **Quality Validation**: File size and format verification (2KB/sec minimum for recordings)
 - **User-Agent Persistence**: Automatically saves working User-Agents for stations with HTTP 403 issues
