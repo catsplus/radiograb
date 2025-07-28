@@ -191,6 +191,13 @@ try {
                                                         <i class="fas fa-info-circle"></i>
                                                     </span>
                                                 <?php endif; ?>
+                                                <button class="btn btn-sm btn-link p-0 ms-2 play-test-recording"
+                                                        data-station-id="<?= $station['id'] ?>"
+                                                        data-station-call="<?= h($station['call_letters']) ?>"
+                                                        title="Play latest test recording"
+                                                        style="display: none;">
+                                                    <i class="fas fa-play text-primary"></i>
+                                                </button>
                                                 <?php if ($station['stream_url']): ?>
                                                     <button class="btn btn-sm btn-outline-success ms-2 test-stream"
                                                             data-station-id="<?= $station['id'] ?>"
@@ -892,6 +899,122 @@ try {
                     this.innerHTML = '<i class="fas fa-sync"></i> Re-check';
                 }
             });
+        });
+        
+        // Check for test recordings and show play icons
+        async function checkForTestRecordings() {
+            try {
+                const response = await fetch('/api/test-recordings.php?action=list');
+                const result = await response.json();
+                
+                if (result.success && result.recordings.length > 0) {
+                    // Group recordings by station ID
+                    const recordingsByStation = {};
+                    result.recordings.forEach(recording => {
+                        if (!recordingsByStation[recording.station_id]) {
+                            recordingsByStation[recording.station_id] = [];
+                        }
+                        recordingsByStation[recording.station_id].push(recording);
+                    });
+                    
+                    // Show play icons for stations with recordings
+                    Object.keys(recordingsByStation).forEach(stationId => {
+                        const playButton = document.querySelector(`.play-test-recording[data-station-id="${stationId}"]`);
+                        if (playButton) {
+                            // Get the latest recording for this station
+                            const latestRecording = recordingsByStation[stationId][0]; // Already sorted newest first
+                            playButton.dataset.filename = latestRecording.filename;
+                            playButton.dataset.url = latestRecording.url;
+                            playButton.style.display = 'inline-block';
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to check for test recordings:', error);
+            }
+        }
+        
+        // Handle play test recording buttons
+        document.querySelectorAll('.play-test-recording').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const filename = this.dataset.filename;
+                const url = this.dataset.url;
+                const stationCall = this.dataset.stationCall;
+                
+                if (!filename || !url) {
+                    alert('No test recording available');
+                    return;
+                }
+                
+                // Create and show audio player modal
+                showAudioPlayerModal(filename, url, stationCall);
+            });
+        });
+        
+        // Show audio player modal
+        function showAudioPlayerModal(filename, url, stationCall) {
+            const modalHtml = `
+                <div class="modal fade" id="audioPlayerModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-play text-primary"></i> Test Recording - ${stationCall}
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <h6 class="mb-3">${filename}</h6>
+                                
+                                <audio controls class="w-100 mb-3" preload="metadata">
+                                    <source src="${url}" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio>
+                                
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a href="/api/test-recordings.php?action=download&file=${encodeURIComponent(filename.split('/').pop())}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download"></i> Download
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                                        <i class="fas fa-times"></i> Close
+                                    </button>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle"></i> 
+                                        This is a 30-second test recording
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove any existing modal
+            const existingModal = document.getElementById('audioPlayerModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('audioPlayerModal'));
+            modal.show();
+            
+            // Clean up modal when hidden
+            document.getElementById('audioPlayerModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        }
+        
+        // Initialize test recording checks when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            checkForTestRecordings();
         });
         
     </script>
