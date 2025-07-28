@@ -36,13 +36,16 @@ RadioGrab transforms any radio station into a personal podcast library. It's a "
 - Prevents recordings at wrong times due to timezone confusion
 - Database fields for station and show timezone preferences
 
-### 6. **Station-Prefixed File Organization**
-- Consistent naming: `{station_id}_{show_name}_YYYYMMDD_HHMM.mp3`
-- Easy identification of recording sources
+### 6. **Call Letters File Organization**
+- Human-readable naming: `{CALL_LETTERS}_{show_name}_YYYYMMDD_HHMM.mp3`
+- Easy identification with 4-letter call signs (WEHC, WERU, WTBR, WYSO)
 - Improved file management and organization
-- Supports multi-station deployments
+- Supports multi-station deployments with intuitive file names
 
 ## 🏗️ System Architecture
+
+### Enhanced Recording Service v2.5.0
+Complete rewrite with database-driven architecture, unified recording strategies, and full integration with test recording proven methods.
 
 ### Container Architecture (5 Services)
 ```

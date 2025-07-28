@@ -80,19 +80,19 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 ## 📖 Documentation
 
 ### 📋 **Quick Setup Guides**
-- [Installation Guide](INSTALLATION.md) - Complete setup instructions
-- [Deployment Guide](DEPLOYMENT.md) - Production deployment
-- [SSL Setup](SSL_PRESERVATION_GUIDE.md) - HTTPS configuration
+- [Deployment Guide](Docs/DEPLOYMENT.md) - Production deployment and installation
+- [SSL Setup](Docs/SSL_PRESERVATION_GUIDE.md) - HTTPS configuration
 
 ### 🔧 **Technical Documentation**
-- [System Architecture](SYSTEM_ARCHITECTURE.md) - How RadioGrab works
-- [Container Setup](CONTAINER_SETUP.md) - Docker configuration
-- [Recording Tools Guide](RECORDING_TOOLS_GUIDE.md) - Multi-tool recording system
+- [System Architecture](Docs/SYSTEM_ARCHITECTURE.md) - How RadioGrab works
+- [Container Setup](Docs/CONTAINER_SETUP.md) - Docker configuration
+- [Recording Tools Guide](Docs/RECORDING_TOOLS_GUIDE.md) - Multi-tool recording system
+- [Project Overview](Docs/PROJECT_OVERVIEW.md) - Complete project overview
 
 ### 🛠️ **Advanced Topics**
-- [Stream Testing](STREAM_TESTING_INTEGRATION.md) - Automatic stream validation
-- [Schedule Discovery](STREAM_URL_DISCOVERY.md) - Website parsing system
-- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
+- [Stream Testing](Docs/STREAM_TESTING_INTEGRATION.md) - Automatic stream validation
+- [Schedule Discovery](Docs/STREAM_URL_DISCOVERY.md) - Website parsing system
+- [Troubleshooting](Docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## 🏗️ Architecture
 
