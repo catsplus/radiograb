@@ -153,13 +153,19 @@ class OnAirStatusManager {
             </div>
         `;
         
-        // Insert indicators into card (avoid action buttons area)
-        const cardTitle = card.querySelector('h5.card-title');
-        if (cardTitle) {
-            // Add ON-AIR badge next to the show title
-            cardTitle.appendChild(onAirBadge);
+        // Insert ON-AIR badge after the Active/Inactive status
+        const formSwitch = card.querySelector('.form-check.form-switch');
+        if (formSwitch) {
+            // Create a container for the ON-AIR badge after the form switch
+            const onAirContainer = document.createElement('div');
+            onAirContainer.className = 'mt-2 on-air-indicator-element';
+            onAirContainer.appendChild(onAirBadge);
+            
+            // Insert after the form switch
+            formSwitch.parentNode.insertBefore(onAirContainer, formSwitch.nextSibling);
         } else {
-            const cardHeader = card.querySelector('.card-header, h6');
+            // Fallback: add to card header if no form switch found
+            const cardHeader = card.querySelector('.card-header, h5, h6');
             if (cardHeader) {
                 cardHeader.appendChild(onAirBadge);
             } else {
