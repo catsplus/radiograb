@@ -7,8 +7,8 @@
 header('Content-Type: application/json');
 session_start();
 
-require_once '../includes/database.php';
-require_once '../includes/functions.php';
+require_once '../../includes/database.php';
+require_once '../../includes/functions.php';
 
 // Enable CORS for API requests
 header('Access-Control-Allow-Origin: *');
