@@ -636,14 +636,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col text-center text-muted">
                     <small>
                         RadioGrab - TiVo for Radio | 
-                        Version: <?php 
-                            $version_file = dirname(dirname(__DIR__)) . '/VERSION';
-                            if (file_exists($version_file)) {
-                                echo trim(file_get_contents($version_file));
-                            } else {
-                                echo 'Unknown';
-                            }
-                        ?>
+                        Version: <?= getVersionNumber() ?>
                     </small>
                 </div>
             </div>

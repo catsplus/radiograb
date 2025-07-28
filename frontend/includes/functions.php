@@ -191,4 +191,19 @@ function paginate($total, $perPage = 20, $currentPage = 1) {
         'hasPrev' => $currentPage > 1
     ];
 }
+
+/**
+ * Get RadioGrab version number from VERSION file
+ */
+function getVersionNumber() {
+    $version_file = dirname(dirname(__DIR__)) . '/VERSION';
+    if (file_exists($version_file)) {
+        $version_content = trim(file_get_contents($version_file));
+        // Extract version number (e.g., "v2.5.0") from the content
+        if (preg_match('/v\d+\.\d+\.\d+/', $version_content, $matches)) {
+            return $matches[0];
+        }
+    }
+    return 'Unknown';
+}
 ?>

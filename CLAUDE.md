@@ -355,34 +355,34 @@ curl -s -b /tmp/cookies.txt -X POST "https://radiograb.svaha.com/api/test-record
 - **deploy-from-git.sh** - Automated deployment script (pulls from GitHub)
 - **.env** - Environment variables (SSL_DOMAIN, SSL_EMAIL)
 
-### 📚 Documentation Directory (Docs/)
-**IMPORTANT FOR CLAUDE CODE: When working with RadioGrab, automatically read ALL files in the Docs/ folder for complete context.**
+### 📚 Documentation Directory (docs/)
+**IMPORTANT FOR CLAUDE CODE: When working with RadioGrab, automatically read ALL files in the docs/ folder for complete context.**
 
-The comprehensive documentation is organized in the `Docs/` folder:
+The comprehensive documentation is organized in the `docs/` folder:
 
-- **Docs/SYSTEM_ARCHITECTURE.md** - Detailed technical architecture and container interactions
-- **Docs/DEPLOYMENT.md** - Installation and deployment guide with step-by-step instructions
-- **Docs/CLAUDE_PROJECT_SUMMARY.md** - Project goals, features, and high-level overview
-- **Docs/CONTAINER_SETUP.md** - Docker container configuration and networking
-- **Docs/SSL_PRESERVATION_GUIDE.md** - SSL certificate management with Let's Encrypt
-- **Docs/TROUBLESHOOTING.md** - Common issues and solutions with diagnostics
-- **Docs/STREAM_TESTING_INTEGRATION.md** - Automatic stream testing system details
-- **Docs/RECORDING_TOOLS_GUIDE.md** - Multi-tool recording compatibility (streamripper/ffmpeg/wget)
-- **Docs/STREAM_URL_DISCOVERY.md** - Website parsing and stream discovery methods
-- **Docs/PROJECT_OVERVIEW.md** - High-level project overview and goals
+- **docs/SYSTEM_ARCHITECTURE.md** - Detailed technical architecture and container interactions
+- **docs/DEPLOYMENT.md** - Installation and deployment guide with step-by-step instructions
+- **docs/CLAUDE_PROJECT_SUMMARY.md** - Project goals, features, and high-level overview
+- **docs/CONTAINER_SETUP.md** - Docker container configuration and networking
+- **docs/SSL_PRESERVATION_GUIDE.md** - SSL certificate management with Let's Encrypt
+- **docs/TROUBLESHOOTING.md** - Common issues and solutions with diagnostics
+- **docs/STREAM_TESTING_INTEGRATION.md** - Automatic stream testing system details
+- **docs/RECORDING_TOOLS_GUIDE.md** - Multi-tool recording compatibility (streamripper/ffmpeg/wget)
+- **docs/STREAM_URL_DISCOVERY.md** - Website parsing and stream discovery methods
+- **docs/PROJECT_OVERVIEW.md** - High-level project overview and goals
 
 #### 🤖 Claude Code Integration Instructions
 **When working on RadioGrab tasks, the system should automatically:**
 1. Read CLAUDE.md (this file) for complete architecture overview
-2. Read ALL files in the Docs/ folder for comprehensive context
+2. Read ALL files in the docs/ folder for comprehensive context
 3. Reference the appropriate documentation based on the task at hand
 4. Use the consolidated information to provide accurate assistance
 
 **Example usage for comprehensive understanding:**
 ```bash
 # Read all documentation for complete project context
-Read: CLAUDE.md, Docs/SYSTEM_ARCHITECTURE.md, Docs/DEPLOYMENT.md, 
-      Docs/TROUBLESHOOTING.md, Docs/CONTAINER_SETUP.md, etc.
+Read: CLAUDE.md, docs/SYSTEM_ARCHITECTURE.md, docs/DEPLOYMENT.md, 
+      docs/TROUBLESHOOTING.md, docs/CONTAINER_SETUP.md, etc.
 ```
 
 ### 🐍 Backend Python Services (/opt/radiograb/backend/)
