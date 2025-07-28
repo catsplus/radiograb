@@ -36,6 +36,7 @@ services:
       - DB_USER=radiograb
       - DB_PASSWORD=${DB_PASSWORD:-your_db_password}
       - DB_NAME=radiograb
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-your_root_password}
       - SSL_DOMAIN=${SSL_DOMAIN:-your-domain.com}
       - SSL_EMAIL=${SSL_EMAIL:-admin@your-domain.com}
     volumes:

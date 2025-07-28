@@ -29,15 +29,12 @@ log_message() {
 
 log_message "Starting database backup"
 
-# Get MySQL root password from environment
-if [ -f "/opt/radiograb/.env" ]; then
-    MYSQL_ROOT_PASSWORD=$(grep "MYSQL_ROOT_PASSWORD=" /opt/radiograb/.env | cut -d'=' -f2)
-    if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
-        log_message "ERROR: Could not find MYSQL_ROOT_PASSWORD in .env file"
-        exit 1
-    fi
-else
-    log_message "ERROR: .env file not found"
+# Get MySQL root password from environment variables
+# In Docker containers, these are set via docker-compose environment variables
+MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-radiograb_root_2024}"
+
+if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
+    log_message "ERROR: MYSQL_ROOT_PASSWORD environment variable not set"
     exit 1
 fi
 
