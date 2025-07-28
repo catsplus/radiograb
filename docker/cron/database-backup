@@ -1,0 +1,6 @@
+# Weekly database backup - every Sunday at 3:00 AM Eastern Time
+# Automated backups with 3-week retention
+0 3 * * 0 /opt/radiograb/scripts/backup-database.sh >> /var/radiograb/logs/database_backup_cron.log 2>&1
+
+# Monthly cleanup of backup logs (first Sunday of each month at 4:00 AM)
+0 4 1-7 * 0 find /var/radiograb/backups -name "backup.log" -mtime +30 -delete && echo "$(date): Cleaned old backup logs" >> /var/radiograb/logs/database_backup_cron.log

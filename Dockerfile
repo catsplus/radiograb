@@ -70,6 +70,19 @@ COPY docker/station-health-cron /etc/cron.d/station-health
 RUN chmod 0644 /etc/cron.d/station-health && \
     crontab /etc/cron.d/station-health
 
+# Configure Database Backup Cron
+COPY docker/cron/database-backup /etc/cron.d/database-backup
+RUN chmod 0644 /etc/cron.d/database-backup && \
+    crontab /etc/cron.d/database-backup
+
+# Configure Schedule Verification Cron  
+COPY docker/cron/schedule-verification /etc/cron.d/schedule-verification
+RUN chmod 0644 /etc/cron.d/schedule-verification && \
+    crontab /etc/cron.d/schedule-verification
+
+# Make scripts executable
+RUN chmod +x /opt/radiograb/scripts/backup-database.sh
+
 # Create startup script
 COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh

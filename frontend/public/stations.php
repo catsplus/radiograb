@@ -186,6 +186,20 @@ try {
                                         <?php endif; ?>
                                     </div>
                                     
+                                    <!-- Calendar Verification Status -->
+                                    <div class="mb-2">
+                                        <i class="fas fa-calendar-check text-info"></i>
+                                        <small class="text-muted">
+                                            Calendar verified: <?= $station['last_tested'] ? timeAgo($station['last_tested']) : 'Never' ?>
+                                            <button class="btn btn-sm btn-outline-primary ms-2 verify-calendar"
+                                                    data-station-id="<?= $station['id'] ?>"
+                                                    data-station-name="<?= h($station['name']) ?>"
+                                                    title="Re-check calendar now">
+                                                <i class="fas fa-sync"></i> Re-check
+                                            </button>
+                                        </small>
+                                    </div>
+                                    
                                     <div class="row text-center">
                                         <div class="col">
                                             <div class="fw-bold"><?= $station['show_count'] ?></div>
