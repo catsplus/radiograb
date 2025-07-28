@@ -9,31 +9,36 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically discovers schedules, records shows, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v2.1.0 (July 25, 2025)
-**Latest Features**: Call sign file naming, timezone synchronization, enhanced download security, and improved database connectivity. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v2.5.0 (July 27, 2025)
+**Latest Features**: Enhanced Recording Service v2.0 with complete rewrite, test recording interface fixes, User-Agent support, duplicate prevention, and unified architecture. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
-- **Automatic Recording**: Schedule-based recording of radio shows
-- **Smart Discovery**: Extract streaming URLs and schedules from station websites
+- **Enhanced Recording Service v2.0**: Database-driven recording with proven architecture and duplicate prevention
+- **Smart Discovery**: Extract streaming URLs and schedules from station websites with User-Agent support
 - **Podcast Generation**: Create RSS feeds for individual shows or all recordings
-- **Test Recording**: 10-second test recordings to verify streams work
-- **On-Demand Recording**: Manual 1-hour recordings with one click
+- **Test Recording**: 10-second test recordings that now appear properly in web interface
+- **On-Demand Recording**: Manual 1-hour recordings with quality validation
 
 ### 🔧 **Technical Features**
+- **Enhanced Recording Architecture**: Complete rewrite with database-driven design and duplicate prevention
+- **User-Agent Support**: Saved User-Agent per station for HTTP 403 handling and stream compatibility
 - **Call Sign File Naming**: Human-readable 4-letter call signs (WEHC, WERU, WTBR, WYSO) instead of numeric IDs
-- **Multi-Tool Recording**: Automatic tool selection (streamripper/ffmpeg/wget) for 100% stream compatibility
+- **Multi-Tool Recording**: Automatic tool selection (streamripper/ffmpeg/wget) with quality validation (2KB/sec minimum)
 - **JavaScript-Aware Parsing**: Selenium WebDriver handles dynamic calendar pages
 - **Docker Containerized**: Complete Docker setup with 5 specialized containers
 - **SSL/HTTPS Ready**: Automatic Let's Encrypt certificate management
 - **Timezone Synchronized**: All containers use Eastern Time for consistent timestamps
-- **Secure Downloads**: Proper MP3 file serving with security validation
+- **Test Interface Fixed**: Test recordings now appear properly in web interface without duplicates
 - **Responsive Web UI**: Modern Bootstrap interface with real-time updates
 
 ### 📊 **Smart Automation**
-- **Automatic Housekeeping**: Cleans up empty recordings every 6 hours
-- **Stream Testing**: Validates streams before recording attempts
+- **Enhanced Recording Service**: Database-driven recording with 30-minute duplicate prevention window
+- **Quality Validation**: File size and format verification (2KB/sec minimum for recordings)
+- **User-Agent Persistence**: Automatically saves working User-Agents for stations with HTTP 403 issues
+- **Automatic Housekeeping**: Cleans up empty recordings every 6 hours with retention policies
+- **Stream Testing**: Validates streams before recording attempts with comprehensive error handling
 - **Schedule Caching**: Remembers successful parsing methods per station
 - **RSS Updates**: Refreshes podcast feeds every 15 minutes
 
@@ -108,11 +113,11 @@ RadioGrab uses a 5-container Docker architecture:
 ```
 
 ### Key Components
-- **Web Interface**: PHP/JavaScript frontend with Bootstrap UI
-- **Recording Engine**: Python services with multi-tool recording
-- **Schedule Parser**: JavaScript-aware calendar extraction
-- **Stream Validator**: Tests streams before recording
-- **RSS Generator**: Creates podcast feeds from recordings
+- **Web Interface**: PHP/JavaScript frontend with Bootstrap UI and test recording fixes
+- **Enhanced Recording Engine**: Python services with database-driven architecture, User-Agent support, and duplicate prevention
+- **Schedule Parser**: JavaScript-aware calendar extraction with stream discovery
+- **Stream Validator**: Tests streams with comprehensive error handling and User-Agent persistence
+- **RSS Generator**: Creates podcast feeds from recordings with proper call letters naming
 
 ## 🎛️ Usage
 

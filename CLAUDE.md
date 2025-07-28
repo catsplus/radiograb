@@ -119,12 +119,13 @@ To enable proper git-based deployment, the server needs:
 
 ### Core Functionality
 - **TiVo for Radio**: Automatically record radio shows and generate podcast feeds
+- **Enhanced Recording Service v2.0**: Database-driven recording with proven architecture
 - **Station Discovery**: Extract streaming URLs, logos, schedules from website URLs
 - **JavaScript-Aware Parsing**: Selenium WebDriver for dynamic calendars
-- **Multi-Tool Recording**: streamripper/wget/ffmpeg with automatic tool selection
-- **Test & On-Demand Recording**: 30-second tests + 1-hour manual recordings
+- **Multi-Tool Recording**: streamripper/wget/ffmpeg with automatic tool selection and User-Agent support
+- **Test & On-Demand Recording**: 30-second tests + 1-hour manual recordings with duplicate prevention
 - **RSS Feeds**: Individual show feeds + master feed (all shows combined)
-- **Automatic Housekeeping**: Cleans empty files every 6 hours
+- **Automatic Housekeeping**: Cleans empty files every 6 hours with retention policies
 - **Station Testing Tracking**: Last tested date, success/failure status on every recording
 - **Automated Station Testing**: Periodic testing service to verify all stations
 
@@ -135,10 +136,15 @@ To enable proper git-based deployment, the server needs:
 - **Web Interface Display**: Last tested status with icons in stations page
 - **Automated Testing Service**: `station_auto_test.py` for periodic station verification
 
-### Recording Tools (All in radiograb-recorder-1 container)
-- **streamripper** (`/usr/bin/streamripper`): Direct HTTP/MP3 streams
-- **ffmpeg** (`/usr/bin/ffmpeg`): Authentication, modern protocols  
-- **wget** (`/usr/bin/wget`): Redirect URLs (StreamTheWorld)
+### Enhanced Recording System (radiograb-recorder-1 container)
+- **Multi-Tool Strategy**: streamripper/ffmpeg/wget with automatic tool selection
+- **User-Agent Support**: Saved User-Agent per station for HTTP 403 handling
+- **Duplicate Prevention**: Built-in 30-minute window duplicate detection
+- **Quality Validation**: File size and format validation (2KB/sec minimum)
+- **Database Integration**: Full synchronization with station settings and test results
+- **APScheduler**: Cron-based show scheduling with timezone support
+- **Call Letters Format**: WYSO_ShowName_20250727_1400.mp3 naming convention
+- **Retention Policies**: Automatic cleanup based on show-specific retention days
 
 ### Key Directories
 ```bash
@@ -760,10 +766,52 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git status && git stash && git
 ### ✅ Enhanced Recording Service v2.0 (Completed)
 - **Complete Rewrite**: Rewrote recording_service.py with database-driven architecture
 - **Integration**: Fully integrated with proven test recording service strategies
-- **Duplicate Prevention**: Built-in duplicate recording detection prevents concurrent recordings
-- **Quality Validation**: Enhanced recording quality validation and error handling
-- **User-Agent Support**: Integrated User-Agent persistence and stream discovery
+- **Duplicate Prevention**: Built-in duplicate recording detection prevents concurrent recordings (30-min window)
+- **Quality Validation**: Enhanced recording quality validation and error handling (2KB/sec minimum)
+- **User-Agent Support**: Integrated User-Agent persistence and stream discovery from test service
 - **Architecture Sync**: Full synchronization with app architecture and test service patterns
+- **Command Line Tools**: `--stats`, `--schedule-status`, `--test-show`, `--manual-show` options
+- **Database Cleanup**: Removed duplicate recordings, maintaining only one valid recording per show/time
+
+### 🛠️ Enhanced Recording Service Architecture
+
+#### Database-Driven Design:
+```python
+# Uses same proven recording function as test service
+from backend.services.test_recording_service import perform_recording
+
+# Key features:
+- Database station settings (User-Agent, call letters, stream URLs)
+- Duplicate detection (prevents recordings within 30 minutes)
+- Quality validation (file size, format verification)  
+- Call letters filename format (WYSO_ShowName_20250727_1400.mp3)
+- Retention policy cleanup (show-specific retention days)
+- Station test status updates on every recording
+```
+
+#### Command Line Interface:
+```bash
+# Enhanced recording service commands:
+/opt/radiograb/venv/bin/python backend/services/recording_service.py --stats
+/opt/radiograb/venv/bin/python backend/services/recording_service.py --schedule-status
+/opt/radiograb/venv/bin/python backend/services/recording_service.py --test-show 5
+/opt/radiograb/venv/bin/python backend/services/recording_service.py --manual-show 5 --duration 600
+/opt/radiograb/venv/bin/python backend/services/recording_service.py --daemon
+
+# Stats output example:
+=== Recording Statistics ===
+Total recordings: 1
+Total size: 54.99 MB
+Recent recordings (7 days): 1
+```
+
+#### Integration Benefits:
+- **Unified Architecture**: Uses same recording strategies as working test service
+- **Error Handling**: Comprehensive error tracking and station status updates
+- **Multi-Tool Support**: streamripper, ffmpeg, wget with automatic tool selection
+- **User-Agent Handling**: Integrated saved User-Agent support for HTTP 403 issues
+- **Stream Discovery**: Full integration with Radio Browser API and stream rediscovery
+- **File Management**: Proper call letters naming, AAC-to-MP3 conversion, quality validation
 
 ### 🔄 Known Outstanding Issues
 - **JavaScript Integration**: Frontend-backend integration could be enhanced for real-time updates
