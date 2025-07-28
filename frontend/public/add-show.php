@@ -55,8 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         try {
             // Parse schedule text using Python schedule parser
-            $python_script = dirname(dirname(__DIR__)) . '/backend/services/schedule_parser.py';
-            $command = "python3 " . escapeshellarg($python_script) . " " . escapeshellarg($schedule_text) . " 2>&1";
+            $python_script = dirname(dirname(__DIR__)) . '/backend/services/parse_schedule.py';
+            $command = "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python " . escapeshellarg($python_script) . " " . escapeshellarg($schedule_text) . " 2>&1";
             $output = shell_exec($command);
             
             // Parse the output to get cron expression

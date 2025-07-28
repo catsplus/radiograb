@@ -46,6 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $host = trim($_POST['host'] ?? '');
     $genre = trim($_POST['genre'] ?? '');
     $active = isset($_POST['active']) ? 1 : 0;
+    $retention_days = (int)($_POST['retention_days'] ?? 30);
+    $default_ttl_type = $_POST['default_ttl_type'] ?? 'days';
     
     $errors = [];
     
@@ -72,11 +74,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Duration must be between 1 and 1440 minutes';
     }
     
+    if ($retention_days < 1 || $retention_days > 3650) {
+        $errors[] = 'Retention period must be between 1 and 3650 days';
+    }
+    
+    $valid_ttl_types = ['days', 'weeks', 'months', 'indefinite'];
+    if (!in_array($default_ttl_type, $valid_ttl_types)) {
+        $errors[] = 'Invalid TTL type';
+    }
+    
     if (empty($errors)) {
         try {
             // Parse schedule text using Python schedule parser
-            $python_script = dirname(dirname(__DIR__)) . '/backend/services/schedule_parser.py';
-            $command = "python3 " . escapeshellarg($python_script) . " " . escapeshellarg($schedule_text) . " 2>&1";
+            $python_script = dirname(dirname(__DIR__)) . '/backend/services/parse_schedule.py';
+            $command = "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python " . escapeshellarg($python_script) . " " . escapeshellarg($schedule_text) . " 2>&1";
             $output = shell_exec($command);
             
             // Parse the output to get cron expression
@@ -101,8 +112,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'host' => $host ?: null,
                         'genre' => $genre ?: null,
                         'active' => $active,
+                        'retention_days' => $retention_days,
+                        'default_ttl_type' => $default_ttl_type,
                         'updated_at' => date('Y-m-d H:i:s')
                     ], 'id = ?', [$show_id]);
+                    
+                    // Update existing recordings TTL that don't have overrides
+                    try {
+                        $python_script = dirname(dirname(__DIR__)) . '/backend/services/ttl_manager.py';
+                        $ttl_command = "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python $python_script --update-show-ttl $show_id --ttl-days $retention_days --ttl-type $default_ttl_type 2>&1";
+                        $ttl_output = shell_exec($ttl_command);
+                        error_log("TTL update result for show $show_id: $ttl_output");
+                    } catch (Exception $e) {
+                        error_log("Failed to update TTL for show $show_id: " . $e->getMessage());
+                    }
                     
                     // Update the show in the recording scheduler
                     try {
@@ -281,6 +304,29 @@ try {
                                         <label for="genre" class="form-label">Genre</label>
                                         <input type="text" class="form-control" id="genre" name="genre" 
                                                value="<?= h($show['genre']) ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- TTL Settings -->
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="retention_days" class="form-label">Recording Retention</label>
+                                        <input type="number" class="form-control" id="retention_days" name="retention_days" 
+                                               value="<?= $show['retention_days'] ?>" min="1" max="3650">
+                                        <div class="form-text">How long to keep recordings before automatic deletion</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="default_ttl_type" class="form-label">Time Unit</label>
+                                        <select class="form-select" id="default_ttl_type" name="default_ttl_type">
+                                            <option value="days" <?= ($show['default_ttl_type'] ?? 'days') === 'days' ? 'selected' : '' ?>>Days</option>
+                                            <option value="weeks" <?= ($show['default_ttl_type'] ?? 'days') === 'weeks' ? 'selected' : '' ?>>Weeks</option>
+                                            <option value="months" <?= ($show['default_ttl_type'] ?? 'days') === 'months' ? 'selected' : '' ?>>Months</option>
+                                            <option value="indefinite" <?= ($show['default_ttl_type'] ?? 'days') === 'indefinite' ? 'selected' : '' ?>>Keep Forever</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>

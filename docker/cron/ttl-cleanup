@@ -1,0 +1,3 @@
+# RadioGrab TTL Cleanup
+# Runs every day at 2:00 AM to clean up expired recordings
+0 2 * * * www-data cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python backend/services/ttl_manager.py --cleanup >> /var/radiograb/logs/ttl-cleanup.log 2>&1

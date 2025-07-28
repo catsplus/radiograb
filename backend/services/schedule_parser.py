@@ -32,6 +32,9 @@ class ScheduleParser:
         
         # Time parsing patterns
         self.time_patterns = [
+            # Special cases
+            (r'\bnoon\b', self._parse_noon),
+            (r'\bmidnight\b', self._parse_midnight),
             # 12-hour format
             (r'(\d{1,2}):(\d{2})\s*(am|pm)', self._parse_12hour),
             (r'(\d{1,2})\s*(am|pm)', self._parse_12hour_no_minutes),
@@ -152,6 +155,14 @@ class ScheduleParser:
             raise ValueError("Invalid hour")
         
         return hour, 0
+    
+    def _parse_noon(self, match) -> Tuple[int, int]:
+        """Parse 'noon'"""
+        return 12, 0
+    
+    def _parse_midnight(self, match) -> Tuple[int, int]:
+        """Parse 'midnight'"""
+        return 0, 0
     
     def _extract_days(self, schedule_text: str) -> Optional[str]:
         """Extract days of week from schedule text"""

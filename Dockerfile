@@ -80,6 +80,11 @@ COPY docker/cron/schedule-verification /etc/cron.d/schedule-verification
 RUN chmod 0644 /etc/cron.d/schedule-verification && \
     crontab /etc/cron.d/schedule-verification
 
+# Configure TTL Cleanup Cron
+COPY docker/cron/ttl-cleanup /etc/cron.d/ttl-cleanup
+RUN chmod 0644 /etc/cron.d/ttl-cleanup && \
+    crontab /etc/cron.d/ttl-cleanup
+
 # Make scripts executable
 RUN chmod +x /opt/radiograb/scripts/backup-database.sh
 
