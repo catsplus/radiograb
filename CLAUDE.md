@@ -6,8 +6,8 @@
 
 - **Domain**: https://radiograb.svaha.com
 - **Server IP**: 167.71.84.143
-- **SSH Access**: `root@167.71.84.143` (SSH key authentication only, password auth disabled)
-- **Alternative SSH**: `radiograb@167.71.84.143` (limited privileges)
+- **SSH Access**: `root@167.71.84.143` (SSH key authentication - FULL ROOT ACCESS for system administration)
+- **Alternative SSH**: `radiograb@167.71.84.143` (limited privileges for application-only tasks)
 - **Project Directory**: `/opt/radiograb/` (owned by `radiograb:radiograb`)
 - **Platform**: AlmaLinux 9 on DigitalOcean droplet
 - **Firewall**: CSF (ConfigServer Security & Firewall) - allows only ports 22, 80, 443
@@ -488,6 +488,22 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && docker compose restart radiogr
 
 # Execute commands in container
 ssh radiograb@167.71.84.143 "docker exec radiograb-web-1 command"
+```
+
+### Docker Troubleshooting (Root Access Required)
+```bash
+# ⚠️ CRITICAL: Use root@167.71.84.143 for Docker system issues
+# Restart Docker service (requires root)
+ssh root@167.71.84.143 "systemctl restart docker"
+
+# Clean Docker system (requires root)
+ssh root@167.71.84.143 "docker system prune -f"
+
+# Fix Docker networking issues (requires root)
+ssh root@167.71.84.143 "systemctl restart docker && cd /opt/radiograb && docker compose up -d"
+
+# Emergency container restart with full rebuild
+ssh root@167.71.84.143 "cd /opt/radiograb && docker compose down && docker system prune -f && docker compose up -d --build"
 ```
 
 ### Testing & Verification
