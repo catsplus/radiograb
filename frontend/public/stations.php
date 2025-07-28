@@ -137,9 +137,21 @@ try {
                                         <h5 class="card-title mb-1"><?= h($station['name']) ?></h5>
                                         <small class="text-muted"><?= h($station['website_url']) ?></small>
                                     </div>
-                                    <span class="badge <?= $station['status'] === 'active' ? 'status-active' : 'status-inactive' ?>">
-                                        <?= h($station['status']) ?>
-                                    </span>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge <?= $station['status'] === 'active' ? 'status-active' : 'status-inactive' ?> me-2">
+                                            <?= h($station['status']) ?>
+                                        </span>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger delete-confirm"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#deleteModal"
+                                                data-station-id="<?= $station['id'] ?>"
+                                                data-station-name="<?= h($station['name']) ?>"
+                                                data-item="station"
+                                                title="Delete station">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 
                                 <div class="mb-3">
@@ -266,16 +278,6 @@ try {
                                     </div>
                                     <?php endif; ?>
                                     
-                                    <!-- Delete Action -->
-                                    <button type="button" 
-                                            class="btn btn-outline-danger btn-sm delete-confirm"
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#deleteModal"
-                                            data-station-id="<?= $station['id'] ?>"
-                                            data-station-name="<?= h($station['name']) ?>"
-                                            data-item="station">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -285,28 +287,6 @@ try {
         <?php endif; ?>
     </div>
 
-    <!-- Test Recordings Section -->
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col">
-                <h2><i class="fas fa-play-circle"></i> Test Recordings</h2>
-                <p class="text-muted">Recent 10-second test recordings from your stations</p>
-                
-                <div id="testRecordingsContainer">
-                    <div class="text-center">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p>Loading test recordings...</p>
-                    </div>
-                </div>
-                
-                <button class="btn btn-outline-primary btn-sm mt-3" onclick="loadTestRecordings()">
-                    <i class="fas fa-sync"></i> Refresh
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteModal" tabindex="-1">
@@ -693,15 +673,6 @@ try {
                         // Show progress indication with countdown
                         showRecordingProgress(result.filename, result.duration, stationName);
                         
-                        // Immediate refresh to show the recording started
-                        setTimeout(() => {
-                            loadTestRecordings();
-                        }, 2000); // Quick refresh after 2 seconds
-                        
-                        // Auto-refresh test recordings after completion
-                        setTimeout(() => {
-                            loadTestRecordings();
-                        }, (result.duration + 5) * 1000); // Add 5 seconds buffer
                     } else {
                         alert(`Test recording failed: ${result.error}`);
                     }
@@ -770,132 +741,6 @@ try {
             });
         });
         
-        // Load and display test recordings
-        async function loadTestRecordings() {
-            const container = document.getElementById('testRecordingsContainer');
-            console.log('Loading test recordings...', new Date().toLocaleTimeString());
-            container.innerHTML = `
-                <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Loading test recordings...</p>
-                </div>
-            `;
-            
-            try {
-                // Add cache-busting parameter to avoid stale responses
-                const response = await fetch('/api/test-recordings.php?_t=' + Date.now(), {
-                    credentials: 'same-origin',
-                    cache: 'no-cache'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const result = await response.json();
-                console.log('Test recordings result:', result, 'at', new Date().toLocaleTimeString());
-                
-                if (result.success && result.recordings.length > 0) {
-                    let html = '<div class="row">';
-                    
-                    result.recordings.forEach(recording => {
-                        html += `
-                            <div class="col-md-6 col-lg-4 mb-3">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h6 class="card-title">
-                                            <i class="fas fa-microphone"></i> ${recording.call_letters || `Station ${recording.station_id}`} Test
-                                        </h6>
-                                        <p class="card-text">
-                                            <small class="text-muted">
-                                                ${recording.readable_date}<br>
-                                                Size: ${recording.size_human}
-                                            </small>
-                                        </p>
-                                        <div class="audio-controls">
-                                            <audio controls class="w-100 mb-2">
-                                                <source src="${recording.download_url}" type="audio/mpeg">
-                                                Your browser does not support the audio element.
-                                            </audio>
-                                            <div class="btn-group w-100">
-                                                <a href="${recording.download_url}" class="btn btn-outline-primary btn-sm" download>
-                                                    <i class="fas fa-download"></i> Download
-                                                </a>
-                                                <button class="btn btn-outline-danger btn-sm delete-test-recording" 
-                                                        data-filename="${recording.filename}">
-                                                    <i class="fas fa-trash"></i> Delete
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    html += '</div>';
-                    container.innerHTML = html;
-                    
-                    // Add delete event listeners
-                    document.querySelectorAll('.delete-test-recording').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            deleteTestRecording(this.dataset.filename);
-                        });
-                    });
-                    
-                } else {
-                    container.innerHTML = `
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> No test recordings found. 
-                            Use the "Test (10s)" button next to any station to create one.
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error loading test recordings:', error);
-                container.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle"></i> Failed to load test recordings.
-                    </div>
-                `;
-            }
-        }
-        
-        // Delete test recording
-        async function deleteTestRecording(filename) {
-            if (!confirm(`Delete test recording "${filename}"?`)) {
-                return;
-            }
-            
-            try {
-                const csrfToken = await getCSRFToken();
-                const response = await fetch('/api/test-recordings.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    credentials: 'same-origin',
-                    body: new URLSearchParams({
-                        action: 'delete',
-                        filename: filename,
-                        csrf_token: csrfToken
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    loadTestRecordings(); // Refresh the list
-                } else {
-                    alert('Failed to delete recording: ' + result.error);
-                }
-            } catch (error) {
-                console.error('Error deleting test recording:', error);
-                alert('Failed to delete recording');
-            }
-        }
         
         // Show recording progress with countdown
         function showRecordingProgress(filename, duration, stationName) {
@@ -937,7 +782,7 @@ try {
                                 <div class="mt-3">
                                     <small class="text-muted">
                                         <i class="fas fa-info-circle"></i> 
-                                        Recording will appear in the Test Recordings section when complete
+                                        Test recording will be saved to temporary storage
                                     </small>
                                 </div>
                             </div>
@@ -1049,10 +894,6 @@ try {
             });
         });
         
-        // Load test recordings when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            loadTestRecordings();
-        });
     </script>
 
     <!-- Footer -->
