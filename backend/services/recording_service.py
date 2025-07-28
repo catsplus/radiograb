@@ -348,12 +348,12 @@ class EnhancedRecordingService:
     
     def get_recording_stats(self) -> Dict[str, Any]:
         """Get recording statistics"""
+        from sqlalchemy import func
+        
         db = SessionLocal()
         try:
             total_recordings = db.query(Recording).count()
-            total_size = db.query(Recording).with_entities(
-                db.func.sum(Recording.file_size_bytes)
-            ).scalar() or 0
+            total_size = db.query(func.sum(Recording.file_size_bytes)).scalar() or 0
             
             recent_recordings = db.query(Recording).filter(
                 Recording.recorded_at >= datetime.now() - timedelta(days=7)
