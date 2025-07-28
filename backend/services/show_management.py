@@ -80,13 +80,38 @@ class ShowManagementService:
                     # Debug logging for troubleshooting
                     logger.info(f"Processing show {show.id} ({show.name}): pattern={show.schedule_pattern}")
                     
+                    # APScheduler uses different day-of-week numbering than standard cron
+                    # Standard cron: 0=Sunday, 1=Monday, ..., 6=Saturday  
+                    # APScheduler: 0=Monday, 1=Tuesday, ..., 6=Sunday
+                    # We need to convert from cron format to APScheduler format
+                    if day_of_week != '*':
+                        # Handle multiple days (e.g., "1,2,3,4,5")
+                        if ',' in day_of_week:
+                            cron_days = day_of_week.split(',')
+                            apscheduler_days = []
+                            for cron_day in cron_days:
+                                cron_day = int(cron_day.strip())
+                                # Convert: cron Sunday(0) -> APScheduler Sunday(6)
+                                #          cron Monday(1) -> APScheduler Monday(0)
+                                apscheduler_day = (cron_day - 1) % 7
+                                apscheduler_days.append(str(apscheduler_day))
+                            converted_day_of_week = ','.join(apscheduler_days)
+                        else:
+                            cron_day = int(day_of_week)
+                            # Convert single day
+                            converted_day_of_week = str((cron_day - 1) % 7)
+                    else:
+                        converted_day_of_week = day_of_week
+                    
+                    logger.info(f"Show {show.id}: Converting cron day_of_week '{day_of_week}' to APScheduler '{converted_day_of_week}'")
+                    
                     # Create trigger to find next run time
                     trigger = CronTrigger(
                         minute=minute,
                         hour=hour,
                         day=day,
                         month=month,
-                        day_of_week=day_of_week,
+                        day_of_week=converted_day_of_week,
                         timezone='America/New_York'
                     )
                     
