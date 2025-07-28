@@ -335,6 +335,62 @@ docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services
 /var/radiograb/logs/              # Application logs
 ```
 
+## 📺 ON-AIR INDICATOR SYSTEM
+
+### Real-Time Recording Status
+The ON-AIR indicator system provides visual feedback for shows currently being recorded:
+
+**✅ Features:**
+- **Real-time Status Updates**: JavaScript checks recording status every 30 seconds
+- **Animated ON-AIR Badges**: Pulsing red indicators next to Active/Inactive status
+- **Progress Tracking**: Shows elapsed time, remaining time, and completion percentage
+- **Page-wide Banners**: Site-wide recording notifications at top of pages
+- **Browser Title Updates**: 🔴 icon appears in browser tab during recordings
+
+**🔧 Technical Components:**
+```bash
+# API Endpoint:
+/api/recording-status.php?action=current_recordings
+
+# CSS Styling:
+/assets/css/on-air.css              # Animated badges and progress bars
+
+# JavaScript Manager:
+/assets/js/on-air-status.js         # Real-time status updates
+
+# Integration:
+shows.php                           # ON-AIR functionality enabled
+```
+
+**📊 API Response Format:**
+```json
+{
+  "success": true,
+  "current_recordings": [
+    {
+      "show_id": 50,
+      "show_name": "Show Name",
+      "station_name": "Station Name",
+      "call_letters": "CALL",
+      "start_time": "2025-07-28 19:00:00",
+      "end_time": "2025-07-28 20:00:00",
+      "duration_minutes": 60,
+      "elapsed_seconds": 1800,
+      "remaining_seconds": 1800,
+      "progress_percent": 50.0
+    }
+  ],
+  "count": 1,
+  "timestamp": "2025-07-28 19:30:00"
+}
+```
+
+**🎯 Visual Placement:**
+- ON-AIR badge appears below the Active/Inactive status badge
+- Progress bar and timing info display in the middle of show cards
+- No overlap with show titles or action buttons
+- Clean separation from delete/edit controls
+
 ## 🔧 TECHNICAL REQUIREMENTS
 
 ### Python Execution (CRITICAL!)
@@ -933,6 +989,30 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git status && git stash && git
 ```
 
 ## 🆕 RECENT UPDATES (July 2025)
+
+### ✅ ON-AIR Indicator System (Completed July 28, 2025)
+- **Real-Time Recording Status**: Live visual indicators for shows currently being recorded
+- **Animated UI Elements**: Pulsing red ON-AIR badges with progress tracking
+- **Smart Placement**: Positioned below Active/Inactive status to avoid title overlap
+- **Progress Tracking**: Shows elapsed time, remaining time, and completion percentage
+- **API Integration**: `/api/recording-status.php` provides real-time recording data
+- **JavaScript Manager**: Automatic status updates every 30 seconds
+- **Browser Integration**: Page title updates with 🔴 indicator during recordings
+- **Site-wide Banners**: Recording notifications appear across all pages
+
+### ✅ TTL (Time-to-Live) Recording Management (Completed July 25, 2025)
+- **Configurable Expiry**: Default 2-week retention with days/weeks/months/indefinite options
+- **Per-Show Defaults**: Individual show TTL settings with override capabilities
+- **Per-Recording Override**: Individual recording TTL management via UI
+- **Automatic Cleanup**: Daily cron job removes expired recordings
+- **Database Integration**: TTL columns added to recordings and shows tables
+- **Management Interface**: Full UI for TTL configuration and monitoring
+
+### ✅ Enhanced Schedule Parsing (Completed July 25, 2025)
+- **Natural Language Support**: Handles "Mondays at 7 PM", "noon", "midnight" formats
+- **Improved Accuracy**: Fixed parsing edge cases and time format issues
+- **Database Caching**: Stores successful parsing strategies per station
+- **Wombats & Music Fix**: Updated schedule from Saturdays 2 PM to Mondays 7 PM
 
 ### ✅ Call Sign Implementation (Completed)
 - **Filename Format Change**: Recording files now use 4-letter call signs instead of numeric station IDs

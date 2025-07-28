@@ -9,13 +9,15 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v2.8.0 (July 28, 2025)
-**Latest Features**: WYSO schedule fixes & day-of-week calculation bug resolved, weekly automated schedule verification system, database backup system with 3-week retention, enhanced station management with calendar verification status, and comprehensive cron job automation. All show scheduling conflicts resolved and next recordings display working correctly. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v2.9.0 (July 28, 2025)
+**Latest Features**: Real-time ON-AIR indicator system with animated progress tracking, TTL (Time-to-Live) recording management with configurable expiry, enhanced schedule parsing with natural language support, and improved UI placement. Shows currently recording display animated badges with elapsed/remaining time. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
+- **Real-Time ON-AIR Indicators**: Live visual feedback for shows currently recording with animated progress tracking
 - **Automatic Show Recording**: APScheduler-based system that automatically records shows at scheduled times
+- **TTL Recording Management**: Configurable expiry periods (days/weeks/months/indefinite) with automatic cleanup
 - **Enhanced Show Management**: Active/inactive toggle, tags functionality, and AJAX-powered interface
 - **Next Recordings Display**: Dashboard widget showing top 3 upcoming scheduled recordings
 - **Schedule Management**: Web interface for adding/editing show schedules with automatic scheduler integration
@@ -37,8 +39,12 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **Responsive Web UI**: Modern Bootstrap interface with real-time updates
 
 ### 📊 **Smart Automation**
+- **Real-Time Status Updates**: JavaScript checks recording status every 30 seconds with animated progress bars
+- **Browser Integration**: Page title updates with 🔴 indicator and site-wide recording banners
+- **TTL Cleanup System**: Daily cron job removes expired recordings based on configurable retention policies
 - **APScheduler Integration**: Cron-based automatic recording of shows at scheduled times with proper day-of-week conversion
 - **Schedule Synchronization**: Real-time scheduler updates when shows are added/modified
+- **Enhanced Schedule Parsing**: Natural language support for "Mondays at 7 PM", "noon", "midnight" formats
 - **Weekly Schedule Verification**: Automated verification of all station schedules with change detection
 - **Show Management**: Active/inactive toggle with automatic scheduler integration
 - **Tags System**: Categorize shows with custom tags for better organization
