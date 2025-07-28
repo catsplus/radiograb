@@ -46,11 +46,12 @@ function listTestRecordings() {
     $recordings = [];
     
     if (is_dir($tempDir)) {
-        // Look for both .mp3 and .mp3.mp3 files (AAC converted files)
-        $files = array_merge(
-            glob($tempDir . '/*.mp3'),
-            glob($tempDir . '/*.mp3.mp3')
-        );
+        // Look for .mp3 files (excluding .mp3.mp3) and .mp3.mp3 files separately to avoid duplicates
+        $mp3Files = array_filter(glob($tempDir . '/*.mp3'), function($file) {
+            return !preg_match('/\.mp3\.mp3$/', $file);
+        });
+        $mp3Mp3Files = glob($tempDir . '/*.mp3.mp3');
+        $files = array_merge($mp3Files, $mp3Mp3Files);
         
         foreach ($files as $file) {
             if (is_file($file)) {

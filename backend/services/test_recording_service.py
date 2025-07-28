@@ -203,6 +203,9 @@ def post_process_recording(output_file):
             mp3_file = output_file[:-4]  # Remove .aac, keeping .mp3
         elif output_file.endswith('.aac'):
             mp3_file = output_file[:-4] + '.mp3'  # Replace .aac with .mp3
+        elif output_file.endswith('.mp3'):
+            # File has .mp3 extension but contains AAC data - keep same filename
+            mp3_file = output_file
         else:
             mp3_file = output_file + '.mp3'  # Add .mp3 extension
         
