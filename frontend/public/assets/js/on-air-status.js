@@ -153,17 +153,29 @@ class OnAirStatusManager {
             </div>
         `;
         
-        // Insert indicators into card
-        const cardHeader = card.querySelector('.card-header, .card-title, h5, h6');
-        if (cardHeader) {
-            cardHeader.appendChild(onAirBadge);
+        // Insert indicators into card (avoid action buttons area)
+        const cardTitle = card.querySelector('h5.card-title');
+        if (cardTitle) {
+            // Add ON-AIR badge next to the show title
+            cardTitle.appendChild(onAirBadge);
         } else {
-            card.insertBefore(onAirBadge, card.firstChild);
+            const cardHeader = card.querySelector('.card-header, h6');
+            if (cardHeader) {
+                cardHeader.appendChild(onAirBadge);
+            } else {
+                card.insertBefore(onAirBadge, card.firstChild);
+            }
         }
         
+        // Add progress info to card body but before action buttons
         const cardBody = card.querySelector('.card-body');
         if (cardBody) {
-            cardBody.appendChild(progressInfo);
+            const actionButtonsRow = cardBody.querySelector('.d-flex.flex-wrap.gap-2, .btn-group, .text-center:has(button)');
+            if (actionButtonsRow) {
+                cardBody.insertBefore(progressInfo, actionButtonsRow);
+            } else {
+                cardBody.appendChild(progressInfo);
+            }
         } else {
             card.appendChild(progressInfo);
         }
