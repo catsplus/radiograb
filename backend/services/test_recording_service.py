@@ -185,14 +185,15 @@ def post_process_recording(output_file):
     # Check if file is AAC format (by extension or content)
     is_aac = False
     
-    # Check by extension
+    # Check by extension first (most reliable)
     if output_file.endswith('.aac') or output_file.endswith('.mp3.aac'):
         is_aac = True
     else:
-        # Check by file content using file command
+        # Check by file content using file command, but be more specific
         try:
             result = subprocess.run(['file', output_file], capture_output=True, text=True)
-            if 'AAC' in result.stdout or 'ADTS' in result.stdout:
+            # Only consider it AAC if it's explicitly AAC and NOT already MP3
+            if ('AAC' in result.stdout or 'ADTS' in result.stdout) and 'MP3' not in result.stdout:
                 is_aac = True
         except:
             pass
