@@ -245,11 +245,91 @@ class OnAirStatusManager {
      * Create a recording banner for the page
      */
     createRecordingBanner() {
+        // Try to find the "Next Recordings" section first
+        const nextRecordingsSection = document.querySelector('.next-recordings-section, [data-section="next-recordings"]');
+        
+        if (nextRecordingsSection) {
+            // Insert banner as first item in Next Recordings section
+            this.insertBannerInNextRecordings(nextRecordingsSection);
+        } else {
+            // Fallback: look for a card container or main content area
+            const cardContainer = document.querySelector('.row .col-md-6, .card-container, .main-content');
+            if (cardContainer) {
+                this.insertBannerInContainer(cardContainer);
+            } else {
+                // Last resort: use the original method but with better positioning
+                this.insertBannerInMainContainer();
+            }
+        }
+    }
+    
+    /**
+     * Insert banner in the Next Recordings section
+     */
+    insertBannerInNextRecordings(section) {
+        const bannerContainer = this.createBannerElement();
+        
+        // Insert as the first child of the Next Recordings section
+        const firstChild = section.querySelector('.card, .row, .next-recording-item');
+        if (firstChild) {
+            section.insertBefore(bannerContainer, firstChild);
+        } else {
+            section.insertBefore(bannerContainer, section.firstChild);
+        }
+    }
+    
+    /**
+     * Insert banner in a card container
+     */
+    insertBannerInContainer(container) {
+        const bannerContainer = this.createBannerElement();
+        
+        // Insert at the beginning of the container
+        const firstChild = container.firstChild;
+        if (firstChild) {
+            container.insertBefore(bannerContainer, firstChild);
+        } else {
+            container.appendChild(bannerContainer);
+        }
+    }
+    
+    /**
+     * Fallback method - insert in main container but positioned better
+     */
+    insertBannerInMainContainer() {
         const container = document.querySelector('.container');
         if (!container) return;
         
+        const bannerContainer = this.createBannerElement();
+        
+        // Try to find a good insertion point after the header
+        const headerElements = container.querySelectorAll('h1, h2, .page-header, .site-header');
+        let insertionPoint = null;
+        
+        if (headerElements.length > 0) {
+            // Insert after the last header element
+            insertionPoint = headerElements[headerElements.length - 1].nextSibling;
+        }
+        
+        if (insertionPoint) {
+            container.insertBefore(bannerContainer, insertionPoint);
+        } else {
+            // Find first content element
+            const firstContent = container.querySelector('.row, .card, .content');
+            if (firstContent) {
+                container.insertBefore(bannerContainer, firstContent);
+            } else {
+                container.insertBefore(bannerContainer, container.firstChild);
+            }
+        }
+    }
+    
+    /**
+     * Create the banner element
+     */
+    createBannerElement() {
         const bannerContainer = document.createElement('div');
-        bannerContainer.className = 'on-air-banner-container';
+        bannerContainer.className = 'on-air-banner-container mb-3';
         
         const banner = document.createElement('div');
         banner.className = 'on-air-banner';
@@ -269,14 +349,7 @@ class OnAirStatusManager {
         }
         
         bannerContainer.appendChild(banner);
-        
-        // Insert banner at the top of the main container
-        const firstChild = container.querySelector('.row, .card, h1, h2');
-        if (firstChild) {
-            container.insertBefore(bannerContainer, firstChild);
-        } else {
-            container.insertBefore(bannerContainer, container.firstChild);
-        }
+        return bannerContainer;
     }
 
     /**
