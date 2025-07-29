@@ -110,10 +110,16 @@ def main():
     else:
         test_multiple_airings()
         
-        # Ask if user wants to test a specific case
-        print(f"\nWould you like to test a specific case? (y/n): ", end="")
-        if input().lower().startswith('y'):
-            test_specific_case()
+        # Ask if user wants to test a specific case (only in interactive mode)
+        try:
+            print(f"\nWould you like to test a specific case? (y/n): ", end="")
+            response = input()
+            if response.lower().startswith('y'):
+                test_specific_case()
+        except (EOFError, KeyboardInterrupt):
+            # Handle non-interactive environments gracefully
+            print("\n(Non-interactive mode detected - skipping interactive test)")
+            pass
 
 if __name__ == '__main__':
     main()
