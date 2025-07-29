@@ -48,9 +48,19 @@ RadioGrab transforms any radio station into a personal podcast library. It's a "
 - Per-station timezone storage and handling
 - Container-wide EST/EDT timezone configuration
 - Prevents recordings at wrong times due to timezone confusion
+
+### 8. **Comprehensive Logo & Social Media System**
+- **Local Logo Storage**: All station logos downloaded and optimized locally for consistent performance
+- **Facebook Logo Extraction**: Automatic fallback to Facebook profile pictures when website logos unavailable
+- **Consistent Visual Design**: All logos displayed at uniform 60x60px with proper aspect ratio maintenance
+- **Image Optimization**: Logos resized to max 400x400px and optimized for web delivery with format conversion
+- **Multi-Platform Social Detection**: Detection and display of 10+ social platforms (Facebook, Twitter, Instagram, YouTube, LinkedIn, Spotify, etc.)
+- **Smart Social Discovery**: Automatic extraction of social media links from station websites with platform recognition
+- **Visual Social Integration**: Colored social media icons with hover effects and proper platform branding
+- **Database-Cached Metadata**: JSON storage for social media links with platform metadata and update tracking
 - Database fields for station and show timezone preferences
 
-### 8. **Call Letters File Organization**
+### 9. **Call Letters File Organization**
 - Human-readable naming: `{CALL_LETTERS}_{show_name}_YYYYMMDD_HHMM.mp3`
 - Easy identification with 4-letter call signs (WEHC, WERU, WTBR, WYSO)
 - Improved file management and organization
@@ -104,7 +114,40 @@ Web Interface → API → Background Service → Recording Tools → File Storag
 - **iframe Parsing**: Google Sheets and embedded calendar extraction
 - **Plugin Detection**: WordPress calendar plugin identification
 
-### 2. **MP3 Metadata Service Architecture**
+### 2. **Logo & Social Media Service Architecture**
+```python
+# Logo storage and optimization service
+def download_and_store_logo(self, logo_url: str, station_id: int, source: str = 'website') -> Optional[Dict]:
+    """Download, optimize, and store station logo locally"""
+    response = requests.get(logo_url, headers=self.headers, timeout=30, stream=True)
+    
+    # Optimize image with PIL
+    image = Image.open(io.BytesIO(content))
+    image.thumbnail((400, 400), Image.Resampling.LANCZOS)
+    
+    # Save locally with proper naming
+    filename = f"station_{station_id}_{source}_{file_hash}.{format_extension}"
+    local_path = os.path.join('/var/radiograb/logos/', filename)
+```
+
+```python
+# Social media detection with platform recognition
+def extract_social_media_links(self, soup: BeautifulSoup, base_url: str) -> Dict[str, Dict]:
+    """Extract social media links with platform metadata"""
+    social_links = {}
+    
+    for link in soup.find_all('a', href=True):
+        platform = self._identify_platform(link['href'])
+        if platform:
+            social_links[platform] = {
+                'url': self._clean_social_url(link['href'], platform),
+                'icon': self.platforms[platform]['icon'],
+                'name': self.platforms[platform]['name'],
+                'color': self.platforms[platform]['color']
+            }
+```
+
+### 3. **MP3 Metadata Service Architecture**
 ```python
 # Comprehensive metadata writing with FFmpeg
 def write_metadata_for_recording(self, recording_id: int) -> bool:
@@ -125,7 +168,7 @@ def write_metadata_for_recording(self, recording_id: int) -> bool:
     return self._write_metadata_with_ffmpeg(recording.filename, metadata)
 ```
 
-### 3. **Upload Service with Format Conversion**
+### 4. **Upload Service with Format Conversion**
 ```python
 # Multi-format upload handling with automatic conversion
 def handle_audio_upload(self, file_data: bytes, filename: str, show_id: int) -> Dict:
@@ -150,7 +193,7 @@ def handle_audio_upload(self, file_data: bytes, filename: str, show_id: int) -> 
     return {'success': True, 'filename': filename, 'metadata': enhanced_metadata}
 ```
 
-### 4. **Recording Tool Intelligence**
+### 5. **Recording Tool Intelligence**
 ```python
 # Intelligent tool selection with database storage
 def _get_station_recommended_tool(self, show_id: int) -> Optional[str]:
@@ -163,7 +206,7 @@ def _get_station_recommended_tool(self, show_id: int) -> Optional[str]:
     return None
 ```
 
-### 5. **Automatic Cleanup System**
+### 6. **Automatic Cleanup System**
 ```python
 # Prevents empty file accumulation
 def cleanup_empty_recordings(self) -> Dict:
@@ -179,7 +222,7 @@ def cleanup_empty_recordings(self) -> Dict:
     return {'files_removed': len(empty_files), 'records_cleaned': orphaned_records}
 ```
 
-### 6. **Deployment Automation**
+### 7. **Deployment Automation**
 ```bash
 # Comprehensive deployment with verification
 ./deploy.sh                    # Full system deployment

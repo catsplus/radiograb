@@ -9,8 +9,8 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v2.11.0 (July 29, 2025)
-**Latest Features**: Complete playlist upload system with drag & drop track ordering, comprehensive MP3 metadata implementation for all recordings (artist=show name, album=station name, recording date), user audio file uploads with format validation and automatic conversion, and enhanced database schema for playlist management. Shows now support both scheduled recordings and user-created playlists. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v2.12.0 (July 29, 2025)
+**Latest Features**: Comprehensive logo and social media system with local logo storage, Facebook logo extraction, consistent 60x60px sizing, and automatic social media link detection for 10+ platforms. All station logos optimized and stored locally for consistent performance. Enhanced visual interface with colored social media icons and proper platform branding. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
@@ -46,6 +46,16 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **Timezone Synchronized**: All containers use Eastern Time for consistent timestamps
 - **Test Interface Fixed**: Test recordings now appear properly in web interface without duplicates
 - **Responsive Web UI**: Modern Bootstrap interface with real-time updates
+
+### 🎨 **Visual & Social Features**
+- **Local Logo Storage**: All station logos downloaded and stored locally for consistent performance and sizing
+- **Facebook Logo Extraction**: Automatic fallback to Facebook profile pictures when website logos unavailable
+- **Consistent Logo Sizing**: All logos displayed at uniform 60x60px with proper aspect ratio maintenance
+- **Image Optimization**: Logos resized to max 400x400px and optimized for web delivery with format conversion
+- **Social Media Integration**: Detection and display of 10+ social platforms (Facebook, Twitter, Instagram, YouTube, LinkedIn, Spotify, etc.)
+- **Smart Social Detection**: Automatic extraction of social media links from station websites with platform recognition
+- **Visual Social Icons**: Colored social media icons with hover effects and proper platform branding
+- **Database-Cached Logos**: JSON storage for social media links with platform metadata and update tracking
 
 ### 📊 **Smart Automation**
 - **Automatic MP3 Metadata**: All recordings tagged with artist=show name, album=station name, recording date, description

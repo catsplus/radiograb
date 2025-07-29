@@ -9,8 +9,9 @@
 - **Automated Recording**: Record radio shows using streamripper based on cron schedules
 - **Playlist Upload System**: User audio file uploads with multi-format support and drag & drop track ordering
 - **MP3 Metadata Management**: Comprehensive metadata writing for all recordings and uploads (artist=show name, album=station name, etc.)
+- **Logo & Social Media System**: Local logo storage with Facebook fallback and social media integration for 10+ platforms
 - **RSS Feed Generation**: Create podcast-style RSS feeds of recorded shows and playlists
-- **Web Management Interface**: Complete web UI for managing stations, shows, recordings, and playlists
+- **Web Management Interface**: Complete web UI for managing stations, shows, recordings, and playlists with visual social media integration
 
 ## Technical Architecture ⚠️ DOCKER CONTAINERS ⚠️
 - **Frontend**: PHP-based web interface with Bootstrap UI (RUNS IN `radiograb-web-1` CONTAINER)
@@ -32,6 +33,9 @@
   - `upload_service.py`: Audio file upload processing and validation
   - `recording_service.py`: Automated recording management
   - `rss_service.py`: RSS feed generation with playlist support
+  - `logo_storage_service.py`: Local logo download, optimization, and storage
+  - `facebook_logo_extractor.py`: Facebook profile picture extraction
+  - `social_media_detector.py`: Social media link detection and categorization
 - **Database Config**: `/opt/radiograb/backend/config/database.py`
 
 **radiograb-recorder-1 Container:**
@@ -42,6 +46,7 @@
 - **Recordings Directory**: `/var/radiograb/recordings/`
 - **Temp Directory**: `/var/radiograb/temp/`
 - **Logs Directory**: `/var/radiograb/logs/`
+- **Logos Directory**: `/var/radiograb/logos/` (local station logos and social media images)
 
 **radiograb-mysql-1 Container:**
 - **Database**: MySQL 8.0

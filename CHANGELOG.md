@@ -1,5 +1,57 @@
 # RadioGrab Changelog
 
+## [2.12.0] - 2025-07-29 - Logo & Social Media System
+
+### 🎨 Visual Enhancement System
+- **Local Logo Storage**: All station logos downloaded and stored locally for consistent performance
+  - Automatic download and optimization of station logos to max 400x400px
+  - Local storage in `/var/radiograb/logos/` with proper file naming and caching
+  - Database tracking of logo source (website/facebook), update timestamps, and file paths
+- **Facebook Logo Extraction**: Automatic fallback to Facebook profile pictures when website logos unavailable
+  - Smart extraction from Facebook Open Graph meta tags
+  - Support for multiple Facebook URL formats and page structures
+  - Fallback logo system with priority: website > facebook > default
+- **Consistent Logo Sizing**: All logos displayed at uniform 60x60px with proper aspect ratio maintenance
+  - CSS improvements for consistent visual presentation
+  - Object-fit containment for proper aspect ratio preservation
+  - Background styling for visual consistency across different logo formats
+
+### 📱 Social Media Integration
+- **Multi-Platform Detection**: Detection and display of 10+ social platforms
+  - Facebook, Twitter/X, Instagram, YouTube, LinkedIn, Spotify, TikTok, Discord, Twitch, SoundCloud
+  - Smart URL pattern matching with platform-specific validation
+  - Automatic extraction from website link structures and meta tags  
+- **Visual Social Icons**: Colored social media icons with hover effects and proper platform branding
+  - Font Awesome icons with platform-specific colors
+  - Responsive design with hover effects and scaling
+  - Proper accessibility with platform names and external link indicators
+- **Database Integration**: JSON storage for social media links with platform metadata
+  - Structured storage of social links with icon, color, and platform information
+  - Update tracking and timestamp management for social media changes
+
+### 🛠️ Technical Infrastructure
+- **New Backend Services**:
+  - `logo_storage_service.py`: Download, optimize, and store station logos locally
+  - `facebook_logo_extractor.py`: Extract profile pictures from Facebook pages
+  - `social_media_detector.py`: Detect and categorize social media links from websites
+  - `station-logo-update.php`: API for bulk and individual station logo/social media updates
+- **Database Schema Extensions**:
+  - `facebook_url`, `local_logo_path`, `logo_source`, `logo_updated_at` fields in stations table
+  - `social_media_links` JSON field for structured social media storage
+  - `social_media_updated_at` timestamp field for update tracking
+- **Nginx Configuration**: New `/logos/` location block for serving local logos with caching
+- **Image Processing**: PIL/Pillow integration for image optimization and format conversion
+
+### 🔧 System Improvements
+- **Station Logo Optimization**: All existing station logos downloaded and optimized locally
+  - WEHC: Facebook profile picture extraction and local storage (241x257px optimized)
+  - WTBR: Logo size issues resolved with local optimization (250x150px)
+  - WERU, WYSO, KULT: All logos optimized and stored locally for consistent performance
+- **Social Media Discovery**: Comprehensive social media link detection across all stations
+  - WEHC: Facebook, Instagram, Spotify links detected and displayed
+  - WYSO: Facebook, Instagram, YouTube, LinkedIn links detected and displayed
+  - Enhanced station information display with proper social media integration
+
 ## [2.11.0] - 2025-07-29 - Playlist System & MP3 Metadata
 
 ### 🎵 MP3 Metadata Implementation
