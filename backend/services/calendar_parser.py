@@ -573,10 +573,16 @@ class CalendarParser:
             
             # Handle different JSON structures
             if isinstance(data, list):
-                for item in data:
-                    show = self._parse_json_show_item(item)
-                    if show:
-                        shows.append(show)
+                # Check if this looks like WERU's calendar format
+                if data and isinstance(data[0], dict) and 'start' in data[0] and 'title' in data[0]:
+                    # WERU-specific format with ISO timestamps
+                    shows = self._parse_weru_json_schedule(data)
+                else:
+                    # Standard JSON format
+                    for item in data:
+                        show = self._parse_json_show_item(item)
+                        if show:
+                            shows.append(show)
             elif isinstance(data, dict):
                 # Look for common keys that might contain show lists
                 for key in ['shows', 'programs', 'schedule', 'events']:
@@ -588,6 +594,92 @@ class CalendarParser:
         
         except json.JSONDecodeError as e:
             logger.error(f"Error parsing JSON schedule: {e}")
+        
+        return shows
+    
+    def _parse_weru_json_schedule(self, data: List[Dict[str, Any]]) -> List[ShowSchedule]:
+        """Parse WERU's specific JSON calendar format with ISO timestamps"""
+        shows = []
+        from datetime import datetime
+        import pytz
+        
+        try:
+            # Group shows by name and day to avoid duplicates
+            show_schedules = {}
+            
+            for item in data:
+                title = item.get('title', '').strip()
+                start_iso = item.get('start', '')
+                end_iso = item.get('end', '')
+                
+                if not title or not start_iso:
+                    continue
+                
+                # Skip generic/automated entries
+                if any(skip in title.lower() for skip in ['various', 'programming', 'automated']):
+                    continue
+                
+                try:
+                    # Parse ISO timestamp - WERU uses -0400 (EDT) offset
+                    # Convert to Eastern Time properly
+                    start_dt = datetime.fromisoformat(start_iso.replace('Z', '+00:00'))
+                    
+                    # Convert to US/Eastern timezone 
+                    if start_dt.tzinfo is None:
+                        # If no timezone, assume it's already in Eastern
+                        eastern = pytz.timezone('US/Eastern')
+                        start_dt = eastern.localize(start_dt)
+                    else:
+                        # Convert to Eastern
+                        eastern = pytz.timezone('US/Eastern')
+                        start_dt = start_dt.astimezone(eastern)
+                    
+                    # Extract local time (without timezone offset)
+                    start_time = start_dt.time()
+                    
+                    # Get day of week
+                    weekday = start_dt.weekday()  # 0=Monday, 6=Sunday
+                    day_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                    day = day_names[weekday]
+                    
+                    # Parse end time if available
+                    end_time = None
+                    if end_iso:
+                        try:
+                            end_dt = datetime.fromisoformat(end_iso.replace('Z', '+00:00'))
+                            if end_dt.tzinfo is None:
+                                end_dt = eastern.localize(end_dt)
+                            else:
+                                end_dt = end_dt.astimezone(eastern)
+                            end_time = end_dt.time()
+                        except Exception:
+                            pass
+                    
+                    # Create a unique key for this show
+                    show_key = (title.lower(), start_time, day)
+                    
+                    if show_key not in show_schedules:
+                        show_schedule = ShowSchedule(
+                            name=title,
+                            start_time=start_time,
+                            end_time=end_time,
+                            days=[day],
+                            description=f"WERU program: {title}",
+                            host=item.get('text', '').strip(),
+                            genre=item.get('data', {}).get('category', '') if isinstance(item.get('data'), dict) else ''
+                        )
+                        show_schedules[show_key] = show_schedule
+                        logger.debug(f"WERU: Added {title} at {start_time} on {day}")
+                        
+                except Exception as e:
+                    logger.debug(f"Error parsing WERU timestamp {start_iso}: {e}")
+                    continue
+            
+            shows = list(show_schedules.values())
+            logger.info(f"WERU JSON parser found {len(shows)} unique shows")
+            
+        except Exception as e:
+            logger.error(f"Error in WERU JSON parser: {e}")
         
         return shows
     
