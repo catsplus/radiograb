@@ -76,10 +76,10 @@ def get_recording_tool(stream_url=None):
     
     return None, None
 
-def record_with_streamripper(stream_url, output_file, duration):
+def record_with_streamripper(stream_url, output_file, duration, tool_path='/usr/bin/streamripper'):
     """Record using streamripper"""
     cmd = [
-        'streamripper',
+        tool_path,
         stream_url,
         '-l', str(duration),
         '-a', output_file,
@@ -100,10 +100,10 @@ def record_with_streamripper(stream_url, output_file, duration):
     except Exception as e:
         return False, str(e)
 
-def record_with_ffmpeg(stream_url, output_file, duration, user_agent=None):
+def record_with_ffmpeg(stream_url, output_file, duration, user_agent=None, tool_path='/usr/bin/ffmpeg'):
     """Record using ffmpeg with optional User-Agent"""
     cmd = [
-        'ffmpeg',
+        tool_path,
         '-i', stream_url,
         '-t', str(duration),
         '-acodec', 'mp3',
@@ -124,11 +124,11 @@ def record_with_ffmpeg(stream_url, output_file, duration, user_agent=None):
     except Exception as e:
         return False, str(e)
 
-def record_with_wget(stream_url, output_file, duration, user_agent=None):
+def record_with_wget(stream_url, output_file, duration, user_agent=None, tool_path='/usr/bin/wget'):
     """Record using wget with timeout and optional User-Agent"""
     cmd = [
         'timeout', str(duration),
-        'wget', '-O', output_file,
+        tool_path, '-O', output_file,
         '--timeout=10',
         '--tries=3'
     ]
@@ -150,7 +150,7 @@ def convert_aac_to_mp3(input_file, output_file):
     """Convert AAC file to MP3 using ffmpeg"""
     try:
         cmd = [
-            'ffmpeg',
+            '/usr/bin/ffmpeg',
             '-i', input_file,
             '-acodec', 'libmp3lame',
             '-ab', '128k',
@@ -240,14 +240,18 @@ def is_access_forbidden_error(error_message):
         '403 forbidden', 'access denied', 'authorization failed'
     ])
 
-def _try_recording_with_tool(tool_name, stream_url, output_file, duration, user_agent=None):
+def _try_recording_with_tool(tool_name, stream_url, output_file, duration, user_agent=None, tool_path=None):
     """Try recording with a specific tool"""
+    # Get tool path if not provided
+    if not tool_path:
+        tool_path = f"/usr/bin/{tool_name}"
+    
     if tool_name == 'streamripper':
-        return record_with_streamripper(stream_url, output_file, duration)
+        return record_with_streamripper(stream_url, output_file, duration, tool_path)
     elif tool_name == 'ffmpeg':
-        return record_with_ffmpeg(stream_url, output_file, duration, user_agent)
+        return record_with_ffmpeg(stream_url, output_file, duration, user_agent, tool_path)
     elif tool_name == 'wget':
-        return record_with_wget(stream_url, output_file, duration, user_agent)
+        return record_with_wget(stream_url, output_file, duration, user_agent, tool_path)
     else:
         return False, f"Unsupported tool: {tool_name}"
 
@@ -337,14 +341,14 @@ def perform_recording(stream_url, output_file, duration, station_id=None):
         
         # Try with ffmpeg first for User-Agent support
         if 'ffmpeg' in tools_available:
-            success, error = record_with_ffmpeg(stream_url, output_file, duration, saved_user_agent)
+            success, error = record_with_ffmpeg(stream_url, output_file, duration, saved_user_agent, tools_available['ffmpeg'])
             if success:
                 print(f"Success with saved User-Agent + ffmpeg")
                 successful_user_agent = saved_user_agent
         
         # Try with wget if ffmpeg failed
         if not success and 'wget' in tools_available:
-            success, error = record_with_wget(stream_url, output_file, duration, saved_user_agent)
+            success, error = record_with_wget(stream_url, output_file, duration, saved_user_agent, tools_available['wget'])
             if success:
                 print(f"Success with saved User-Agent + wget")
                 successful_user_agent = saved_user_agent
@@ -354,7 +358,7 @@ def perform_recording(stream_url, output_file, duration, station_id=None):
         tool_path, tool_name = get_recording_tool(stream_url)
         print(f"Strategy 2: Using {tool_name} at {tool_path} for stream: {stream_url}")
         
-        success, error = _try_recording_with_tool(tool_name, stream_url, output_file, duration)
+        success, error = _try_recording_with_tool(tool_name, stream_url, output_file, duration, None, tool_path)
         if success:
             successful_user_agent = None  # Default User-Agent worked
     
@@ -371,7 +375,7 @@ def perform_recording(stream_url, output_file, duration, station_id=None):
             
             # Try with ffmpeg first for User-Agent support
             if 'ffmpeg' in tools_available:
-                success, error = record_with_ffmpeg(stream_url, output_file, duration, user_agent)
+                success, error = record_with_ffmpeg(stream_url, output_file, duration, user_agent, tools_available['ffmpeg'])
                 if success:
                     print(f"Success with ffmpeg + User-Agent")
                     successful_user_agent = user_agent
@@ -379,7 +383,7 @@ def perform_recording(stream_url, output_file, duration, station_id=None):
             
             # Try with wget if ffmpeg failed
             if not success and 'wget' in tools_available:
-                success, error = record_with_wget(stream_url, output_file, duration, user_agent)
+                success, error = record_with_wget(stream_url, output_file, duration, user_agent, tools_available['wget'])
                 if success:
                     print(f"Success with wget + User-Agent")
                     successful_user_agent = user_agent
@@ -393,7 +397,7 @@ def perform_recording(stream_url, output_file, duration, station_id=None):
         for alt_tool in tool_order:
             if alt_tool in tools_available and alt_tool != tool_name:
                 print(f"Trying alternative tool: {alt_tool}")
-                alt_success, alt_error = _try_recording_with_tool(alt_tool, stream_url, output_file, duration)
+                alt_success, alt_error = _try_recording_with_tool(alt_tool, stream_url, output_file, duration, None, tools_available[alt_tool])
                 if alt_success:
                     success, error = alt_success, alt_error
                     print(f"Success with alternative tool: {alt_tool}")
