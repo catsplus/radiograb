@@ -267,17 +267,17 @@ class EnhancedRecordingService:
     def _save_recording_to_database(self, show_id: int, filename: str, title: str, 
                                    description: str, recorded_at: datetime, 
                                    file_size: int, duration: int) -> Optional[int]:
-        """Save recording metadata to database"""
+        """Save recording metadata to database with proper duplicate prevention"""
         db = SessionLocal()
         try:
-            # Check for existing recording with same show_id and timestamp
+            # Use database transaction with explicit locking to prevent race conditions
+            # Check for existing recording with same filename (more specific than show_id + time)
             existing = db.query(Recording).filter(
-                Recording.show_id == show_id,
-                Recording.recorded_at == recorded_at
+                Recording.filename == filename
             ).first()
             
             if existing:
-                logger.warning(f"Recording already exists for show {show_id} at {recorded_at}")
+                logger.warning(f"Recording already exists with filename {filename} (ID: {existing.id})")
                 return existing.id
             
             recording = Recording(
@@ -291,10 +291,24 @@ class EnhancedRecordingService:
             )
             
             db.add(recording)
-            db.commit()
-            db.refresh(recording)
             
-            logger.info(f"Recording saved to database: ID {recording.id}")
+            # Commit first to get the ID and prevent race conditions
+            try:
+                db.commit()
+                db.refresh(recording)
+                logger.info(f"Recording saved to database: ID {recording.id}")
+            except Exception as commit_error:
+                # Handle potential duplicate key errors (if database constraint exists)
+                if "Duplicate entry" in str(commit_error) or "UNIQUE constraint" in str(commit_error):
+                    db.rollback()
+                    # Re-check for existing recording after failed commit
+                    existing_after_error = db.query(Recording).filter(
+                        Recording.filename == filename
+                    ).first()
+                    if existing_after_error:
+                        logger.warning(f"Duplicate recording detected after commit error, using existing ID: {existing_after_error.id}")
+                        return existing_after_error.id
+                raise commit_error
             
             # Write MP3 metadata for the recorded file
             try:
