@@ -391,6 +391,87 @@ shows.php                           # ON-AIR functionality enabled
 - No overlap with show titles or action buttons
 - Clean separation from delete/edit controls
 
+## 📺 MULTIPLE SHOW AIRINGS SYSTEM
+
+### Original + Repeat Broadcasting Support
+The system now supports shows with multiple airings (original broadcasts plus repeats):
+
+**✅ Features:**
+- **Natural Language Parsing**: "Mondays at 7 PM and Thursdays at 3 PM"
+- **Keyword Detection**: Recognizes "original", "repeat", "encore", "rerun", "also"
+- **Multiple Separators**: Handles "and", commas, "also", "plus" in schedule text
+- **Priority Assignment**: Original broadcasts get priority 1, repeats get 2+
+- **Complex Scheduling**: "Original Wednesday 9AM, repeat Thursday 2PM, encore Sunday 6PM"
+- **Database Normalization**: Separate `show_schedules` table for multiple patterns per show
+
+**🔧 Technical Components:**
+```bash
+# Database Schema:
+show_schedules                          # Multiple schedule patterns per show
+├── schedule_pattern (cron)            # Individual cron pattern for this airing
+├── airing_type (original/repeat/special)
+├── priority (1=highest)               # Primary airing priority
+└── active (boolean)                   # Enable/disable specific airings
+
+# Parser Services:
+backend/services/multiple_airings_parser.py    # Detect multiple airings from text
+backend/services/show_schedules_manager.py     # Manage multiple schedule patterns
+
+# Database Migration:
+database/migrations/add_multiple_show_schedules.sql
+
+# Testing:
+test_multiple_airings.py               # Comprehensive test suite
+```
+
+**📊 Supported Schedule Formats:**
+```text
+# Single Airings (unchanged)
+"Mondays at 7 PM"                     → 1 schedule
+"Weekdays at 6:30 AM"                 → 1 schedule
+
+# Multiple Airings with Separators
+"Mondays at 7 PM and Thursdays at 3 PM"     → 2 schedules
+"Mon 7PM, Thu 3PM"                           → 2 schedules
+"Tuesday 9AM, Saturday 2PM"                  → 2 schedules
+
+# Multiple Airings with Keywords
+"Mondays at 7 PM, repeat on Thursdays at 3 PM"      → 2 schedules (original + repeat)
+"Original broadcast Tuesday 9 AM, encore Friday 6 PM" → 2 schedules (original + repeat)
+"Live Wednesdays at noon, rerun Sundays at 8 PM"     → 2 schedules (original + repeat)
+
+# Complex Multiple Airings
+"Original Wednesday 9AM, repeat Thursday 2PM, encore Sunday 6PM" → 3 schedules
+"First airing Monday 7PM, also Tuesday 3PM and Saturday noon"   → 3 schedules
+```
+
+**🎯 Database Structure:**
+```sql
+-- Example: Show with multiple airings
+show_schedules:
+  id=1, show_id=50, schedule_pattern="0 19 * * 1", airing_type="original", priority=1
+  id=2, show_id=50, schedule_pattern="0 15 * * 4", airing_type="repeat", priority=2
+  id=3, show_id=50, schedule_pattern="0 18 * * 0", airing_type="repeat", priority=3
+
+-- Shows table updated with flag
+shows.uses_multiple_schedules = TRUE  (when show has >1 schedule)
+```
+
+**🚀 Management Commands:**
+```bash
+# Test the parser with various inputs
+python test_multiple_airings.py
+
+# Migrate legacy single schedules to new system
+python backend/services/show_schedules_manager.py --migrate
+
+# Add multiple schedules for a show
+python backend/services/show_schedules_manager.py --show-id 50 --schedule-text "Mon 7PM and Thu 3PM"
+
+# List all active schedules
+python backend/services/show_schedules_manager.py --list-schedules
+```
+
 ## 🔧 TECHNICAL REQUIREMENTS
 
 ### Python Execution (CRITICAL!)
@@ -990,6 +1071,16 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git status && git stash && git
 
 ## 🆕 RECENT UPDATES (July 2025)
 
+### ✅ Multiple Show Airings System (Completed July 29, 2025)
+- **Original + Repeat Support**: Shows can now have multiple airings (original + repeat broadcasts)
+- **Natural Language Parser**: "Mondays at 7 PM and Thursdays at 3 PM" → 2 separate schedules
+- **Keyword Detection**: Recognizes "original", "repeat", "encore", "rerun", "also" keywords
+- **Complex Scheduling**: "Original Wed 9AM, repeat Thu 2PM, encore Sun 6PM" → 3 schedules
+- **Database Normalization**: New `show_schedules` table for multiple patterns per show
+- **Priority System**: Original broadcasts get priority 1, repeats get 2+
+- **Backward Compatibility**: Existing single schedules continue working unchanged
+- **Comprehensive Testing**: 17 test cases covering all parsing scenarios
+
 ### ✅ ON-AIR Indicator System (Completed July 28, 2025)
 - **Real-Time Recording Status**: Live visual indicators for shows currently being recorded
 - **Animated UI Elements**: Pulsing red ON-AIR badges with progress tracking
@@ -999,6 +1090,7 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git status && git stash && git
 - **JavaScript Manager**: Automatic status updates every 30 seconds
 - **Browser Integration**: Page title updates with 🔴 indicator during recordings
 - **Site-wide Banners**: Recording notifications appear across all pages
+- **Stations Page Integration**: ON-AIR functionality extended to stations view
 
 ### ✅ TTL (Time-to-Live) Recording Management (Completed July 25, 2025)
 - **Configurable Expiry**: Default 2-week retention with days/weeks/months/indefinite options
