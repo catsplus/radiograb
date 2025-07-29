@@ -276,6 +276,12 @@ try {
         <?php else: ?>
             <div class="row">
                 <?php foreach ($shows as $show): ?>
+                    <?php 
+                    // Skip On-Demand Recording shows with no recordings
+                    if (strpos($show['name'], 'On-Demand Recordings') !== false && $show['recording_count'] == 0) {
+                        continue;
+                    }
+                    ?>
                     <div class="col-lg-6 col-xl-4 mb-4">
                         <div class="card h-100 show-card" data-show-id="<?= $show['id'] ?>" data-station-call="<?= h($show['call_letters']) ?>">
                             <!-- Show Image Header -->
@@ -465,14 +471,6 @@ try {
                                         </div>
                                     <?php endif; ?>
                                     
-                                    <?php if ($show['timezone'] || $show['station_timezone']): ?>
-                                        <div class="mt-1">
-                                            <small class="text-muted">
-                                                <i class="fas fa-clock"></i> 
-                                                <?= h($show['timezone'] ?: $show['station_timezone']) ?>
-                                            </small>
-                                        </div>
-                                    <?php endif; ?>
                                     
                                     <?php if ($show['duration_minutes']): ?>
                                         <div class="mt-1">

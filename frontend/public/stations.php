@@ -137,6 +137,11 @@ try {
                                     <div class="flex-grow-1">
                                         <h5 class="card-title mb-1"><?= h($station['name']) ?></h5>
                                         <small class="text-muted"><?= h($station['website_url']) ?></small>
+                                        
+                                        <!-- Social Media Icons -->
+                                        <div class="social-media-icons mt-2">
+                                            <?= generateSocialMediaIcons($station) ?>
+                                        </div>
                                     </div>
                                     <div class="d-flex align-items-center">
                                         <span class="badge <?= $station['status'] === 'active' ? 'status-active' : 'status-inactive' ?> me-2">

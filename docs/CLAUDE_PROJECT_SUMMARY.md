@@ -1,18 +1,20 @@
 # RadioGrab Project Summary & Goals
 
 ## Project Overview
-**RadioGrab** is a comprehensive radio station recording and management system - essentially a "Radio Recording System for radio stations." It automatically discovers, schedules, and records radio shows from streaming stations, then makes them available via RSS feeds for podcast consumption.
+**RadioGrab** is a comprehensive radio station recording and management system - essentially a "Radio Recording System for radio stations." It automatically discovers, schedules, and records radio shows from streaming stations, supports user playlist uploads with comprehensive metadata management, and makes everything available via RSS feeds for podcast consumption.
 
 ## Core Functionality
 - **Station Discovery**: Automatically crawl radio station websites to discover streaming URLs, logos, schedules, and metadata
 - **Show Scheduling**: Import show schedules and convert them to automated recording schedules
 - **Automated Recording**: Record radio shows using streamripper based on cron schedules
-- **RSS Feed Generation**: Create podcast-style RSS feeds of recorded shows
-- **Web Management Interface**: Complete web UI for managing stations, shows, and recordings
+- **Playlist Upload System**: User audio file uploads with multi-format support and drag & drop track ordering
+- **MP3 Metadata Management**: Comprehensive metadata writing for all recordings and uploads (artist=show name, album=station name, etc.)
+- **RSS Feed Generation**: Create podcast-style RSS feeds of recorded shows and playlists
+- **Web Management Interface**: Complete web UI for managing stations, shows, recordings, and playlists
 
 ## Technical Architecture ⚠️ DOCKER CONTAINERS ⚠️
 - **Frontend**: PHP-based web interface with Bootstrap UI (RUNS IN `radiograb-web-1` CONTAINER)
-- **Backend**: Python services for discovery, recording, and RSS generation (RUNS IN CONTAINERS)
+- **Backend**: Python services for discovery, recording, upload processing, MP3 metadata management, and RSS generation (RUNS IN CONTAINERS)
 - **Database**: MySQL for storing stations, shows, schedules, and recordings (RUNS IN `radiograb-mysql-1` CONTAINER)
 - **🚨 DEPLOYMENT**: FULLY DOCKER CONTAINERIZED on Ubuntu server at radiograb.svaha.com
 - **🚨 SERVER**: DigitalOcean droplet (167.71.84.143) accessible via SSH as `radiograb` user
@@ -26,6 +28,10 @@
 - **Backend Python**: `/opt/radiograb/backend/`
 - **Models**: `/opt/radiograb/backend/models/station.py`
 - **Services**: `/opt/radiograb/backend/services/`
+  - `mp3_metadata_service.py`: MP3 metadata writing with FFmpeg
+  - `upload_service.py`: Audio file upload processing and validation
+  - `recording_service.py`: Automated recording management
+  - `rss_service.py`: RSS feed generation with playlist support
 - **Database Config**: `/opt/radiograb/backend/config/database.py`
 
 **radiograb-recorder-1 Container:**
@@ -58,6 +64,8 @@
 - **webdriver-manager**: Automatic Chrome WebDriver management for JavaScript parsing
 - **beautifulsoup4**: HTML parsing for station discovery and schedule extraction
 - **feedparser**: RSS/XML feed parsing for podcast functionality
+- **mutagen**: MP3 metadata reading and writing for uploaded files
+- **ffmpeg-python**: FFmpeg integration for audio processing and metadata writing
 
 **System Dependencies:**
 - **Python 3.10**: Runtime environment
@@ -65,6 +73,20 @@
 - **Ubuntu 22.04**: Base container OS
 
 ## Major Features Implemented
+
+### Playlist Upload & Management System
+- **Multi-Format Upload Support**: Upload MP3, WAV, M4A, AAC, OGG, FLAC with automatic MP3 conversion
+- **Drag & Drop Track Ordering**: Real-time playlist management with track reordering interface
+- **Upload Progress Tracking**: Visual progress indicators with comprehensive error handling
+- **File Validation**: Audio format validation, size limits, and quality verification
+- **Playlist Interface**: Dedicated management modal with drag & drop and manual track numbering
+
+### MP3 Metadata Management
+- **Comprehensive Metadata Writing**: All recordings tagged with artist=show name, album=station name, recording date, description
+- **Upload Metadata Enhancement**: Preserves existing metadata while adding show/station information
+- **FFmpeg Integration**: Backend service using FFmpeg for reliable metadata writing
+- **Automatic Tagging**: Genre support and metadata source tracking
+- **Service Architecture**: Dedicated `mp3_metadata_service.py` for consistent metadata management
 
 ### Station Discovery System
 - **Auto-discovery from website URLs**: Input just a station website, system discovers everything else
@@ -102,11 +124,12 @@
 - **Universal compatibility**: 100% stream support through multi-tool fallback system
 
 ### RSS/Podcast System
-- **Automatic RSS generation**: Create podcast feeds for each show
-- **Master feed**: Combined RSS feed of all shows for single subscription
-- **iTunes-compatible**: Proper podcast metadata and enclosures
-- **Feed updates**: Regular RSS feed updates with new recordings
-- **Web access**: Direct HTTP access to recordings and feeds
+- **Automatic RSS generation**: Create podcast feeds for each show and playlist
+- **Master feed**: Combined RSS feed of all shows and playlists for single subscription
+- **Playlist Support**: RSS feeds include uploaded tracks with proper track ordering
+- **iTunes-compatible**: Proper podcast metadata and enclosures with enhanced MP3 metadata
+- **Feed updates**: Regular RSS feed updates with new recordings and uploads
+- **Web access**: Direct HTTP access to recordings, uploads, and feeds
 - **Copy-to-clipboard**: Robust clipboard functionality for easy feed sharing
 - **QR codes**: Mobile-friendly QR codes for podcast app subscriptions
 
@@ -118,6 +141,13 @@
 5. **Flexibility**: Handle different station formats and schedule types
 
 ## Recent Major Accomplishments
+- **Complete Playlist Upload System**: Implemented multi-format audio file uploads (MP3, WAV, M4A, AAC, OGG, FLAC) with drag & drop track ordering, automatic MP3 conversion, and comprehensive file validation
+- **MP3 Metadata Implementation**: Added comprehensive metadata writing for all recordings and uploads using FFmpeg integration (artist=show name, album=station name, recording date, description, genre)
+- **Database Schema Extensions**: Extended database with playlist support fields (show_type, allow_uploads, max_file_size_mb, source_type, track_number, original_filename) and proper migrations
+- **Enhanced Web Interface**: Added show type selection (scheduled/playlist), upload functionality, playlist management modal with drag & drop reordering, and real-time progress tracking
+- **RSS Feed Playlist Support**: Enhanced RSS generation to include uploaded tracks with proper track ordering and metadata integration
+- **Legal Compliance Updates**: Replaced all "TiVo for Radio" references with legally neutral "Radio Recorder" terminology throughout codebase and documentation
+- **UI Improvements**: Hidden empty On-Demand Recording shows, removed timezone display from show blocks, enhanced upload/playlist management interface
 - **Refactored calendar parsing**: Removed hardcoded data, created generic pattern-based parsers
 - **Enhanced station discovery**: Deep stream detection, better filtering, multiple strategies
 - **Fixed import issues**: Resolved database schema mismatches, aggressive duplicate detection
@@ -128,18 +158,20 @@
 - **Live Recording Verification**: Confirmed end-to-end recording functionality with successful 30-second WEHC test
 - **Multi-Tool Recording Solution**: Solved all stream compatibility issues using wget + ffmpeg for modern streaming protocols, redirects, and authentication
 - **Automatic Stream Testing Integration**: Implemented comprehensive stream validation during station discovery with multi-tool testing, compatibility scoring, and optimal tool recommendation
-- **Master RSS Feed**: Added combined RSS feed functionality that aggregates all recorded shows into a single chronological feed for easier podcast subscription management
+- **Master RSS Feed**: Added combined RSS feed functionality that aggregates all recorded shows and playlists into a single chronological feed for easier podcast subscription management
 - **Enhanced Copy-to-Clipboard**: Implemented robust clipboard functionality with fallback support for HTTP/HTTPS and cross-browser compatibility
 - **JavaScript-Aware Schedule Parsing**: Complete Selenium-based solution for parsing dynamic calendar content, including embedded Google Sheets, WordPress plugins, and AJAX-loaded schedules - solved parsing issues for stations like WTBR that use JavaScript-rendered calendars
 
 ## Current Status
 - **Deployment**: Live on radiograb.svaha.com with Docker containers
-- **Functionality**: COMPLETE END-TO-END SYSTEM OPERATIONAL
+- **Functionality**: COMPLETE END-TO-END SYSTEM OPERATIONAL with playlist upload support
 - **Live Recording**: Successfully verified with ALL stations (WEHC/WERU/WYSO)
+- **Playlist System**: Full upload/management functionality with MP3 metadata integration
 - **Stream Discovery**: Headless Chrome+Selenium solution for JavaScript players
 - **Recording Tools**: Multi-tool support (streamripper/wget/ffmpeg) for universal compatibility
 - **Stream Testing**: Automatic compatibility validation with 100% success rate prediction
-- **Performance**: Handles real-world station formats and schedules
+- **Performance**: Handles real-world station formats, schedules, and user uploads
+- **Version**: v2.11.0 with comprehensive playlist and metadata capabilities
 
 ## Technical Debt & Future Improvements
 - **Database schema**: Some fields missing (genre, duration_minutes, auto_imported)
@@ -173,15 +205,20 @@
 - **Container Management**: All containers run under `radiograb` user context
 
 ## Key Files & Directories
-- **Frontend**: `frontend/public/` - PHP web interface
+- **Frontend**: `frontend/public/` - PHP web interface with playlist upload functionality
 - **Backend**: `backend/services/` - Python services
-- **Discovery**: `backend/services/station_discovery.py`
-- **Calendar Parsing**: `backend/services/calendar_parser.py`, `backend/services/js_calendar_parser.py`
-- **Schedule Import**: `backend/services/schedule_importer.py`
-- **RSS Management**: `backend/services/rss_manager.py`, `backend/services/rss_service.py`
-- **API Endpoints**: `frontend/public/api/feeds.php`, `frontend/public/api/master-feed.php`
-- **Database**: `database/schema.sql`
-- **Config**: `docker-compose.yml`, `.env`, `requirements.txt`
+  - **MP3 Metadata**: `backend/services/mp3_metadata_service.py`
+  - **Upload Processing**: `backend/services/upload_service.py`
+  - **Discovery**: `backend/services/station_discovery.py`
+  - **Calendar Parsing**: `backend/services/calendar_parser.py`, `backend/services/js_calendar_parser.py`
+  - **Schedule Import**: `backend/services/schedule_importer.py`
+  - **RSS Management**: `backend/services/rss_manager.py`, `backend/services/rss_service.py`
+- **API Endpoints**: 
+  - `frontend/public/api/feeds.php`, `frontend/public/api/master-feed.php`
+  - `frontend/public/api/upload.php` - Audio file upload processing
+  - `frontend/public/api/playlist-tracks.php` - Playlist management
+- **Database**: `database/schema.sql` with playlist support extensions
+- **Config**: `docker-compose.yml`, `.env`, `requirements.txt` with new dependencies
 
 ## Success Metrics
 - **Station addition time**: Should take <5 minutes from URL to working recordings

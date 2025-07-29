@@ -53,6 +53,10 @@ sudo dnf install -y python3 python3-pip mysql-server nginx php-fpm php-mysql php
 python3 -m venv /opt/radiograb/venv
 source /opt/radiograb/venv/bin/activate
 pip install -r requirements.txt
+
+# Additional dependencies for logo and social media features (2025-07-29)
+pip install Pillow  # Image processing for logo optimization
+# selenium is automatically installed via pip if needed for JavaScript-aware parsing
 ```
 
 ## Installation
@@ -71,7 +75,7 @@ sudo chown -R www-data:www-data /opt/radiograb/frontend
 sudo chmod -R 755 /opt/radiograb/frontend
 
 # Create directories
-sudo mkdir -p /var/radiograb/{recordings,feeds,logs,temp}
+sudo mkdir -p /var/radiograb/{recordings,feeds,logs,temp,logos}
 sudo chown -R www-data:www-data /var/radiograb
 ```
 
@@ -94,6 +98,10 @@ EOF
 
 # Import schema
 mysql -u radiograb -p radiograb < database/schema.sql
+
+# Apply logo and social media migrations (2025-07-29)
+mysql -u radiograb -p radiograb < database/migrations/add_logo_storage_fields.sql
+mysql -u radiograb -p radiograb < database/migrations/add_show_playlist_support.sql
 ```
 
 ### 4. Configuration
@@ -188,6 +196,14 @@ server {
         add_header Cache-Control "public, max-age=300";
     }
 
+    # Station logos (2025-07-29)
+    location /logos/ {
+        alias /var/radiograb/logos/;
+        add_header Cache-Control "public, max-age=604800";
+        add_header Access-Control-Allow-Origin "*";
+        expires 7d;
+    }
+
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
@@ -278,6 +294,38 @@ sudo systemctl enable radiograb-recorder
 sudo systemctl enable radiograb-rss.timer
 sudo systemctl start radiograb-recorder
 sudo systemctl start radiograb-rss.timer
+```
+
+### 7. Logo and Social Media Services (New 2025-07-29)
+
+#### Initial Logo Population
+After deployment, populate station logos and social media links:
+
+```bash
+# Method 1: Via web interface
+# Visit https://yourdomain.com/admin (if admin interface exists)
+# Click "Update All Station Logos"
+
+# Method 2: Via API call
+curl -X POST "https://yourdomain.com/api/station-logo-update.php" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "update_station_logos", "csrf_token": "your_token"}'
+
+# Method 3: Via command line
+cd /opt/radiograb
+source venv/bin/activate
+python backend/services/logo_storage_service.py --update-all-stations
+python backend/services/facebook_logo_extractor.py --extract-all
+python backend/services/social_media_detector.py --scan-all-stations
+```
+
+#### Verify Logo Storage
+```bash
+# Check logo directory
+ls -la /var/radiograb/logos/
+
+# Test logo serving
+curl -I "https://yourdomain.com/logos/station_1_logo.png"
 ```
 
 ## Configuration

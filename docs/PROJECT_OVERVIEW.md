@@ -6,37 +6,51 @@ RadioGrab transforms any radio station into a personal podcast library. It's a "
 
 ## ✨ Key Innovations
 
-### 1. **JavaScript-Aware Schedule Parsing**
+### 1. **Complete Playlist Upload System**
+- User audio file uploads with multi-format support (MP3, WAV, M4A, AAC, OGG, FLAC)
+- Drag & drop track ordering with automatic sequential numbering
+- Real-time playlist management with track reordering interface
+- Automatic format conversion to MP3 with quality validation
+- Upload progress tracking and comprehensive error handling
+
+### 2. **Comprehensive MP3 Metadata Implementation**
+- Automatic metadata writing for all recordings using FFmpeg integration
+- Standardized tagging: artist=show name, album=station name, recording date, description
+- Upload metadata enhancement preserves existing tags while adding show/station information
+- Genre tagging support with metadata source tracking
+- Backend service architecture for consistent metadata management
+
+### 3. **JavaScript-Aware Schedule Parsing**
 - Handles dynamic web calendars (WordPress plugins, FullCalendar, etc.)
 - Selenium WebDriver for JavaScript rendering
 - Google Sheets iframe parsing for embedded schedules
 - Eliminates "No shows found" issues with modern station websites
 
-### 2. **Intelligent Recording Tool Management**
+### 4. **Intelligent Recording Tool Management**
 - Tests and stores optimal recording method per station (streamripper/wget/ffmpeg)
 - Eliminates repeated compatibility discovery
 - Database storage of stream testing results
 - Automatic fallback to alternative tools when needed
 
-### 3. **Comprehensive Test & On-Demand System**
+### 5. **Comprehensive Test & On-Demand System**
 - **Test Recording**: 30-second stream validation with one-click button
 - **On-Demand Recording**: 1-hour manual recordings from station cards
 - Automatic show creation for on-demand recordings
 - Test files isolated in temporary directory
 
-### 4. **Automatic Housekeeping Service**
+### 6. **Automatic Housekeeping Service**
 - Runs every 6 hours to clean empty recording files
 - Prevents accumulation of 33,000+ zero-byte files
 - Removes orphaned database records
 - Logs cleanup statistics and performance metrics
 
-### 5. **Advanced Timezone Management**
+### 7. **Advanced Timezone Management**
 - Per-station timezone storage and handling
 - Container-wide EST/EDT timezone configuration
 - Prevents recordings at wrong times due to timezone confusion
 - Database fields for station and show timezone preferences
 
-### 6. **Call Letters File Organization**
+### 8. **Call Letters File Organization**
 - Human-readable naming: `{CALL_LETTERS}_{show_name}_YYYYMMDD_HHMM.mp3`
 - Easy identification with 4-letter call signs (WEHC, WERU, WTBR, WYSO)
 - Improved file management and organization
@@ -90,7 +104,53 @@ Web Interface → API → Background Service → Recording Tools → File Storag
 - **iframe Parsing**: Google Sheets and embedded calendar extraction
 - **Plugin Detection**: WordPress calendar plugin identification
 
-### 2. **Recording Tool Intelligence**
+### 2. **MP3 Metadata Service Architecture**
+```python
+# Comprehensive metadata writing with FFmpeg
+def write_metadata_for_recording(self, recording_id: int) -> bool:
+    """Write comprehensive MP3 metadata for recording"""
+    recording = db.query(Recording).filter(Recording.id == recording_id).first()
+    show = recording.show
+    station = show.station
+    
+    metadata = {
+        'artist': show.name,
+        'album': station.name,
+        'title': f"{show.name} - {recording.recorded_at.strftime('%Y-%m-%d')}",
+        'comment': show.description or f"Recorded from {station.name}",
+        'date': recording.recorded_at.strftime('%Y-%m-%d'),
+        'genre': show.genre or 'Radio Show'
+    }
+    
+    return self._write_metadata_with_ffmpeg(recording.filename, metadata)
+```
+
+### 3. **Upload Service with Format Conversion**
+```python
+# Multi-format upload handling with automatic conversion
+def handle_audio_upload(self, file_data: bytes, filename: str, show_id: int) -> Dict:
+    """Process uploaded audio file with format validation and conversion"""
+    # Validate audio format
+    if not self._is_valid_audio_file(file_data, filename):
+        raise ValueError("Invalid audio file format")
+    
+    # Convert to MP3 if needed
+    if not filename.lower().endswith('.mp3'):
+        file_data = self._convert_to_mp3(file_data, filename)
+        filename = filename.rsplit('.', 1)[0] + '.mp3'
+    
+    # Extract and enhance metadata
+    metadata = self._extract_metadata(file_data)
+    enhanced_metadata = self._enhance_upload_metadata(metadata, show_id)
+    
+    # Save file and write metadata
+    saved_path = self._save_upload_file(file_data, filename, show_id)
+    self._write_metadata(saved_path, enhanced_metadata)
+    
+    return {'success': True, 'filename': filename, 'metadata': enhanced_metadata}
+```
+
+### 4. **Recording Tool Intelligence**
 ```python
 # Intelligent tool selection with database storage
 def _get_station_recommended_tool(self, show_id: int) -> Optional[str]:
@@ -103,7 +163,7 @@ def _get_station_recommended_tool(self, show_id: int) -> Optional[str]:
     return None
 ```
 
-### 3. **Automatic Cleanup System**
+### 5. **Automatic Cleanup System**
 ```python
 # Prevents empty file accumulation
 def cleanup_empty_recordings(self) -> Dict:
@@ -119,7 +179,7 @@ def cleanup_empty_recordings(self) -> Dict:
     return {'files_removed': len(empty_files), 'records_cleaned': orphaned_records}
 ```
 
-### 4. **Deployment Automation**
+### 6. **Deployment Automation**
 ```bash
 # Comprehensive deployment with verification
 ./deploy.sh                    # Full system deployment
@@ -134,6 +194,14 @@ def cleanup_empty_recordings(self) -> Dict:
 - **On-Demand Recordings**: 1-hour manual captures
 - **Multi-Tool Support**: streamripper, wget, ffmpeg with intelligent selection
 - **Automatic Cleanup**: Empty file prevention and removal
+- **MP3 Metadata**: Comprehensive metadata writing for all recordings
+
+### Playlist Management
+- **User Uploads**: Multi-format audio file uploads (MP3, WAV, M4A, AAC, OGG, FLAC)
+- **Track Ordering**: Drag & drop reordering with sequential numbering
+- **Format Conversion**: Automatic conversion to MP3 with quality validation
+- **Metadata Enhancement**: Upload metadata preserved and enhanced with show/station info
+- **Playlist Interface**: Dedicated management interface with real-time updates
 
 ### Station Management  
 - **Discovery Engine**: Automatic stream URL detection
@@ -143,10 +211,11 @@ def cleanup_empty_recordings(self) -> Dict:
 - **Tool Preference**: Optimal recording method per station
 
 ### File Organization
-- **Consistent Naming**: Station-prefixed filenames
-- **Directory Structure**: Separated test, on-demand, and scheduled recordings
-- **RSS Generation**: iTunes-compatible feeds with master feed
-- **Web Interface**: Built-in audio player and management
+- **Consistent Naming**: Station-prefixed filenames with call letters
+- **Directory Structure**: Separated test, on-demand, scheduled recordings, and uploaded files
+- **RSS Generation**: iTunes-compatible feeds with master feed and playlist support
+- **Web Interface**: Built-in audio player and management with upload functionality
+- **Metadata Management**: Automatic MP3 tagging with FFmpeg integration
 
 ## 🎯 Problem Solutions
 

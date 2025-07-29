@@ -333,6 +333,7 @@ docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services
 /var/radiograb/feeds/             # RSS feeds
 /var/radiograb/temp/              # Test recordings
 /var/radiograb/logs/              # Application logs
+/var/radiograb/logos/             # Local station logos and social media images (2025-07-29)
 ```
 
 ## 📺 ON-AIR INDICATOR SYSTEM
@@ -1071,6 +1072,26 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git status && git stash && git
 
 ## 🆕 RECENT UPDATES (July 2025)
 
+### ✅ Playlist Upload System & MP3 Metadata Implementation (Completed July 29, 2025)
+- **Complete Playlist System**: Multi-format audio file uploads (MP3, WAV, M4A, AAC, OGG, FLAC) with automatic MP3 conversion
+- **Drag & Drop Track Ordering**: Real-time playlist management with track reordering interface and sequential numbering
+- **Comprehensive MP3 Metadata**: All recordings tagged with artist=show name, album=station name, recording date, description, genre
+- **Upload Metadata Enhancement**: User uploads preserve existing metadata while adding show/station information
+- **Database Schema Extensions**: Added playlist support fields (show_type, allow_uploads, track_number, source_type, original_filename)
+- **Enhanced Web Interface**: Show type selection, upload functionality, playlist management modal with progress tracking
+- **RSS Feed Playlist Support**: Enhanced RSS generation to include uploaded tracks with proper track ordering
+- **FFmpeg Integration**: Backend service architecture for reliable metadata writing and audio processing
+- **File Validation**: Comprehensive audio format validation, size limits, and quality verification
+- **Legal Compliance**: Replaced all "TiVo for Radio" references with legally neutral "Radio Recorder" terminology
+
+### ✅ UI Improvements & User Experience (Completed July 29, 2025)
+- **Empty Show Hiding**: On-Demand Recording shows with 0 recordings are now hidden from shows page for cleaner interface
+- **Timezone Display Removal**: Removed timezone display from show blocks to reduce visual clutter
+- **Upload Progress Tracking**: Real-time progress indicators with comprehensive error handling and status updates
+- **Playlist Management Interface**: Dedicated modal with drag & drop functionality and visual feedback
+- **Enhanced Show Cards**: Improved layout with better spacing and information hierarchy
+- **Real-time Updates**: AJAX-powered interface updates without page reloads
+
 ### ✅ Multiple Show Airings System (Completed July 29, 2025)
 - **Original + Repeat Support**: Shows can now have multiple airings (original + repeat broadcasts)
 - **Natural Language Parser**: "Mondays at 7 PM and Thursdays at 3 PM" → 2 separate schedules
@@ -1228,6 +1249,21 @@ Recent recordings (7 days): 1
 - **Manual Re-check Buttons**: "Re-check calendar now" buttons for each station
 - **Git Repository Permissions**: Fixed radiograb user git permissions for proper deployment workflow
 - **File Permissions**: Corrected ownership issues to enable non-root deployment operations
+
+### ✅ Logo and Social Media System (Completed July 2025)
+- **Local Logo Storage**: All station logos downloaded and stored in `/var/radiograb/logos/`
+- **Facebook Logo Extraction**: Automatic fallback to Facebook profile pictures when website logos unavailable
+- **Social Media Integration**: Detection and display of 10+ social platforms (Facebook, Twitter, Instagram, YouTube, etc.)
+- **Consistent Logo Sizing**: All logos displayed at uniform 60x60px with proper aspect ratio
+- **Image Optimization**: Logos resized to max 400x400px and optimized for web delivery
+- **Database Extensions**: JSON storage for social media links with platform metadata
+- **API Management**: Bulk and individual station logo/social media updates via API
+
+### New Services (2025-07-29)
+- **logo_storage_service.py**: Downloads, optimizes, and stores station logos locally
+- **facebook_logo_extractor.py**: Extracts profile pictures from Facebook pages  
+- **social_media_detector.py**: Detects and categorizes social media links
+- **station-logo-update.php**: API for bulk updating station logos and social media
 
 ### 🔄 Known Outstanding Issues
 - **Schedule Parser Integration**: Need to fix `parse_station_schedule` method for full verification functionality

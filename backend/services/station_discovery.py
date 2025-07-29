@@ -11,6 +11,9 @@ from urllib.parse import urljoin, urlparse
 import logging
 from typing import Dict, List, Optional, Tuple
 from stream_tester import StreamTester
+from social_media_detector import SocialMediaDetector
+from facebook_logo_extractor import FacebookLogoExtractor
+from logo_storage_service import LogoStorageService
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -65,6 +68,11 @@ class StationDiscovery:
         })
         if self.test_streams:
             self.stream_tester = StreamTester()
+        
+        # Initialize new services
+        self.social_media_detector = SocialMediaDetector()
+        self.facebook_extractor = FacebookLogoExtractor()
+        self.logo_storage = LogoStorageService()
     
     def discover_station(self, website_url: str) -> Dict:
         """
@@ -116,8 +124,10 @@ class StationDiscovery:
             result['frequency'] = self._extract_frequency(soup)
             result['location'] = self._extract_location(soup)
             result['description'] = self._extract_description(soup)
-            result['logo_url'] = self._extract_logo(soup, website_url)
-            result['social_links'] = self._extract_social_links(soup)
+            # Extract logo information (enhanced with Facebook fallback and local storage)
+            logo_info = self._extract_logo(soup, website_url)
+            result.update(logo_info)
+            result['social_links'] = self._extract_social_links(soup, website_url)
             result['discovered_links'] = self._extract_navigation_links(soup, website_url)
             
             # Find streaming URLs
@@ -245,30 +255,99 @@ class StationDiscovery:
                 
         return None
     
-    def _extract_logo(self, soup: BeautifulSoup, base_url: str) -> Optional[str]:
-        """Extract station logo URL"""
-        # Try common logo selectors
+    def _extract_logo(self, soup: BeautifulSoup, base_url: str, station_id: Optional[int] = None) -> Dict:
+        """Extract station logo URL with enhanced detection and local storage"""
+        logo_result = {
+            'logo_url': None,
+            'local_logo_path': None,
+            'logo_source': None,
+            'facebook_url': None
+        }
+        
+        # Try common logo selectors on website
         logo_selectors = [
             'img[alt*="logo" i]',
             'img[src*="logo" i]',
             'img[class*="logo" i]',
             '.logo img',
-            '#logo img',
+            '#logo img', 
             'header img',
             '.header img'
         ]
         
+        website_logo_url = None
         for selector in logo_selectors:
             img = soup.select_one(selector)
             if img and img.get('src'):
-                return urljoin(base_url, img['src'])
+                website_logo_url = urljoin(base_url, img['src'])
+                break
         
         # Try favicon as fallback
-        favicon = soup.find('link', rel='icon') or soup.find('link', rel='shortcut icon')
-        if favicon and favicon.get('href'):
-            return urljoin(base_url, favicon['href'])
+        if not website_logo_url:
+            favicon = soup.find('link', rel='icon') or soup.find('link', rel='shortcut icon')
+            if favicon and favicon.get('href'):
+                website_logo_url = urljoin(base_url, favicon['href'])
+        
+        # If we found a logo on the website, try to download it
+        if website_logo_url and station_id:
+            logger.info(f"Found website logo: {website_logo_url}")
+            stored_logo = self.logo_storage.download_and_store_logo(
+                website_logo_url, station_id, 'website'
+            )
+            if stored_logo:
+                logo_result.update({
+                    'logo_url': website_logo_url,
+                    'local_logo_path': stored_logo['local_path'],
+                    'logo_source': 'website'
+                })
+                return logo_result
+        
+        # If no website logo found, try Facebook as fallback
+        social_links = self._extract_social_links(soup, base_url)
+        facebook_info = social_links.get('facebook')
+        
+        if facebook_info and facebook_info.get('url'):
+            facebook_url = facebook_info['url']
+            logger.info(f"No website logo found, trying Facebook: {facebook_url}")
             
-        return None
+            try:
+                fb_logo_result = self.facebook_extractor.extract_facebook_logo(facebook_url)
+                if fb_logo_result and fb_logo_result.get('logo_url'):
+                    fb_logo_url = fb_logo_result['logo_url']
+                    
+                    # Try to download and store Facebook logo
+                    if station_id:
+                        stored_logo = self.logo_storage.download_and_store_logo(
+                            fb_logo_url, station_id, 'facebook'
+                        )
+                        if stored_logo:
+                            logo_result.update({
+                                'logo_url': fb_logo_url,
+                                'local_logo_path': stored_logo['local_path'],
+                                'logo_source': 'facebook',
+                                'facebook_url': facebook_url
+                            })
+                            return logo_result
+                    else:
+                        # Just return the URL if no station_id for storage
+                        logo_result.update({
+                            'logo_url': fb_logo_url,
+                            'logo_source': 'facebook',
+                            'facebook_url': facebook_url
+                        })
+                        return logo_result
+                        
+            except Exception as e:
+                logger.warning(f"Failed to extract Facebook logo: {e}")
+        
+        # Return original website logo URL even if storage failed
+        if website_logo_url:
+            logo_result.update({
+                'logo_url': website_logo_url,
+                'logo_source': 'website'
+            })
+        
+        return logo_result
     
     def _find_streaming_urls(self, soup: BeautifulSoup, base_url: str) -> List[str]:
         """Find potential streaming URLs on the page with deep discovery"""
@@ -541,24 +620,9 @@ class StationDiscovery:
         
         return None
     
-    def _extract_social_links(self, soup: BeautifulSoup) -> Dict[str, str]:
-        """Find social media links"""
-        social_links = {}
-        social_patterns = {
-            'facebook': r'facebook\.com/[^/?]+',
-            'twitter': r'twitter\.com/[^/?]+',
-            'instagram': r'instagram\.com/[^/?]+',
-            'youtube': r'youtube\.com/[^/?]+'
-        }
-        
-        all_links = soup.find_all('a', href=True)
-        for link in all_links:
-            href = link['href']
-            for platform, pattern in social_patterns.items():
-                if re.search(pattern, href, re.IGNORECASE):
-                    social_links[platform] = href
-        
-        return social_links
+    def _extract_social_links(self, soup: BeautifulSoup, base_url: str) -> Dict[str, Dict]:
+        """Find social media links using enhanced detection"""
+        return self.social_media_detector.extract_social_media_links(soup, base_url)
     
     def _extract_navigation_links(self, soup: BeautifulSoup, base_url: str) -> List[Dict[str, str]]:
         """Extract all menu/navigation links for manual review"""

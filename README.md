@@ -9,12 +9,16 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v2.10.0 (July 29, 2025)
-**Latest Features**: Multiple show airings support (original + repeat broadcasts), advanced natural language schedule parsing for complex patterns, real-time ON-AIR indicator system with animated progress tracking, and TTL recording management. Shows can now handle "Mondays at 7 PM and Thursdays at 3 PM" scheduling automatically. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v2.11.0 (July 29, 2025)
+**Latest Features**: Complete playlist upload system with drag & drop track ordering, comprehensive MP3 metadata implementation for all recordings (artist=show name, album=station name, recording date), user audio file uploads with format validation and automatic conversion, and enhanced database schema for playlist management. Shows now support both scheduled recordings and user-created playlists. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
+- **Playlist Upload System**: User audio file uploads with drag & drop track ordering and playlist management
+- **MP3 Metadata Implementation**: Automatic metadata writing for all recordings (artist=show name, album=station name, recording date, description)
+- **Multi-Format Audio Support**: Upload MP3, WAV, M4A, AAC, OGG, FLAC with automatic MP3 conversion
+- **Track Ordering Management**: Drag & drop playlist reordering with manual track number adjustment
 - **Multiple Show Airings**: Support for original + repeat broadcasts with natural language scheduling ("Mondays at 7 PM and Thursdays at 3 PM")
 - **Real-Time ON-AIR Indicators**: Live visual feedback for shows currently recording with animated progress tracking
 - **Advanced Schedule Parsing**: Recognizes "original", "repeat", "encore" keywords with priority-based scheduling
@@ -24,11 +28,14 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **Next Recordings Display**: Dashboard widget showing top 3 upcoming scheduled recordings
 - **Schedule Management**: Web interface for adding/editing show schedules with automatic scheduler integration
 - **Smart Discovery**: Extract streaming URLs and schedules from station websites with User-Agent support
-- **Podcast Generation**: Create RSS feeds for individual shows or all recordings
+- **Podcast Generation**: Create RSS feeds for individual shows or all recordings with playlist support
 - **Test Recording**: 30-second test recordings with automated cleanup (4 hour retention)
 - **On-Demand Recording**: Manual 1-hour recordings with quality validation
 
 ### 🔧 **Technical Features**
+- **MP3 Metadata Service**: Automated metadata writing with FFmpeg integration for comprehensive audio tagging
+- **Upload Service Architecture**: Audio file validation, format conversion, and playlist integration
+- **Database Schema Extensions**: New fields for playlist support, track ordering, and metadata management
 - **Enhanced Recording Architecture**: Complete rewrite with database-driven design and duplicate prevention
 - **User-Agent Support**: Saved User-Agent per station for HTTP 403 handling and stream compatibility
 - **Call Sign File Naming**: Human-readable 4-letter call signs (WEHC, WERU, WTBR, WYSO) instead of numeric IDs
@@ -41,6 +48,10 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **Responsive Web UI**: Modern Bootstrap interface with real-time updates
 
 ### 📊 **Smart Automation**
+- **Automatic MP3 Metadata**: All recordings tagged with artist=show name, album=station name, recording date, description
+- **Upload Metadata Enhancement**: User uploads preserve existing metadata and enhance with show/station information
+- **Playlist Track Ordering**: Automatic sequential track numbering with drag & drop reordering support
+- **Audio Format Conversion**: Automatic conversion of uploaded files (WAV, M4A, AAC, OGG, FLAC) to MP3 format
 - **Multiple Airings Detection**: Automatically parses complex schedules like "Original Monday 7PM, repeat Thursday 3PM, encore Sunday 6PM"
 - **Real-Time Status Updates**: JavaScript checks recording status every 30 seconds with animated progress bars
 - **Browser Integration**: Page title updates with 🔴 indicator and site-wide recording banners
@@ -61,7 +72,7 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **Automatic Housekeeping**: Cleans up empty recordings every 6 hours with retention policies
 - **Stream Testing**: Validates streams before recording attempts with comprehensive error handling
 - **Schedule Caching**: Remembers successful parsing methods per station
-- **RSS Updates**: Refreshes podcast feeds every 15 minutes
+- **RSS Updates**: Refreshes podcast feeds every 15 minutes with playlist support
 
 ## 🚀 Quick Start
 
@@ -134,11 +145,13 @@ RadioGrab uses a 5-container Docker architecture:
 ```
 
 ### Key Components
-- **Web Interface**: PHP/JavaScript frontend with Bootstrap UI and test recording fixes
+- **Web Interface**: PHP/JavaScript frontend with Bootstrap UI, playlist management, and upload functionality
+- **MP3 Metadata Service**: Automated metadata writing for all recordings with FFmpeg integration
+- **Upload Service**: Audio file validation, format conversion, and playlist integration
 - **Enhanced Recording Engine**: Python services with database-driven architecture, User-Agent support, and duplicate prevention
 - **Schedule Parser**: JavaScript-aware calendar extraction with stream discovery
 - **Stream Validator**: Tests streams with comprehensive error handling and User-Agent persistence
-- **RSS Generator**: Creates podcast feeds from recordings with proper call letters naming
+- **RSS Generator**: Creates podcast feeds from recordings with playlist support and proper call letters naming
 
 ## 🎛️ Usage
 
@@ -154,11 +167,22 @@ RadioGrab uses a 5-container Docker architecture:
 ### Setting Up Show Recording
 1. Go to **Shows** → **Add Show**
 2. Select your station
-3. Configure:
+3. Choose show type:
+   - **Scheduled Show**: Automatic recording based on schedule
+   - **Playlist**: User-uploaded audio files with track ordering
+4. Configure:
    - Show name and description
-   - Schedule pattern (e.g., "Monday 9:00 AM")
-   - Recording duration
-   - Retention period
+   - Schedule pattern (for scheduled shows, e.g., "Monday 9:00 AM")
+   - Recording duration and retention period
+   - Upload settings (for playlists: max file size, allowed formats)
+
+### Managing Playlists
+1. Create a **Playlist** type show
+2. Click **Upload Audio** to add files
+3. Upload supported formats: MP3, WAV, M4A, AAC, OGG, FLAC
+4. Use **Order** button to manage track sequence
+5. Drag & drop tracks to reorder or edit track numbers manually
+6. All uploads automatically include MP3 metadata (artist=show name, album=station name)
 
 ### Testing Streams
 - Use **Test Recording** buttons to verify streams work
@@ -167,8 +191,8 @@ RadioGrab uses a 5-container Docker architecture:
 
 ### Accessing Recordings
 - **Web Interface**: Listen and download via the Recordings page
-- **RSS Feeds**: Subscribe to podcast feeds for individual shows
-- **Master Feed**: Combined feed of all recordings
+- **RSS Feeds**: Subscribe to podcast feeds for individual shows (includes playlists)
+- **Master Feed**: Combined feed of all recordings and playlists
 - **Direct Files**: Access recordings via `/recordings/` URL
 
 ## 📡 Recording Compatibility
@@ -247,10 +271,10 @@ radiograb/
 
 ### Database Configuration
 RadioGrab uses MySQL 8.0 with the following structure:
-- **stations**: Radio station information
-- **shows**: Show definitions and schedules  
-- **recordings**: Individual recording entries
-- **feeds**: RSS feed metadata
+- **stations**: Radio station information with User-Agent and streaming data
+- **shows**: Show definitions, schedules, and playlist configuration (show_type, allow_uploads, max_file_size_mb)
+- **recordings**: Individual recording entries with metadata, track ordering, and source tracking (source_type, track_number, original_filename)
+- **feeds**: RSS feed metadata with playlist support
 
 ## 🆘 Troubleshooting
 

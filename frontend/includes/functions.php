@@ -81,15 +81,82 @@ function callPythonService($service, $method, $data = []) {
 }
 
 /**
- * Get station logo URL with fallback
+ * Get station logo URL with fallback (prioritizes local storage)
  */
 function getStationLogo($station) {
+    // Prioritize local logo if available
+    if (!empty($station['local_logo_path'])) {
+        // Convert local path to web path
+        $filename = basename($station['local_logo_path']);
+        return "/logos/{$filename}";
+    }
+    
+    // Fallback to original logo URL
     if (!empty($station['logo_url'])) {
         return $station['logo_url'];
     }
     
     // Return default logo
     return '/assets/images/default-station-logo.png';
+}
+
+/**
+ * Generate social media icons HTML for a station
+ */
+function generateSocialMediaIcons($station) {
+    $html = '';
+    
+    // Add main website icon
+    if (!empty($station['website_url'])) {
+        $html .= sprintf(
+            '<a href="%s" target="_blank" rel="noopener noreferrer" class="social-icon me-2" title="Website">
+                <i class="fas fa-globe" style="color: #6c757d;"></i>
+            </a>',
+            h($station['website_url'])
+        );
+    }
+    
+    // Parse social media links from JSON if available
+    $social_links = [];
+    if (!empty($station['social_media_links'])) {
+        $social_links = json_decode($station['social_media_links'], true) ?: [];
+    }
+    
+    // Define display order for social media platforms
+    $platform_order = ['facebook', 'twitter', 'instagram', 'youtube', 'soundcloud', 'spotify', 'linkedin', 'tiktok'];
+    
+    // Generate icons in preferred order
+    foreach ($platform_order as $platform) {
+        if (isset($social_links[$platform])) {
+            $link_info = $social_links[$platform];
+            $html .= sprintf(
+                '<a href="%s" target="_blank" rel="noopener noreferrer" class="social-icon me-2" title="%s">
+                    <i class="%s" style="color: %s;"></i>
+                </a>',
+                h($link_info['url']),
+                h($link_info['name']),
+                h($link_info['icon']),
+                h($link_info['color'])
+            );
+        }
+    }
+    
+    // Add any remaining platforms not in the preferred order
+    foreach ($social_links as $platform => $link_info) {
+        if (!in_array($platform, $platform_order)) {
+            $html .= sprintf(
+                '<a href="%s" target="_blank" rel="noopener noreferrer" class="social-icon me-2" title="%s">
+                    <i class="%s" style="color: %s;"></i>
+                </a>',
+                h($link_info['url']),
+                h($link_info['name']),
+                h($link_info['icon']),
+                h($link_info['color'])
+            );
+        }
+    }
+    
+    return $html;
 }
 
 /**

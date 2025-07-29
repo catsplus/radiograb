@@ -184,9 +184,12 @@ body {
 }
 
 .station-logo {
-    max-width: 60px;
-    max-height: 60px;
+    width: 60px;
+    height: 60px;
     border-radius: 8px;
+    object-fit: contain;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
 }
 
 .show-time {
@@ -265,4 +268,52 @@ body {
 
 .shadow-soft {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+}
+
+/* Social Media Icons */
+.social-media-icons {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.social-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+    font-size: 12px;
+}
+
+.social-icon:hover {
+    transform: scale(1.1);
+    background-color: rgba(255, 255, 255, 0.2);
+    text-decoration: none;
+}
+
+.social-icon i {
+    transition: color 0.2s ease-in-out;
+}
+
+.social-icon:hover i {
+    filter: brightness(1.2);
+}
+
+/* Responsive adjustments for social icons */
+@media (max-width: 576px) {
+    .social-icon {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+    
+    .social-media-icons {
+        gap: 2px;
+    }
 }

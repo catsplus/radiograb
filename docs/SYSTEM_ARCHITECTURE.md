@@ -11,6 +11,7 @@
   - `/var/radiograb/feeds/` - Generated RSS feeds
   - `/var/radiograb/logs/` - Application logs
   - `/var/radiograb/temp/` - Test recordings and temporary files
+  - `/var/radiograb/logos/` - Local station logos and social media images
 
 ### radiograb-recorder-1 Container  
 - **Purpose**: Recording service daemon
@@ -479,5 +480,41 @@ All API endpoints require valid CSRF tokens:
 - **Test Recording API**: Added missing `session_start()` to resolve "Invalid security token" errors
 - **CSRF Protection**: All forms now properly protected against cross-site request forgery
 - **Session Security**: Secure session handling across all user interactions
+
+## Logo and Social Media System
+
+### Logo Storage Architecture
+- **Local Storage**: All station logos downloaded and stored in `/var/radiograb/logos/`
+- **Facebook Fallback**: Extracts profile pictures from Facebook pages when website logos unavailable
+- **Format Optimization**: Images resized to max 400x400px, optimized for web delivery
+- **Consistent Display**: All logos displayed at uniform 60x60px with proper aspect ratio
+
+### Social Media Integration
+- **Multi-Platform Detection**: Detects 10+ platforms (Facebook, Twitter, Instagram, YouTube, etc.)
+- **Smart Icon Display**: Colored social media icons with hover effects
+- **Database Storage**: Social links stored as JSON with platform metadata
+- **Visual Integration**: Icons displayed below station names for easy access
+
+### New Services
+- **logo_storage_service.py**: Downloads, optimizes, and stores station logos locally
+- **facebook_logo_extractor.py**: Extracts profile pictures from Facebook pages
+- **social_media_detector.py**: Detects and categorizes social media links
+- **station-logo-update.php**: API for bulk updating station logos and social media
+
+### Database Schema Extensions
+```sql
+ALTER TABLE stations 
+ADD COLUMN facebook_url VARCHAR(500) NULL,
+ADD COLUMN local_logo_path VARCHAR(255) NULL,
+ADD COLUMN logo_source VARCHAR(50) NULL,
+ADD COLUMN logo_updated_at TIMESTAMP NULL,
+ADD COLUMN social_media_links JSON NULL,
+ADD COLUMN social_media_updated_at TIMESTAMP NULL;
+```
+
+### Nginx Configuration
+- **Logo Serving**: `/logos/` location block serves local logos with caching
+- **Security Headers**: Proper content-type and CORS headers
+- **Cache Optimization**: 7-day caching for static logo assets
 
 This documentation is automatically updated as system knowledge is discovered during development and maintenance.

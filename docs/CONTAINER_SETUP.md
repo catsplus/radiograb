@@ -26,6 +26,7 @@
   - Recordings: `/var/radiograb/recordings/`
   - Temp: `/var/radiograb/temp/`
   - Logs: `/var/radiograb/logs/`
+  - Logos: `/var/radiograb/logos/`
 
 ### radiograb-rss-updater-1
 - **Purpose**: RSS feed generation and updates (individual + master feeds)
@@ -84,6 +85,8 @@ All recording tools are installed in `radiograb-recorder-1`:
 - **requests** (2.32.4): HTTP client library
 - **urllib3** (2.5.0): HTTP library foundation
 - **chardet** (5.2.0): Character encoding detection
+- **Pillow** (10.4.0): Image processing for logo optimization and resizing
+- **selenium** (4.x): JavaScript-aware web scraping (manually installed)
 
 **Auto-installed Dependencies:**
 - **certifi** (2025.7.14): SSL certificate bundle
@@ -105,12 +108,18 @@ These packages were installed after container deployment and should be added to 
 ```bash
 # Installed on 2025-07-23 for multi-tool recording support
 docker exec radiograb-recorder-1 apt update && docker exec radiograb-recorder-1 apt install -y ffmpeg
+
+# Installed on 2025-07-29 for image processing and logo storage
+docker exec radiograb-web-1 /opt/radiograb/venv/bin/pip install Pillow
 ```
 
-**⚠️ TODO for Next Container Rebuild**: Add `ffmpeg` installation to Dockerfile to ensure it's included in future builds.
+**⚠️ TODO for Next Container Rebuild**: 
+- Add `ffmpeg` installation to Dockerfile to ensure it's included in future builds
+- Add `Pillow` to requirements.txt for logo image processing
 
 ### Package Installation Status
-**✅ Python packages**: All properly defined in requirements.txt
+**✅ Python packages**: Most properly defined in requirements.txt
+**⚠️ Missing from requirements.txt**: Pillow (image processing) - manually installed
 **⚠️ System packages**: ffmpeg was manually installed and needs to be added to Dockerfile
 
 ## File Deployment Process
@@ -151,6 +160,11 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # Install new Python packages (if needed)
 docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/pip install package_name
+
+# Logo and Social Media Services (new 2025-07-29)
+docker exec radiograb-web-1 bash -c "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python backend/services/logo_storage_service.py --help"
+docker exec radiograb-web-1 bash -c "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python backend/services/facebook_logo_extractor.py --help"
+docker exec radiograb-web-1 bash -c "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python backend/services/social_media_detector.py --help"
 ```
 
 ### ⚠️ CRITICAL Python Execution Rules
@@ -175,3 +189,51 @@ Environment variables in containers:
 - **Docker Isolation**: Containers run in isolated network  
 - **File Permissions**: `/opt/radiograb/` owned by `radiograb:radiograb`
 - **Non-root Execution**: All containers run under `radiograb` user context
+
+## API Endpoints
+
+### Core APIs
+- **CSRF Token**: `/api/get-csrf-token.php` - Security token generation
+- **Test Recording**: `/api/test-recording.php` - Manual recording tests and on-demand recordings
+- **Show Management**: `/api/shows.php` - Show creation and management
+
+### Logo and Social Media APIs (New 2025-07-29)
+- **Station Logo Update**: `/api/station-logo-update.php` - Bulk and individual station logo/social media updates
+  - Actions: `update_station_logos`, `update_single_station`, `get_logo_update_status`
+  - Features: Facebook logo extraction, local logo storage, social media link detection
+
+### Data Directories
+- **Logos**: `/var/radiograb/logos/` - Local station logos and social media images
+- **Recordings**: `/var/radiograb/recordings/` - Audio recordings
+- **Feeds**: `/var/radiograb/feeds/` - RSS feeds
+- **Temp**: `/var/radiograb/temp/` - Test recordings and temporary files
+
+### New Python Services (2025-07-29)
+- **logo_storage_service.py**: Downloads, optimizes, and stores station logos locally
+- **facebook_logo_extractor.py**: Extracts profile pictures from Facebook pages
+- **social_media_detector.py**: Detects and categorizes social media links
+- **mp3_metadata_service.py**: Writes comprehensive MP3 metadata for recordings
+
+### Database Schema Extensions (2025-07-29)
+```sql
+-- Logo and social media storage
+ALTER TABLE stations 
+ADD COLUMN facebook_url VARCHAR(500) NULL,
+ADD COLUMN local_logo_path VARCHAR(255) NULL,
+ADD COLUMN logo_source VARCHAR(50) NULL,
+ADD COLUMN logo_updated_at TIMESTAMP NULL,
+ADD COLUMN social_media_links JSON NULL,
+ADD COLUMN social_media_updated_at TIMESTAMP NULL;
+
+-- Show type and playlist support
+ALTER TABLE shows
+ADD COLUMN show_type ENUM('scheduled', 'playlist') DEFAULT 'scheduled',
+ADD COLUMN allow_uploads BOOLEAN DEFAULT FALSE,
+ADD COLUMN max_file_size_mb INT DEFAULT 50,
+ADD COLUMN description TEXT NULL;
+
+-- Recording source tracking
+ALTER TABLE recordings
+ADD COLUMN source_type ENUM('scheduled', 'test', 'on_demand', 'upload') DEFAULT 'scheduled',
+ADD COLUMN track_number INT NULL;
+```

@@ -1,5 +1,75 @@
 # RadioGrab Changelog
 
+## [2.11.0] - 2025-07-29 - Playlist System & MP3 Metadata
+
+### 🎵 MP3 Metadata Implementation
+- **Automatic Metadata Writing**: All recordings now include comprehensive MP3 tags
+  - Artist: Show name
+  - Album: Station name  
+  - Title: Show name + recording date
+  - Comment: Show description
+  - Date: Recording date
+  - Genre: Show genre (if available)
+- **Upload Metadata Enhancement**: User uploads preserve existing metadata and enhance with show/station information
+- **Backend Service**: New `mp3_metadata_service.py` for automated metadata management using FFmpeg
+- **Integration**: Metadata writing integrated into recording service and upload service
+
+### 📁 Playlist Upload System  
+- **User Upload Functionality**: Complete audio file upload system with drag & drop interface
+- **Multi-Format Support**: Upload MP3, WAV, M4A, AAC, OGG, FLAC with automatic MP3 conversion
+- **File Validation**: Comprehensive validation including size limits, format validation, and audio stream verification
+- **Track Ordering**: Sequential track numbering with drag & drop reordering capability
+- **Playlist Management Modal**: Dedicated interface for managing playlist track order
+- **Upload Modal**: User-friendly upload interface with progress tracking and error handling
+
+### 🗄️ Database Schema Extensions
+- **Playlist Support**: New `show_type` field (scheduled/playlist) in shows table
+- **Upload Configuration**: Added `allow_uploads`, `max_file_size_mb` fields for playlist shows
+- **Upload Tracking**: New fields in recordings table:
+  - `source_type`: 'recorded' or 'uploaded'
+  - `original_filename`: Preserve original upload filename
+  - `uploaded_by`: Track upload user (reserved for future multi-user support)
+  - `track_number`: Sequential ordering for playlist tracks
+- **Metadata Fields**: Extended show metadata with genre, image_url, long_description fields
+- **Migration Scripts**: Proper database migrations for schema updates
+
+### 🎛️ Enhanced Web Interface
+- **Show Type Selection**: Radio buttons to choose between 'Scheduled Show' and 'Playlist/Upload'
+- **Conditional Forms**: Dynamic form fields based on show type selection
+- **Upload Actions**: New upload and playlist management buttons for playlist-type shows
+- **Playlist Display**: Enhanced shows page with upload functionality and track management
+- **JavaScript Integration**: Complete AJAX integration for file uploads and playlist management
+
+### 📡 RSS Feed Enhancements
+- **Playlist Support**: RSS feeds now include uploaded tracks with proper ordering
+- **Track Ordering**: Playlist tracks ordered by track_number field for proper playback sequence
+- **Mixed Content**: RSS feeds support both recorded shows and uploaded playlists
+- **Metadata Integration**: RSS items include enhanced MP3 metadata in descriptions
+
+### 🔧 Backend Service Architecture
+- **Upload Service**: New `upload_service.py` for handling file uploads, validation, and conversion
+- **MP3 Metadata Service**: Dedicated service for reading and writing MP3 metadata
+- **Integration Points**: Services integrated with existing recording and RSS systems
+- **Error Handling**: Comprehensive error handling and validation throughout upload pipeline
+
+### ⚖️ Legal Compliance Updates
+- **Terminology Cleanup**: Replaced all "TiVo for Radio" references with legally neutral "Radio Recorder"
+- **Documentation Updates**: Updated all PHP files, documentation, and frontend text
+- **Footer Updates**: Changed website footer text for clear legal positioning
+- **RSS Generator**: Updated RSS feed generator descriptions to use neutral language
+
+### 🐛 User Interface Improvements
+- **Empty Show Hiding**: On-Demand Recording shows with 0 recordings are now hidden from shows page
+- **Timezone Removal**: Removed timezone display from show blocks for cleaner interface
+- **Upload Progress**: Real-time upload progress indicators with status updates
+- **Drag & Drop**: Intuitive track reordering with visual feedback and automatic numbering
+
+### 🚀 Performance & Reliability
+- **Audio Validation**: Upload files validated for audio content and format compatibility
+- **Automatic Conversion**: Non-MP3 uploads automatically converted to MP3 format
+- **Database Integrity**: Proper foreign key relationships and data validation
+- **Session Management**: Enhanced CSRF protection for all upload and management operations
+
 ## [2.1.0] - 2025-07-25 - Call Sign Implementation & System Fixes
 
 ### 📞 Call Sign Implementation
