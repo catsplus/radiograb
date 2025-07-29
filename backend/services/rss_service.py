@@ -36,10 +36,19 @@ class RSSFeedGenerator:
                 return None
                 
             station = db.query(Station).filter(Station.id == show.station_id).first()
-            recordings = (db.query(Recording)
-                        .filter(Recording.show_id == show_id)
-                        .order_by(Recording.recorded_at.desc())
-                        .all())
+            # Order recordings based on show type
+            if show.show_type == 'playlist':
+                # For playlists, order by track number first, then by upload date
+                recordings = (db.query(Recording)
+                            .filter(Recording.show_id == show_id)
+                            .order_by(Recording.track_number.asc(), Recording.recorded_at.asc())
+                            .all())
+            else:
+                # For regular shows, order by recording date (newest first)
+                recordings = (db.query(Recording)
+                            .filter(Recording.show_id == show_id)
+                            .order_by(Recording.recorded_at.desc())
+                            .all())
             
             # Generate RSS XML
             rss_xml = self._build_rss_xml(show, station, recordings)
@@ -137,11 +146,21 @@ class RSSFeedGenerator:
         item = SubElement(channel, 'item')
         
         # Basic item info
-        title = recording.title or f"{show.name} - {recording.recorded_at.strftime('%Y-%m-%d')}"
+        if show.show_type == 'playlist' and recording.track_number:
+            # For playlists, include track number in title
+            base_title = recording.title or recording.original_filename or 'Untitled'
+            title = f"{recording.track_number:02d}. {base_title}"
+        else:
+            title = recording.title or f"{show.name} - {recording.recorded_at.strftime('%Y-%m-%d')}"
         self._add_text_element(item, 'title', title)
         
-        description = (recording.description or 
-                      f"Recording of {show.name} from {station.name} on {recording.recorded_at.strftime('%B %d, %Y')}")
+        # Description based on source type
+        if recording.source_type == 'uploaded':
+            description = (recording.description or 
+                          f"Uploaded to {show.name} playlist on {recording.recorded_at.strftime('%B %d, %Y')}")
+        else:
+            description = (recording.description or 
+                          f"Recording of {show.name} from {station.name} on {recording.recorded_at.strftime('%B %d, %Y')}")
         self._add_text_element(item, 'description', description)
         
         # Unique identifier

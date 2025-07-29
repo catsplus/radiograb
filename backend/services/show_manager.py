@@ -7,6 +7,7 @@ from backend.config.database import SessionLocal
 from backend.models.station import Station, Show, Recording
 from backend.services.schedule_parser import ScheduleParser
 from backend.services.recording_service import RecordingScheduler, AudioRecorder
+from backend.services.show_metadata_detection import ShowMetadataDetector
 import logging
 from typing import Dict, List, Optional
 from datetime import datetime
@@ -20,6 +21,7 @@ class ShowManager:
         self.schedule_parser = ScheduleParser()
         self.recorder = AudioRecorder()
         self.scheduler = RecordingScheduler(self.recorder)
+        self.metadata_detector = ShowMetadataDetector()
     
     def add_show(self, 
                  station_id: int,
@@ -99,6 +101,32 @@ class ShowManager:
                 db.refresh(show)
                 
                 result['show_id'] = show.id
+                
+                # Auto-detect and enrich show metadata
+                try:
+                    logger.info(f"Starting automatic metadata detection for show '{name}'")
+                    metadata = self.metadata_detector.detect_and_enrich_show_metadata(show.id, station_id)
+                    
+                    # Add metadata info to result
+                    result['metadata'] = {
+                        'description_source': metadata.description_source,
+                        'image_source': metadata.image_source,
+                        'has_description': bool(metadata.description),
+                        'has_image': bool(metadata.image_url),
+                        'has_host': bool(metadata.host),
+                        'needs_manual_review': not metadata.description or metadata.description_source == 'generated'
+                    }
+                    
+                    if metadata.description_source == 'generated':
+                        result['warnings'].append("No description found in calendar or website - using generated description")
+                    if metadata.image_source == 'default':
+                        result['warnings'].append("No show-specific image found - using default image")
+                    
+                    logger.info(f"Metadata detection completed for '{name}': description={metadata.description_source}, image={metadata.image_source}")
+                    
+                except Exception as e:
+                    logger.warning(f"Metadata detection failed for show '{name}': {e}")
+                    result['warnings'].append(f"Automatic metadata detection failed: {str(e)}")
                 
                 # Schedule the recording
                 if station.stream_url:
@@ -410,6 +438,175 @@ class ShowManager:
         finally:
             db.close()
     
+    def enrich_existing_shows_metadata(self, station_id: int = None, force_update: bool = False) -> Dict:
+        """
+        Auto-detect metadata for existing shows that lack descriptions or images
+        
+        Args:
+            station_id: Optional station ID to limit processing to specific station
+            force_update: If True, update metadata even if it already exists
+            
+        Returns:
+            Dictionary with operation results
+        """
+        result = {
+            'success': False,
+            'processed_shows': [],
+            'skipped_shows': [],
+            'failed_shows': [],
+            'total_processed': 0,
+            'total_updated': 0,
+            'errors': []
+        }
+        
+        try:
+            db = SessionLocal()
+            try:
+                # Build query for shows that need metadata enrichment
+                query = db.query(Show).filter(Show.active == True)
+                
+                if station_id:
+                    query = query.filter(Show.station_id == station_id)
+                
+                if not force_update:
+                    # Only process shows that lack metadata or have generated descriptions
+                    query = query.filter(
+                        (Show.description.is_(None)) |
+                        (Show.description == '') |
+                        (Show.description_source == 'generated') |
+                        (Show.image_url.is_(None)) |
+                        (Show.image_url == '') |
+                        (Show.image_source == 'default')
+                    )
+                
+                shows = query.all()
+                result['total_processed'] = len(shows)
+                
+                logger.info(f"Starting metadata enrichment for {len(shows)} shows")
+                
+                for show in shows:
+                    try:
+                        logger.info(f"Processing metadata for show '{show.name}' (ID: {show.id})")
+                        
+                        # Check if show already has good metadata and we're not forcing update
+                        if not force_update and self._has_good_metadata(show):
+                            result['skipped_shows'].append({
+                                'show_id': show.id,
+                                'show_name': show.name,
+                                'reason': 'Already has good metadata'
+                            })
+                            continue
+                        
+                        # Detect metadata
+                        metadata = self.metadata_detector.detect_and_enrich_show_metadata(show.id, show.station_id)
+                        
+                        show_result = {
+                            'show_id': show.id,
+                            'show_name': show.name,
+                            'station_id': show.station_id,
+                            'metadata': {
+                                'description_source': metadata.description_source,
+                                'image_source': metadata.image_source,
+                                'has_description': bool(metadata.description),
+                                'has_image': bool(metadata.image_url),
+                                'has_host': bool(metadata.host)
+                            }
+                        }
+                        
+                        result['processed_shows'].append(show_result)
+                        
+                        if metadata.description_source != 'generated' or metadata.image_source != 'default':
+                            result['total_updated'] += 1
+                        
+                        logger.info(f"✅ Completed metadata for '{show.name}': description={metadata.description_source}, image={metadata.image_source}")
+                        
+                    except Exception as e:
+                        logger.error(f"❌ Failed to process show '{show.name}': {e}")
+                        result['failed_shows'].append({
+                            'show_id': show.id,
+                            'show_name': show.name,
+                            'error': str(e)
+                        })
+                
+                result['success'] = True
+                logger.info(f"Metadata enrichment completed: {result['total_updated']}/{result['total_processed']} shows updated")
+                
+            finally:
+                db.close()
+                
+        except Exception as e:
+            logger.error(f"Error in bulk metadata enrichment: {e}")
+            result['errors'].append(str(e))
+        
+        return result
+    
+    def _has_good_metadata(self, show: Show) -> bool:
+        """Check if a show already has good metadata that doesn't need updating"""
+        has_description = (show.description and 
+                          getattr(show, 'description_source', None) and 
+                          show.description_source not in ['generated', 'manual'])
+        
+        has_image = (getattr(show, 'image_url', None) and 
+                    getattr(show, 'image_source', None) and 
+                    show.image_source not in ['default'])
+        
+        return has_description and has_image
+    
+    def refresh_show_metadata(self, show_id: int) -> Dict:
+        """
+        Manually refresh metadata for a specific show
+        
+        Args:
+            show_id: ID of the show to refresh
+            
+        Returns:
+            Dictionary with operation result
+        """
+        result = {
+            'success': False,
+            'show_id': show_id,
+            'metadata': {},
+            'errors': []
+        }
+        
+        try:
+            db = SessionLocal()
+            try:
+                show = db.query(Show).filter(Show.id == show_id).first()
+                if not show:
+                    result['errors'].append("Show not found")
+                    return result
+                
+                logger.info(f"Refreshing metadata for show '{show.name}' (ID: {show_id})")
+                
+                # Force metadata detection
+                metadata = self.metadata_detector.detect_and_enrich_show_metadata(show_id, show.station_id)
+                
+                result['metadata'] = {
+                    'name': metadata.name,
+                    'description': metadata.description,
+                    'long_description': metadata.long_description,
+                    'host': metadata.host,
+                    'genre': metadata.genre,
+                    'image_url': metadata.image_url,
+                    'website_url': metadata.website_url,
+                    'description_source': metadata.description_source,
+                    'image_source': metadata.image_source,
+                    'last_updated': metadata.last_updated.isoformat() if metadata.last_updated else None
+                }
+                
+                result['success'] = True
+                logger.info(f"✅ Metadata refreshed for '{show.name}': description={metadata.description_source}, image={metadata.image_source}")
+                
+            finally:
+                db.close()
+                
+        except Exception as e:
+            logger.error(f"Error refreshing show metadata: {e}")
+            result['errors'].append(str(e))
+        
+        return result
+
     def shutdown(self):
         """Shutdown the show manager and its services"""
         self.scheduler.shutdown()

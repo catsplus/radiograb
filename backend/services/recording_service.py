@@ -295,6 +295,16 @@ class EnhancedRecordingService:
             db.refresh(recording)
             
             logger.info(f"Recording saved to database: ID {recording.id}")
+            
+            # Write MP3 metadata for the recorded file
+            try:
+                from backend.services.mp3_metadata_service import MP3MetadataService
+                metadata_service = MP3MetadataService()
+                metadata_service.write_metadata_for_recording(recording.id)
+                logger.info(f"MP3 metadata written for recording {recording.id}")
+            except Exception as e:
+                logger.warning(f"Failed to write MP3 metadata for recording {recording.id}: {e}")
+            
             return recording.id
             
         except Exception as e:

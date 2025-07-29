@@ -78,9 +78,12 @@ $where_clause = $where_conditions ? 'WHERE ' . implode(' AND ', $where_condition
 try {
     // Get shows with station and recording info
     $shows = $db->fetchAll("
-        SELECT s.*, st.name as station_name, st.logo_url, st.timezone as station_timezone,
+        SELECT s.*, st.name as station_name, st.logo_url, st.call_letters, st.timezone as station_timezone,
                COUNT(r.id) as recording_count,
-               MAX(r.recorded_at) as latest_recording
+               MAX(r.recorded_at) as latest_recording,
+               s.long_description, s.genre, s.image_url, s.website_url,
+               s.description_source, s.image_source, s.metadata_updated,
+               s.show_type, s.allow_uploads, s.max_file_size_mb
         FROM shows s 
         JOIN stations st ON s.station_id = st.id 
         LEFT JOIN recordings r ON s.id = r.show_id
@@ -275,15 +278,62 @@ try {
                 <?php foreach ($shows as $show): ?>
                     <div class="col-lg-6 col-xl-4 mb-4">
                         <div class="card h-100 show-card" data-show-id="<?= $show['id'] ?>" data-station-call="<?= h($show['call_letters']) ?>">
+                            <!-- Show Image Header -->
+                            <?php if ($show['image_url']): ?>
+                                <div class="card-img-top-container" style="height: 150px; overflow: hidden; position: relative;">
+                                    <img src="<?= h($show['image_url']) ?>" 
+                                         alt="<?= h($show['name']) ?>" 
+                                         class="card-img-top" 
+                                         style="width: 100%; height: 100%; object-fit: cover;"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                    <div class="fallback-header bg-gradient text-white d-flex align-items-center justify-content-center" 
+                                         style="height: 100%; position: absolute; top: 0; left: 0; width: 100%; background: linear-gradient(135deg, #007bff, #0056b3); display: none;">
+                                        <div class="text-center">
+                                            <i class="fas fa-microphone fa-2x mb-2"></i>
+                                            <h6 class="mb-0"><?= h($show['name']) ?></h6>
+                                        </div>
+                                    </div>
+                                    <!-- Image source badge -->
+                                    <?php if ($show['image_source']): ?>
+                                        <span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75">
+                                            <?php
+                                            $source_icons = [
+                                                'calendar' => 'fa-calendar',
+                                                'website' => 'fa-globe',
+                                                'station' => 'fa-building',
+                                                'default' => 'fa-image'
+                                            ];
+                                            $icon = $source_icons[$show['image_source']] ?? 'fa-image';
+                                            ?>
+                                            <i class="fas <?= $icon ?>"></i> <?= ucfirst($show['image_source']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                            
                             <div class="card-body">
                                 <div class="d-flex align-items-start mb-3">
-                                    <img src="<?= h(getStationLogo(['logo_url' => $show['logo_url']])) ?>" 
-                                         alt="<?= h($show['station_name']) ?>" 
-                                         class="station-logo me-3"
-                                         onerror="this.src='/assets/images/default-station-logo.png'">
+                                    <?php if (!$show['image_url']): ?>
+                                        <img src="<?= h(getStationLogo(['logo_url' => $show['logo_url']])) ?>" 
+                                             alt="<?= h($show['station_name']) ?>" 
+                                             class="station-logo me-3"
+                                             onerror="this.src='/assets/images/default-station-logo.png'">
+                                    <?php endif; ?>
                                     <div class="flex-grow-1">
-                                        <h5 class="card-title mb-1"><?= h($show['name']) ?></h5>
+                                        <h5 class="card-title mb-1">
+                                            <?= h($show['name']) ?>
+                                            <?php if ($show['genre']): ?>
+                                                <small class="badge bg-light text-dark ms-2"><?= h($show['genre']) ?></small>
+                                            <?php endif; ?>
+                                        </h5>
                                         <small class="text-muted"><?= h($show['station_name']) ?></small>
+                                        <?php if ($show['website_url']): ?>
+                                            <div class="mt-1">
+                                                <a href="<?= h($show['website_url']) ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-external-link-alt"></i> Show Page
+                                                </a>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" 
@@ -298,11 +348,81 @@ try {
                                     </div>
                                 </div>
                                 
-                                <?php if ($show['description']): ?>
-                                    <p class="card-text text-muted small mb-2">
-                                        <?= h(substr($show['description'], 0, 100)) ?>
-                                        <?= strlen($show['description']) > 100 ? '...' : '' ?>
-                                    </p>
+                                <!-- Enhanced Description Section -->
+                                <?php if ($show['description'] || $show['long_description']): ?>
+                                    <div class="description-section mb-3">
+                                        <?php 
+                                        $display_description = $show['long_description'] ?: $show['description'];
+                                        $is_truncated = strlen($display_description) > 150;
+                                        $short_description = $is_truncated ? substr($display_description, 0, 150) . '...' : $display_description;
+                                        ?>
+                                        
+                                        <div class="description-content">
+                                            <div class="description-text" id="desc-short-<?= $show['id'] ?>">
+                                                <p class="card-text text-muted small mb-2"><?= h($short_description) ?></p>
+                                            </div>
+                                            
+                                            <?php if ($is_truncated): ?>
+                                                <div class="description-text" id="desc-full-<?= $show['id'] ?>" style="display: none;">
+                                                    <p class="card-text text-muted small mb-2"><?= h($display_description) ?></p>
+                                                </div>
+                                                <button class="btn btn-sm btn-link p-0 text-primary" id="desc-toggle-<?= $show['id'] ?>" onclick="toggleDescription(<?= $show['id'] ?>)">
+                                                    <i class="fas fa-chevron-down"></i> Show more
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                        
+                                        <!-- Description Source Badge -->
+                                        <?php if ($show['description_source']): ?>
+                                            <div class="mt-1">
+                                                <small class="badge bg-light text-dark">
+                                                    <?php
+                                                    $source_icons = [
+                                                        'calendar' => 'fa-calendar',
+                                                        'website' => 'fa-globe',
+                                                        'manual' => 'fa-user-edit',
+                                                        'generated' => 'fa-robot'
+                                                    ];
+                                                    $source_colors = [
+                                                        'calendar' => 'bg-success',
+                                                        'website' => 'bg-info', 
+                                                        'manual' => 'bg-primary',
+                                                        'generated' => 'bg-secondary'
+                                                    ];
+                                                    $icon = $source_icons[$show['description_source']] ?? 'fa-question';
+                                                    $color = $source_colors[$show['description_source']] ?? 'bg-light';
+                                                    ?>
+                                                    <i class="fas <?= $icon ?>"></i> <?= ucfirst($show['description_source']) ?> description
+                                                </small>
+                                                
+                                                <?php if ($show['description_source'] === 'generated'): ?>
+                                                    <button class="btn btn-sm btn-outline-warning ms-1" 
+                                                            onclick="refreshMetadata(<?= $show['id'] ?>)" 
+                                                            title="Auto-detect description from calendar or website">
+                                                        <i class="fas fa-sync"></i> Auto-detect
+                                                    </button>
+                                                <?php elseif ($show['metadata_updated']): ?>
+                                                    <small class="text-muted ms-2">
+                                                        Updated <?= timeAgo($show['metadata_updated']) ?>
+                                                    </small>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <!-- No Description - Show Auto-detect Button -->
+                                    <div class="description-section mb-3">
+                                        <div class="alert alert-light py-2 mb-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle"></i> No description available
+                                            </small>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="refreshMetadata(<?= $show['id'] ?>)" 
+                                                title="Auto-detect description from calendar or website">
+                                            <i class="fas fa-search"></i> Auto-detect metadata
+                                        </button>
+                                    </div>
                                 <?php endif; ?>
                                 
                                 <div class="mb-3">
@@ -411,6 +531,33 @@ try {
                             </div>
                             
                             <div class="card-footer bg-transparent">
+                                <?php if ($show['show_type'] === 'playlist'): ?>
+                                    <!-- Playlist Upload Actions -->
+                                    <div class="mb-2">
+                                        <div class="d-flex gap-2">
+                                            <button type="button" 
+                                                    class="btn btn-success btn-sm flex-fill upload-file-btn"
+                                                    data-show-id="<?= $show['id'] ?>"
+                                                    data-show-name="<?= h($show['name']) ?>"
+                                                    data-max-size="<?= $show['max_file_size_mb'] ?? 100 ?>">
+                                                <i class="fas fa-upload"></i> Upload Audio
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary btn-sm manage-playlist-btn"
+                                                    data-show-id="<?= $show['id'] ?>"
+                                                    data-show-name="<?= h($show['name']) ?>"
+                                                    title="Manage Playlist Order">
+                                                <i class="fas fa-list-ol"></i> Order
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle"></i> 
+                                            Max size: <?= $show['max_file_size_mb'] ?? 100 ?>MB | 
+                                            Supports: MP3, WAV, M4A, AAC, OGG, FLAC
+                                        </small>
+                                    </div>
+                                <?php endif; ?>
+                                
                                 <div class="btn-group w-100" role="group">
                                     <a href="/edit-show.php?id=<?= $show['id'] ?>" 
                                        class="btn btn-outline-primary btn-sm">
@@ -418,15 +565,17 @@ try {
                                     </a>
                                     <a href="/recordings.php?show_id=<?= $show['id'] ?>" 
                                        class="btn btn-outline-info btn-sm">
-                                        <i class="fas fa-file-audio"></i> Recordings
+                                        <i class="fas fa-file-audio"></i> <?= $show['show_type'] === 'playlist' ? 'Tracks' : 'Recordings' ?>
                                     </a>
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary btn-sm schedule-manager"
-                                            data-show-id="<?= $show['id'] ?>"
-                                            data-show-name="<?= h($show['name']) ?>"
-                                            title="Manage Schedule">
-                                        <i class="fas fa-clock"></i>
-                                    </button>
+                                    <?php if ($show['show_type'] === 'scheduled'): ?>
+                                        <button type="button" 
+                                                class="btn btn-outline-secondary btn-sm schedule-manager"
+                                                data-show-id="<?= $show['id'] ?>"
+                                                data-show-name="<?= h($show['name']) ?>"
+                                                title="Manage Schedule">
+                                            <i class="fas fa-clock"></i>
+                                        </button>
+                                    <?php endif; ?>
                                     <?php if ($show['recording_count'] > 0): ?>
                                         <a href="/feeds.php#show-<?= $show['id'] ?>" 
                                            class="btn btn-outline-success btn-sm"
@@ -477,6 +626,110 @@ try {
                             <i class="fas fa-trash"></i> Delete Show
                         </button>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Upload Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Audio File</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                        <input type="hidden" name="action" value="upload_file">
+                        <input type="hidden" name="show_id" id="upload_show_id">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Audio File *</label>
+                            <input type="file" class="form-control" name="audio_file" id="audio_file" 
+                                   accept=".mp3,.wav,.m4a,.aac,.ogg,.flac,audio/*" required>
+                            <div class="form-text">
+                                Supported formats: MP3, WAV, M4A, AAC, OGG, FLAC | 
+                                Max size: <span id="upload_max_size">100</span>MB
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="upload_title" class="form-label">Title</label>
+                            <input type="text" class="form-control" name="title" id="upload_title" 
+                                   placeholder="Leave blank to use file metadata or filename">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="upload_description" class="form-label">Description</label>
+                            <textarea class="form-control" name="description" id="upload_description" 
+                                      rows="3" placeholder="Optional description"></textarea>
+                        </div>
+                        
+                        <div class="upload-progress" style="display: none;">
+                            <div class="progress mb-2">
+                                <div class="progress-bar" role="progressbar"></div>
+                            </div>
+                            <div class="upload-status"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="uploadButton">
+                        <i class="fas fa-upload"></i> Upload File
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Playlist Management Modal -->
+    <div class="modal fade" id="playlistModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Playlist Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Drag & Drop:</strong> Drag tracks by their left edge to reorder them in the playlist.
+                        You can also manually edit track numbers.
+                    </div>
+                    
+                    <div id="playlist-loading" class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p class="mt-2">Loading playlist tracks...</p>
+                    </div>
+                    
+                    <div id="playlist-content" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th width="40">Order</th>
+                                        <th width="60">Track #</th>
+                                        <th>Title</th>
+                                        <th width="100">Duration</th>
+                                        <th width="100">Uploaded</th>
+                                        <th width="80">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="playlist-tracks">
+                                    <!-- Tracks loaded via AJAX -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="savePlaylistOrder">
+                        <i class="fas fa-save"></i> Save Order
+                    </button>
                 </div>
             </div>
         </div>
@@ -552,6 +805,69 @@ try {
             .catch(error => {
                 // Revert toggle on error
                 toggle.checked = !active;
+                alert('Network error: ' + error.message);
+            });
+        }
+        
+        // Description toggle function
+        function toggleDescription(showId) {
+            const shortDiv = document.getElementById(`desc-short-${showId}`);
+            const fullDiv = document.getElementById(`desc-full-${showId}`);
+            const toggleBtn = document.getElementById(`desc-toggle-${showId}`);
+            
+            if (fullDiv.style.display === 'none') {
+                // Show full description
+                shortDiv.style.display = 'none';
+                fullDiv.style.display = 'block';
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show less';
+            } else {
+                // Show short description
+                shortDiv.style.display = 'block';
+                fullDiv.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show more';
+            }
+        }
+        
+        // Refresh metadata function
+        function refreshMetadata(showId) {
+            const btn = document.querySelector(`[onclick="refreshMetadata(${showId})"]`);
+            const originalContent = btn.innerHTML;
+            
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting...';
+            
+            fetch('/api/show-management.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'refresh_metadata',
+                    show_id: showId,
+                    csrf_token: '<?= generateCSRFToken() ?>'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success and reload page to display new metadata
+                    btn.innerHTML = '<i class="fas fa-check"></i> Detected!';
+                    btn.className = 'btn btn-sm btn-success';
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    // Show error
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                    alert('Failed to refresh metadata: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
                 alert('Network error: ' + error.message);
             });
         }
@@ -948,7 +1264,206 @@ try {
         // Load verification status on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadVerificationStatus();
+            setupUploadHandlers();
+            setupPlaylistHandlers();
         });
+        
+        // Upload functionality
+        function setupUploadHandlers() {
+            // Handle upload button clicks
+            document.querySelectorAll('.upload-file-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const showId = this.dataset.showId;
+                    const showName = this.dataset.showName;
+                    const maxSize = this.dataset.maxSize;
+                    
+                    document.getElementById('upload_show_id').value = showId;
+                    document.getElementById('upload_max_size').textContent = maxSize;
+                    document.querySelector('#uploadModal .modal-title').textContent = `Upload Audio - ${showName}`;
+                    
+                    // Reset form
+                    document.getElementById('uploadForm').reset();
+                    document.querySelector('.upload-progress').style.display = 'none';
+                    
+                    new bootstrap.Modal(document.getElementById('uploadModal')).show();
+                });
+            });
+            
+            // Handle upload form submission
+            document.getElementById('uploadButton').addEventListener('click', function() {
+                const form = document.getElementById('uploadForm');
+                const formData = new FormData(form);
+                const progressBar = document.querySelector('.upload-progress');
+                const statusDiv = document.querySelector('.upload-status');
+                
+                // Show progress
+                progressBar.style.display = 'block';
+                statusDiv.textContent = 'Uploading...';
+                document.querySelector('.progress-bar').style.width = '0%';
+                
+                // Upload file
+                fetch('/api/upload.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        statusDiv.innerHTML = '<i class="fas fa-check-circle text-success"></i> Upload successful!';
+                        document.querySelector('.progress-bar').style.width = '100%';
+                        
+                        setTimeout(() => {
+                            bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+                            location.reload(); // Reload to show updated recording count
+                        }, 1500);
+                    } else {
+                        statusDiv.innerHTML = `<i class="fas fa-times-circle text-danger"></i> ${data.error}`;
+                    }
+                })
+                .catch(error => {
+                    statusDiv.innerHTML = `<i class="fas fa-times-circle text-danger"></i> Upload failed: ${error.message}`;
+                });
+            });
+        }
+        
+        // Playlist management functionality
+        function setupPlaylistHandlers() {
+            // Handle playlist management button clicks
+            document.querySelectorAll('.manage-playlist-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const showId = this.dataset.showId;
+                    const showName = this.dataset.showName;
+                    
+                    document.querySelector('#playlistModal .modal-title').textContent = `Manage Playlist - ${showName}`;
+                    loadPlaylistTracks(showId);
+                    
+                    new bootstrap.Modal(document.getElementById('playlistModal')).show();
+                });
+            });
+        }
+        
+        function loadPlaylistTracks(showId) {
+            const loading = document.getElementById('playlist-loading');
+            const content = document.getElementById('playlist-content');
+            
+            loading.style.display = 'block';
+            content.style.display = 'none';
+            
+            fetch(`/api/playlist-tracks.php?show_id=${showId}`)
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                
+                if (data.success) {
+                    const tbody = document.getElementById('playlist-tracks');
+                    tbody.innerHTML = '';
+                    
+                    data.tracks.forEach(track => {
+                        const row = createTrackRow(track);
+                        tbody.appendChild(row);
+                    });
+                    
+                    // Initialize drag and drop
+                    initializeDragDrop();
+                    content.style.display = 'block';
+                } else {
+                    content.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                    content.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                content.innerHTML = `<div class="alert alert-danger">Failed to load tracks: ${error.message}</div>`;
+                content.style.display = 'block';
+            });
+        }
+        
+        function createTrackRow(track) {
+            const row = document.createElement('tr');
+            row.dataset.recordingId = track.id;
+            row.innerHTML = `
+                <td class="drag-handle" style="cursor: move;">
+                    <i class="fas fa-grip-vertical text-muted"></i>
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm track-number" 
+                           value="${track.track_number}" min="1" style="width: 60px;">
+                </td>
+                <td>
+                    <strong>${escapeHtml(track.title)}</strong>
+                    ${track.description ? `<br><small class="text-muted">${escapeHtml(track.description)}</small>` : ''}
+                </td>
+                <td>${formatDuration(track.duration_seconds)}</td>
+                <td>${timeAgo(track.recorded_at)}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger delete-track" 
+                            data-recording-id="${track.id}" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            return row;
+        }
+        
+        function initializeDragDrop() {
+            const tbody = document.getElementById('playlist-tracks');
+            let draggedElement = null;
+            
+            // Add drag events to all rows
+            tbody.querySelectorAll('tr').forEach(row => {
+                row.draggable = true;
+                
+                row.addEventListener('dragstart', function(e) {
+                    draggedElement = this;
+                    this.style.opacity = '0.5';
+                });
+                
+                row.addEventListener('dragend', function(e) {
+                    this.style.opacity = '';
+                });
+                
+                row.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                });
+                
+                row.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    if (draggedElement !== this) {
+                        const rect = this.getBoundingClientRect();
+                        const middle = rect.top + rect.height / 2;
+                        
+                        if (e.clientY < middle) {
+                            this.parentNode.insertBefore(draggedElement, this);
+                        } else {
+                            this.parentNode.insertBefore(draggedElement, this.nextSibling);
+                        }
+                        
+                        updateTrackNumbers();
+                    }
+                });
+            });
+        }
+        
+        function updateTrackNumbers() {
+            const rows = document.querySelectorAll('#playlist-tracks tr');
+            rows.forEach((row, index) => {
+                const input = row.querySelector('.track-number');
+                input.value = index + 1;
+            });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatDuration(seconds) {
+            if (!seconds) return '--';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
     </script>
 
     <!-- Footer -->

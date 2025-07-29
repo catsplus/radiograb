@@ -44,12 +44,29 @@ class Show(Base):
     station_id = Column(Integer, ForeignKey("stations.id"), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
+    long_description = Column(Text, nullable=True)  # Extended description from website
     host = Column(String(255), nullable=True)
-    schedule_pattern = Column(String(255), nullable=False)  # Cron-like pattern
+    genre = Column(String(100), nullable=True)  # Show genre/category
+    image_url = Column(String(500), nullable=True)  # Show-specific image
+    website_url = Column(String(500), nullable=True)  # Direct show page URL
+    
+    # Metadata tracking
+    description_source = Column(String(50), nullable=True)  # 'calendar', 'website', 'manual', 'generated'
+    image_source = Column(String(50), nullable=True)  # 'calendar', 'website', 'station', 'default'
+    metadata_json = Column(Text, nullable=True)  # Extended metadata as JSON
+    metadata_updated = Column(DateTime(timezone=True), nullable=True)  # Last metadata update
+    
+    # Show type and scheduling
+    show_type = Column(String(20), default='scheduled')  # 'scheduled' or 'playlist'
+    schedule_pattern = Column(String(255), nullable=True)  # Cron-like pattern (nullable for playlists)
     schedule_description = Column(String(500), nullable=True)  # Human readable
-    retention_days = Column(Integer, default=30)
+    retention_days = Column(Integer, default=30)  # 0 = never expire (for playlists)
     audio_format = Column(String(10), default='mp3')
     active = Column(Boolean, default=True)
+    
+    # Upload/playlist specific fields
+    allow_uploads = Column(Boolean, default=False)  # Allow user uploads to this show
+    max_file_size_mb = Column(Integer, default=100)  # Max upload size in MB
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -69,6 +86,13 @@ class Recording(Base):
     duration_seconds = Column(Integer, nullable=True)
     file_size_bytes = Column(Integer, nullable=True)
     recorded_at = Column(DateTime(timezone=True), nullable=False)
+    
+    # Upload/source tracking
+    source_type = Column(String(20), default='recorded')  # 'recorded' or 'uploaded'
+    uploaded_by = Column(String(100), nullable=True)  # User who uploaded (future auth)
+    original_filename = Column(String(255), nullable=True)  # Original upload filename
+    track_number = Column(Integer, nullable=True)  # Track order in playlist (NULL for regular recordings)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships

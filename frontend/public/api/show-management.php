@@ -49,6 +49,10 @@ try {
             handleGetStats();
             break;
             
+        case 'refresh_metadata':
+            handleRefreshMetadata();
+            break;
+            
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Invalid action']);
@@ -162,6 +166,51 @@ function handleGetStats() {
         echo json_encode(['success' => true, 'stats' => $stats]);
     } else {
         echo json_encode($result);
+    }
+}
+
+function handleRefreshMetadata() {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) {
+        parse_str(file_get_contents('php://input'), $input);
+    }
+    
+    $show_id = intval($input['show_id'] ?? 0);
+    
+    if (!$show_id) {
+        echo json_encode(['success' => false, 'error' => 'Show ID required']);
+        return;
+    }
+    
+    // Use the Python show metadata CLI to refresh metadata
+    $python_script = dirname(dirname(dirname(__DIR__))) . '/backend/services/show_metadata_cli.py';
+    $full_command = "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python {$python_script} detect-show {$show_id} 2>&1";
+    
+    $output = shell_exec($full_command);
+    
+    if ($output === null) {
+        echo json_encode([
+            'success' => false,
+            'error' => 'Failed to execute metadata detection command'
+        ]);
+        return;
+    }
+    
+    // Check if the command succeeded
+    $success = !preg_match('/error|exception|failed/i', $output) && preg_match('/Metadata Detection Results/i', $output);
+    
+    if ($success) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Metadata refreshed successfully',
+            'output' => trim($output)
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'error' => 'Metadata detection failed',
+            'output' => trim($output)
+        ]);
     }
 }
 
