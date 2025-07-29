@@ -116,7 +116,7 @@ def demonstrate_workflow():
     print("\n=== RadioGrab Workflow Demonstration ===")
     
     print("""
-RadioGrab Radio TiVo Workflow:
+RadioGrab Radio Recording Workflow:
 
 1. 📡 Station Discovery:
    User provides: https://kexp.org

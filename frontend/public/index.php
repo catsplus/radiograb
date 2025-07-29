@@ -1,7 +1,7 @@
 <?php
 /**
  * RadioGrab - Main Dashboard
- * Radio TiVo Application Frontend
+ * Radio Recorder Application Frontend
  */
 
 session_start();
@@ -51,7 +51,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RadioGrab - Radio TiVo Dashboard</title>
+    <title>RadioGrab - Radio Recorder Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/assets/css/radiograb.css" rel="stylesheet">
@@ -118,7 +118,7 @@ try {
         <div class="row mb-4">
             <div class="col">
                 <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
-                <p class="text-muted">Welcome to RadioGrab, your personal radio TiVo system</p>
+                <p class="text-muted">Welcome to RadioGrab, your personal radio recording system</p>
             </div>
             <div class="col-auto">
                 <a href="/add-station.php" class="btn btn-primary">
@@ -318,7 +318,7 @@ try {
             <div class="row">
                 <div class="col text-center text-muted">
                     <small>
-                        RadioGrab - TiVo for Radio | 
+                        RadioGrab - Radio Recorder | 
                         Version: <?= getVersionNumber() ?>
                     </small>
                 </div>

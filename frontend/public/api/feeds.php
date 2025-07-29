@@ -63,7 +63,7 @@ function generateRSSFeed($show, $recordings) {
     echo '<link>' . $base_url . '/shows/' . $show['id'] . '</link>' . "\n";
     echo '<language>en-us</language>' . "\n";
     echo '<copyright>© ' . h($show['station_name']) . '</copyright>' . "\n";
-    echo '<generator>RadioGrab - Radio TiVo</generator>' . "\n";
+    echo '<generator>RadioGrab - Radio Recorder</generator>' . "\n";
     echo '<lastBuildDate>' . date('r') . '</lastBuildDate>' . "\n";
     
     // iTunes specific tags

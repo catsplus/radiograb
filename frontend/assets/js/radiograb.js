@@ -1,6 +1,6 @@
 /**
  * RadioGrab JavaScript
- * Frontend functionality for the Radio TiVo application
+ * Frontend functionality for the Radio Recorder application
  */
 
 class RadioGrab {

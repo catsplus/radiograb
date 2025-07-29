@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/python-3.8+-blue)](https://www.python.org/)
 [![PHP](https://img.shields.io/badge/php-8.1+-blue)](https://www.php.net/)
 
-**TiVo for Radio Stations** - Automatically record radio shows based on schedules and generate podcast feeds
+**Radio Recording System** - Automatically record radio shows based on schedules and generate podcast feeds
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 

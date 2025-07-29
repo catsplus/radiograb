@@ -2,7 +2,7 @@
 
 ## 🎯 Project Mission
 
-RadioGrab transforms any radio station into a personal podcast library. It's a "TiVo for radio" that automatically discovers streaming URLs, parses show schedules, records audio content, and generates podcast feeds - all while handling the complexities of timezone management, stream compatibility, and system maintenance.
+RadioGrab transforms any radio station into a personal podcast library. It's a "Radio Recording System" that automatically discovers streaming URLs, parses show schedules, records audio content, and generates podcast feeds - all while handling the complexities of timezone management, stream compatibility, and system maintenance.
 
 ## ✨ Key Innovations
 

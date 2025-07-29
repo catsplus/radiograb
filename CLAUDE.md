@@ -120,7 +120,7 @@ To enable proper git-based deployment, the server needs:
 ## 🎯 SYSTEM CAPABILITIES & FEATURES
 
 ### Core Functionality
-- **TiVo for Radio**: Automatically record radio shows based on configured schedules and generate podcast feeds
+- **Radio Recording System**: Automatically record radio shows based on configured schedules and generate podcast feeds
 - **Enhanced Recording Service v2.5**: Database-driven recording with APScheduler integration for automatic scheduling
 - **Automatic Show Recording**: APScheduler-based cron scheduling system that automatically records shows at scheduled times
 - **Schedule Management**: Web interface for adding/editing show schedules with automatic scheduler integration

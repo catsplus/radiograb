@@ -1,7 +1,7 @@
 # RadioGrab Project Summary & Goals
 
 ## Project Overview
-**RadioGrab** is a comprehensive radio station recording and management system - essentially a "TiVo for radio stations." It automatically discovers, schedules, and records radio shows from streaming stations, then makes them available via RSS feeds for podcast consumption.
+**RadioGrab** is a comprehensive radio station recording and management system - essentially a "Radio Recording System for radio stations." It automatically discovers, schedules, and records radio shows from streaming stations, then makes them available via RSS feeds for podcast consumption.
 
 ## Core Functionality
 - **Station Discovery**: Automatically crawl radio station websites to discover streaming URLs, logos, schedules, and metadata

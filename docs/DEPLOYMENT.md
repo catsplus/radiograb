@@ -2,7 +2,7 @@
 
 **⚠️ CRITICAL: PRODUCTION DEPLOYMENT ARCHITECTURE ⚠️**
 
-RadioGrab is a "TiVo for radio stations" application that runs in Docker containers on production server 167.71.84.143.
+RadioGrab is a "Radio Recording System" application that runs in Docker containers on production server 167.71.84.143.
 
 ## Production Server Details
 - **Server**: 167.71.84.143 (user: `radiograb`)
@@ -505,5 +505,5 @@ echo "Backup completed: $BACKUP_DIR"
 
 ---
 
-**RadioGrab** - Your personal radio TiVo system
+**RadioGrab** - Your personal radio recording system
 Version 1.0 | Last updated: 2025

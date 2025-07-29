@@ -102,7 +102,7 @@ class RSSFeedGenerator:
         self._add_text_element(channel, 'link', f"{self.base_url}/shows/{show.id}")
         self._add_text_element(channel, 'language', 'en-us')
         self._add_text_element(channel, 'copyright', f"© {station.name}")
-        self._add_text_element(channel, 'generator', 'RadioGrab - Radio TiVo')
+        self._add_text_element(channel, 'generator', 'RadioGrab - Radio Recorder')
         self._add_text_element(channel, 'lastBuildDate', 
                               self._format_rfc2822_date(datetime.now(timezone.utc)))
         
@@ -300,7 +300,7 @@ class RSSFeedGenerator:
         self._add_text_element(channel, 'link', f"{self.base_url}/")
         self._add_text_element(channel, 'language', 'en-us')
         self._add_text_element(channel, 'copyright', '© RadioGrab')
-        self._add_text_element(channel, 'generator', 'RadioGrab - Radio TiVo')
+        self._add_text_element(channel, 'generator', 'RadioGrab - Radio Recorder')
         self._add_text_element(channel, 'lastBuildDate', 
                               self._format_rfc2822_date(datetime.now(timezone.utc)))
         

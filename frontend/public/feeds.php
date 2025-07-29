@@ -472,7 +472,7 @@ function getFeedUrl($show_id) {
             <div class="row">
                 <div class="col text-center text-muted">
                     <small>
-                        RadioGrab - TiVo for Radio | 
+                        RadioGrab - Radio Recorder | 
                         Version: <?= getVersionNumber() ?>
                     </small>
                 </div>
