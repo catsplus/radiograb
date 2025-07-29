@@ -621,17 +621,17 @@ class CalendarParser:
                 
                 try:
                     # Parse ISO timestamp - WERU uses -0400 (EDT) offset
-                    # Convert to Eastern Time properly
-                    start_dt = datetime.fromisoformat(start_iso.replace('Z', '+00:00'))
+                    # Python's fromisoformat doesn't handle -0400 format, so use dateutil
+                    from dateutil import parser as dateutil_parser
+                    start_dt = dateutil_parser.parse(start_iso)
                     
                     # Convert to US/Eastern timezone 
+                    eastern = pytz.timezone('US/Eastern')
                     if start_dt.tzinfo is None:
                         # If no timezone, assume it's already in Eastern
-                        eastern = pytz.timezone('US/Eastern')
                         start_dt = eastern.localize(start_dt)
                     else:
-                        # Convert to Eastern
-                        eastern = pytz.timezone('US/Eastern')
+                        # Convert to Eastern (this handles the -0400 offset properly)
                         start_dt = start_dt.astimezone(eastern)
                     
                     # Extract local time (without timezone offset)
@@ -646,7 +646,7 @@ class CalendarParser:
                     end_time = None
                     if end_iso:
                         try:
-                            end_dt = datetime.fromisoformat(end_iso.replace('Z', '+00:00'))
+                            end_dt = dateutil_parser.parse(end_iso)
                             if end_dt.tzinfo is None:
                                 end_dt = eastern.localize(end_dt)
                             else:
