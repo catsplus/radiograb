@@ -27,7 +27,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 
 # Import existing calendar parser components
-from calendar_parser import CalendarParser, ShowSchedule
+from .calendar_parser import CalendarParser, ShowSchedule
 
 logger = logging.getLogger(__name__)
 
