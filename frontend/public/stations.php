@@ -872,17 +872,9 @@ try {
                         throw new Error('Failed to get CSRF token');
                     }
                     
-                    const response = await fetch('/api/schedule-verification.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        credentials: 'same-origin',
-                        body: new URLSearchParams({
-                            action: 'verify_single',
-                            station_id: stationId,
-                            csrf_token: csrfToken
-                        })
+                    const response = await fetch(`/api/schedule-verification.php?action=verify_station&station_id=${stationId}`, {
+                        method: 'GET',
+                        credentials: 'same-origin'
                     });
                     
                     const result = await response.json();
