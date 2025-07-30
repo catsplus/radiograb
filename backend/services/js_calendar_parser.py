@@ -170,11 +170,22 @@ class JavaScriptCalendarParser(CalendarParser):
                 self.driver = None
     
     def parse_station_schedule(self, station_url: str, station_id: int = None) -> List[ShowSchedule]:
-        """Main entry point - tries JavaScript parsing first, falls back to standard parsing"""
+        """Main entry point - tries saved method first, then JavaScript parsing, then fallbacks"""
         try:
             logger.info(f"Starting JavaScript-aware schedule parsing for {station_url}")
             
-            # First try JavaScript-aware parsing
+            # First, check if we have a previously successful parsing method
+            saved_method = self._load_saved_parsing_method(station_id)
+            if saved_method:
+                logger.info(f"Using saved parsing method: {saved_method['method_type']}")
+                saved_shows = self._execute_saved_method(saved_method, station_url, station_id)
+                if saved_shows:
+                    logger.info(f"Saved method found {len(saved_shows)} shows")
+                    return self._deduplicate_shows(saved_shows)
+                else:
+                    logger.warning("Saved method failed, falling back to full parsing")
+            
+            # Try JavaScript-aware parsing
             js_shows = self._parse_with_javascript(station_url, station_id)
             
             if js_shows:
@@ -191,7 +202,16 @@ class JavaScriptCalendarParser(CalendarParser):
                 direct_shows = self._parse_with_requests(station_url)
                 if direct_shows:
                     logger.info(f"Direct HTML parsing found {len(direct_shows)} shows")
+                    self._save_parsing_method(station_id, "direct_html", station_url)
                     return self._deduplicate_shows(direct_shows)
+                
+                # Final attempt: RSS feed parsing
+                logger.info("Direct HTML parsing found no shows, trying RSS feed parsing")
+                rss_shows = self._parse_rss_feeds(station_url, station_id)
+                if rss_shows:
+                    logger.info(f"RSS feed parsing found {len(rss_shows)} shows")
+                    self._save_parsing_method(station_id, "rss_feeds", station_url)
+                    return self._deduplicate_shows(rss_shows)
             
             return standard_shows
             
@@ -914,6 +934,233 @@ class JavaScriptCalendarParser(CalendarParser):
             logger.error(f"Error in generic schedule parsing: {e}")
         
         return shows
+    
+    def _parse_rss_feeds(self, station_url: str, station_id: int = None) -> List[ShowSchedule]:
+        """Parse RSS feeds to extract show/program information"""
+        shows = []
+        
+        try:
+            logger.info(f"Attempting RSS feed parsing for {station_url}")
+            
+            # Extract base domain
+            from urllib.parse import urlparse
+            parsed_url = urlparse(station_url)
+            base_domain = f"{parsed_url.scheme}://{parsed_url.netloc}"
+            
+            # Common RSS feed locations
+            rss_urls = [
+                f"{base_domain}/feed/",
+                f"{base_domain}/rss/",
+                f"{base_domain}/feed/podcast/",
+                f"{base_domain}/rss.xml",
+                f"{base_domain}/feed.xml",
+                f"{base_domain}/podcast.xml"
+            ]
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+            }
+            
+            for rss_url in rss_urls:
+                try:
+                    response = requests.get(rss_url, headers=headers, timeout=15)
+                    if response.status_code == 200:
+                        logger.info(f"Found RSS feed at {rss_url}")
+                        feed_shows = self._parse_rss_content(response.text, rss_url)
+                        shows.extend(feed_shows)
+                        
+                        if feed_shows:
+                            logger.info(f"Extracted {len(feed_shows)} shows from {rss_url}")
+                            break  # Stop after first successful RSS feed
+                            
+                except Exception as e:
+                    logger.debug(f"RSS URL {rss_url} failed: {e}")
+                    continue
+            
+        except Exception as e:
+            logger.error(f"Error in RSS feed parsing: {e}")
+        
+        return shows
+    
+    def _parse_rss_content(self, rss_content: str, rss_url: str) -> List[ShowSchedule]:
+        """Parse RSS XML content to extract show information"""
+        shows = []
+        
+        try:
+            soup = BeautifulSoup(rss_content, 'xml')
+            items = soup.find_all('item')
+            
+            show_names = set()
+            
+            for item in items[:20]:  # Process first 20 items
+                title_elem = item.find('title')
+                if not title_elem:
+                    continue
+                
+                title = title_elem.get_text(strip=True)
+                
+                # Extract show name from RSS item titles
+                show_name = self._extract_show_name_from_title(title)
+                if show_name and len(show_name) > 2:
+                    show_names.add(show_name)
+            
+            # Convert to ShowSchedule objects
+            for show_name in show_names:
+                # Determine schedule based on show name patterns
+                days, start_time = self._infer_schedule_from_name(show_name)
+                
+                show = ShowSchedule(
+                    name=show_name,
+                    start_time=start_time,
+                    end_time=dt_time((start_time.hour + 1) % 24, start_time.minute),
+                    days=days,
+                    description=f"Program extracted from RSS feed: {show_name}",
+                    host="",
+                    genre=""
+                )
+                shows.append(show)
+                logger.info(f"Created show from RSS: {show_name}")
+        
+        except Exception as e:
+            logger.error(f"Error parsing RSS content: {e}")
+        
+        return shows
+    
+    def _extract_show_name_from_title(self, title: str) -> str:
+        """Extract clean show name from RSS item title"""
+        try:
+            # Remove date patterns
+            title = re.sub(r'–\s*\w+,?\s*\w*\s*\d{1,2},?\s*\d{4}', '', title)  # "– Saturday, August 28, 2021"
+            title = re.sub(r'–\s*\d{1,2}/\d{1,2}/\d{4}', '', title)  # "– 8/20/2023"
+            title = re.sub(r'\d{4}-\d{2}-\d{2}', '', title)  # "2025-07-28"
+            title = re.sub(r'\w+\s+\d{1,2},\s+\d{4}', '', title)  # "July 28, 2025"
+            
+            # Remove episode information in parentheses
+            title = re.sub(r'\([^)]*\)', '', title)
+            
+            # Clean up extra whitespace and dashes
+            title = re.sub(r'–+', '', title)
+            title = re.sub(r'\s+', ' ', title)
+            title = title.strip(' –-')
+            
+            return title
+            
+        except Exception as e:
+            logger.debug(f"Error extracting show name from '{title}': {e}")
+            return ""
+    
+    def _infer_schedule_from_name(self, show_name: str) -> tuple:
+        """Infer schedule from show name patterns"""
+        days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']  # Default weekdays
+        start_time = dt_time(9, 0)  # Default 9 AM
+        
+        try:
+            name_lower = show_name.lower()
+            
+            # Day-specific shows
+            if 'sunday' in name_lower:
+                days = ['sunday']
+                start_time = dt_time(10, 0)  # Sunday morning
+            elif 'saturday' in name_lower or 'classic' in name_lower:
+                days = ['saturday']
+                start_time = dt_time(14, 0)  # Saturday afternoon
+            elif 'morning' in name_lower:
+                start_time = dt_time(7, 0)  # Morning shows
+            elif 'evening' in name_lower:
+                start_time = dt_time(19, 0)  # Evening shows
+            elif 'night' in name_lower:
+                start_time = dt_time(21, 0)  # Night shows
+            elif 'jazz' in name_lower:
+                days = ['friday']  # Jazz typically Friday nights
+                start_time = dt_time(20, 0)
+            elif 'country' in name_lower:
+                days = ['saturday']  # Country often weekends
+                start_time = dt_time(16, 0)
+                
+        except Exception as e:
+            logger.debug(f"Error inferring schedule for '{show_name}': {e}")
+        
+        return days, start_time
+    
+    def _save_parsing_method(self, station_id: int, method_type: str, station_url: str):
+        """Save successful parsing method for future use"""
+        try:
+            if not station_id:
+                return
+                
+            # Create parsing method cache directory
+            cache_dir = Path('/var/radiograb/logs/parsing_methods')
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            
+            method_file = cache_dir / f"station_{station_id}_method.json"
+            
+            method_data = {
+                'station_id': station_id,
+                'method_type': method_type,
+                'station_url': station_url,
+                'last_successful': datetime.now().isoformat(),
+                'success_count': 1
+            }
+            
+            # If file exists, update success count
+            if method_file.exists():
+                try:
+                    with open(method_file, 'r') as f:
+                        existing_data = json.load(f)
+                    method_data['success_count'] = existing_data.get('success_count', 0) + 1
+                except:
+                    pass
+            
+            # Save method data
+            with open(method_file, 'w') as f:
+                json.dump(method_data, f, indent=2)
+                
+            logger.info(f"Saved parsing method '{method_type}' for station {station_id}")
+            
+        except Exception as e:
+            logger.error(f"Error saving parsing method: {e}")
+    
+    def _load_saved_parsing_method(self, station_id: int):
+        """Load previously successful parsing method"""
+        try:
+            if not station_id:
+                return None
+                
+            method_file = Path(f'/var/radiograb/logs/parsing_methods/station_{station_id}_method.json')
+            
+            if method_file.exists():
+                with open(method_file, 'r') as f:
+                    method_data = json.load(f)
+                    
+                # Only use method if it was successful recently (within 30 days)
+                last_success = datetime.fromisoformat(method_data['last_successful'])
+                if (datetime.now() - last_success).days <= 30:
+                    logger.info(f"Found saved parsing method '{method_data['method_type']}' for station {station_id}")
+                    return method_data
+                    
+        except Exception as e:
+            logger.debug(f"Error loading saved parsing method: {e}")
+            
+        return None
+    
+    def _execute_saved_method(self, method_data: dict, station_url: str, station_id: int) -> List[ShowSchedule]:
+        """Execute a previously successful parsing method"""
+        try:
+            method_type = method_data.get('method_type')
+            
+            if method_type == "rss_feeds":
+                return self._parse_rss_feeds(station_url, station_id)
+            elif method_type == "direct_html":
+                return self._parse_with_requests(station_url)
+            elif method_type == "javascript":
+                return self._parse_with_javascript(station_url, station_id)
+            else:
+                logger.warning(f"Unknown saved method type: {method_type}")
+                return []
+                
+        except Exception as e:
+            logger.error(f"Error executing saved method: {e}")
+            return []
     
     def _parse_days_string(self, days_str: str) -> List[str]:
         """Parse a string containing day information"""
