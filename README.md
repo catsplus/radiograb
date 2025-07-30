@@ -9,7 +9,7 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v2.12.0 (July 30, 2025)
+## 📅 Current Version: v3.8.0 (July 30, 2025)
 **Latest Features**: 🎯 **STATION SCHEDULE DISCOVERY** - Complete smart show management system in Add Show interface. When station is pre-selected, automatically discover and display the station's programming schedule with "Find Shows" button. Shows with multiple airings display all air times separately with individual Add buttons. Clicking Add pre-fills all form fields (name, schedule, duration, description, host, genre) and converts schedule data to natural language format. Enhanced workflow: Stations → Shows → Add Show → Find Shows → Browse schedule → Add specific airings. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
