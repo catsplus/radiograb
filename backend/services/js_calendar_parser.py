@@ -9,6 +9,7 @@ import re
 import json
 import logging
 import time
+import os
 from datetime import datetime, time as dt_time, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from urllib.parse import urljoin, urlparse
@@ -100,8 +101,28 @@ class JavaScriptCalendarParser(CalendarParser):
                 }
                 chrome_options.add_experimental_option("prefs", prefs)
                 
-                # Use Chromium browser which should be installed via apt
-                chrome_options.binary_location = '/usr/bin/chromium-browser'
+                # Try to find available browser binaries
+                possible_browsers = [
+                    '/usr/bin/google-chrome',
+                    '/usr/bin/chrome',
+                    '/usr/bin/chromium',
+                    '/usr/bin/chromium-browser',
+                    '/snap/bin/chromium'
+                ]
+                
+                browser_found = None
+                for browser_path in possible_browsers:
+                    import os
+                    if os.path.exists(browser_path):
+                        browser_found = browser_path
+                        break
+                
+                if browser_found:
+                    chrome_options.binary_location = browser_found
+                    logger.info(f"Using browser: {browser_found}")
+                else:
+                    logger.warning("No Chrome/Chromium browser found, WebDriver will fail")
+                    raise Exception("No compatible browser found for WebDriver")
                 
                 # First, try using system chromedriver
                 import shutil
@@ -163,6 +184,14 @@ class JavaScriptCalendarParser(CalendarParser):
             # Fall back to standard parsing
             logger.info("JavaScript parsing found no shows, falling back to standard parsing")
             standard_shows = super().parse_station_schedule(station_url, station_id)
+            
+            # If standard parsing also fails, try requests + BeautifulSoup direct approach
+            if not standard_shows:
+                logger.info("Standard parsing also found no shows, trying direct HTML parsing")
+                direct_shows = self._parse_with_requests(station_url)
+                if direct_shows:
+                    logger.info(f"Direct HTML parsing found {len(direct_shows)} shows")
+                    return self._deduplicate_shows(direct_shows)
             
             return standard_shows
             
@@ -766,6 +795,123 @@ class JavaScriptCalendarParser(CalendarParser):
         
         except Exception as e:
             logger.error(f"Error in additional generic parsing: {e}")
+        
+        return shows
+    
+    def _parse_with_requests(self, station_url: str) -> List[ShowSchedule]:
+        """Parse schedule using direct HTTP requests and BeautifulSoup for WTBR-specific content"""
+        shows = []
+        
+        try:
+            logger.info(f"Attempting direct HTTP parsing for {station_url}")
+            
+            # Make HTTP request with proper headers
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            response = requests.get(station_url, headers=headers, timeout=30)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # WTBR-specific parsing - look for schedule content
+            shows.extend(self._parse_wtbr_schedule(soup))
+            
+            # Generic parsing approaches
+            if not shows:
+                shows.extend(self._parse_generic_schedule_content(soup))
+            
+        except Exception as e:
+            logger.error(f"Error in direct HTML parsing: {e}")
+        
+        return shows
+    
+    def _parse_wtbr_schedule(self, soup) -> List[ShowSchedule]:
+        """Parse WTBR-specific schedule format"""
+        shows = []
+        
+        try:
+            # Look for WTBR schedule patterns
+            # Check for any tables, lists, or div containers that might have schedule info
+            schedule_containers = soup.find_all(['table', 'div', 'ul'], class_=re.compile(r'schedule|program|show', re.I))
+            
+            for container in schedule_containers:
+                # Extract text and look for show patterns
+                text = container.get_text(strip=True)
+                if len(text) > 10:  # Skip empty containers
+                    logger.debug(f"Found potential schedule container with text: {text[:100]}...")
+                    
+                    # Look for time patterns in the text
+                    time_patterns = re.findall(r'(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?)\s*[-–—]\s*([^,\n]+)', text)
+                    for time_match, show_name in time_patterns:
+                        if len(show_name.strip()) > 2:
+                            try:
+                                start_time = self._parse_time(time_match)
+                                if start_time:
+                                    show = ShowSchedule(
+                                        name=show_name.strip(),
+                                        start_time=start_time,
+                                        end_time=dt_time((start_time.hour + 1) % 24, start_time.minute),
+                                        days=['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                                        description=f"WTBR program: {show_name.strip()}",
+                                        host="",
+                                        genre=""
+                                    )
+                                    shows.append(show)
+                                    logger.info(f"Found WTBR show: {show_name.strip()} at {start_time}")
+                            except Exception as e:
+                                logger.debug(f"Error parsing show {show_name}: {e}")
+            
+            # Also look for any links or headings that might be show names
+            show_links = soup.find_all('a', href=re.compile(r'show|program', re.I))
+            for link in show_links:
+                show_name = link.get_text(strip=True)
+                if len(show_name) > 2 and len(show_name) < 100:
+                    show = ShowSchedule(
+                        name=show_name,
+                        start_time=dt_time(9, 0),  # Default time
+                        end_time=dt_time(10, 0),
+                        days=['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                        description=f"WTBR program: {show_name}",
+                        host="",
+                        genre=""
+                    )
+                    shows.append(show)
+                    logger.info(f"Found WTBR show link: {show_name}")
+        
+        except Exception as e:
+            logger.error(f"Error parsing WTBR schedule: {e}")
+        
+        return shows
+    
+    def _parse_generic_schedule_content(self, soup) -> List[ShowSchedule]:
+        """Generic parsing for any schedule-like content"""
+        shows = []
+        
+        try:
+            # Look for headings that might be show names
+            headings = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+            for heading in headings:
+                text = heading.get_text(strip=True)
+                # Skip common navigation/header text
+                if (len(text) > 3 and len(text) < 100 and 
+                    not any(skip in text.lower() for skip in ['schedule', 'calendar', 'about', 'contact', 'home', 'news'])):
+                    
+                    show = ShowSchedule(
+                        name=text,
+                        start_time=dt_time(9, 0),
+                        end_time=dt_time(10, 0),
+                        days=['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                        description=f"Radio program: {text}",
+                        host="",
+                        genre=""
+                    )
+                    shows.append(show)
+                    logger.debug(f"Found potential show from heading: {text}")
+        
+        except Exception as e:
+            logger.error(f"Error in generic schedule parsing: {e}")
         
         return shows
     
