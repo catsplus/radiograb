@@ -43,6 +43,14 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && docker compose down && docker 
 - **Retention Policies**: Configurable TTL with automatic cleanup
 - **Real-time Status**: ON-AIR indicators, progress tracking, browser notifications
 
+### ✅ Generic Architecture (v2.11.0)
+- **No Station-Specific Code**: All parsers completely generic and reusable
+- **ISO Timestamp Parser**: `_parse_iso_timestamp_json_schedule()` for any timezone-aware JSON calendar
+- **Show Links Parser**: `_parse_show_links_schedule()` for any HTML with show links/program elements  
+- **StreamTheWorld Fallback**: Generic HD2→HD1→base quality fallback (not station-specific)
+- **Smart Logo Detection**: Intelligent scoring system with homepage priority, path analysis, size validation
+- **Unlimited Scalability**: Add any station without code changes - parsers auto-detect formats
+
 ## 🕐 AUTOMATIC RECORDING SYSTEM
 
 ### Architecture
@@ -121,6 +129,8 @@ ssh radiograb@167.71.84.143 "docker exec -it radiograb-mysql-1 mysql -u radiogra
 - **BeautifulSoup4**: HTML parsing
 - **Selenium**: JavaScript-aware parsing
 - **requests**: HTTP client
+- **Pillow**: Image processing for logo optimization
+- **python-dateutil**: ISO timestamp parsing with timezone support
 
 ## 🔐 SSL/SECURITY
 

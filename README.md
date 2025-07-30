@@ -9,23 +9,24 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v2.12.0 (July 29, 2025)
-**Latest Features**: Comprehensive logo and social media system with local logo storage, Facebook logo extraction, consistent 60x60px sizing, and automatic social media link detection for 10+ platforms. All station logos optimized and stored locally for consistent performance. Enhanced visual interface with colored social media icons and proper platform branding. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v2.11.0 (July 30, 2025)
+**Latest Features**: 🏗️ **GENERIC ARCHITECTURE OVERHAUL** - Removed ALL station-specific hardcoded logic from parsers. System now uses completely generic, reusable parsers that work with any station format. ISO timestamp parser handles timezone-aware JSON calendars, show links parser works with any HTML structure, StreamTheWorld fallback logic is format-agnostic. **No station-specific code remains** - unlimited scalability without code changes. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
+- **🏗️ Generic Architecture**: 100% station-agnostic parsers - no hardcoded station logic anywhere
+- **ISO Timestamp Parser**: Handles any timezone-aware JSON calendar format (`_parse_iso_timestamp_json_schedule`)
+- **Show Links Parser**: Works with any HTML structure with show links (`_parse_show_links_schedule`)
+- **StreamTheWorld Fallback**: Generic HD2→HD1→base quality fallback for any station
+- **Smart Logo Detection**: Intelligent scoring system with homepage priority and path analysis
 - **Playlist Upload System**: User audio file uploads with drag & drop track ordering and playlist management
 - **MP3 Metadata Implementation**: Automatic metadata writing for all recordings (artist=show name, album=station name, recording date, description)
 - **Multi-Format Audio Support**: Upload MP3, WAV, M4A, AAC, OGG, FLAC with automatic MP3 conversion
-- **Track Ordering Management**: Drag & drop playlist reordering with manual track number adjustment
 - **Multiple Show Airings**: Support for original + repeat broadcasts with natural language scheduling ("Mondays at 7 PM and Thursdays at 3 PM")
 - **Real-Time ON-AIR Indicators**: Live visual feedback for shows currently recording with animated progress tracking
-- **Advanced Schedule Parsing**: Recognizes "original", "repeat", "encore" keywords with priority-based scheduling
 - **Automatic Show Recording**: APScheduler-based system that automatically records shows at scheduled times
 - **TTL Recording Management**: Configurable expiry periods (days/weeks/months/indefinite) with automatic cleanup
-- **Enhanced Show Management**: Active/inactive toggle, tags functionality, and AJAX-powered interface
-- **Next Recordings Display**: Dashboard widget showing top 3 upcoming scheduled recordings
 - **Schedule Management**: Web interface for adding/editing show schedules with automatic scheduler integration
 - **Smart Discovery**: Extract streaming URLs and schedules from station websites with User-Agent support
 - **Podcast Generation**: Create RSS feeds for individual shows or all recordings with playlist support
