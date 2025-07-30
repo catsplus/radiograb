@@ -5,7 +5,9 @@
 ### Server Details
 - **Domain**: https://radiograb.svaha.com
 - **Server**: 167.71.84.143 (AlmaLinux 9)
-- **SSH**: `root@167.71.84.143` (full access) | `radiograb@167.71.84.143` (app-only)
+- **SSH Access**: 
+  - `root@167.71.84.143` - **FULL ROOT ACCESS** for system administration, Docker management, container restarts
+  - `radiograb@167.71.84.143` - Limited user for application-only tasks and deployments
 - **Directory**: `/opt/radiograb/`
 
 ### Docker Architecture (5 Containers)
@@ -287,6 +289,22 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && ./setup-container-ssl.sh radio
 
 # Git repository fix
 ssh radiograb@167.71.84.143 "cd /opt/radiograb && git stash && git pull origin main"
+```
+
+### 🧪 Testing Requirements
+**CRITICAL**: All tests and debugging should simulate actual user browser interactions using Chromium browser. This includes:
+- **Calendar Verification**: Test through web interface (not direct API calls)
+- **Browser CSRF Workflow**: Use actual browser-based token workflows
+- **User Interaction Simulation**: Actual clicks, form submissions, page interactions
+- **JavaScript Execution**: Selenium WebDriver with Chromium for dynamic content
+- **Real User Testing**: "Test using the same method users test, via a browser"
+
+```bash
+# Browser testing examples:
+# 1. Use web interface buttons instead of direct API calls
+# 2. Test CSRF token flow through browser forms
+# 3. Verify calendar discovery via "Find Shows" button
+# 4. Check recording status through dashboard (not just API)
 ```
 
 ## 🆕 RECENT UPDATES (July 2025)
