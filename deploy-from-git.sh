@@ -6,8 +6,16 @@
 
 set -e
 
-echo "🚀 RadioGrab Deployment from Git"
-echo "================================="
+# Parse command line arguments
+QUICK_MODE=false
+if [[ "$1" == "--quick" ]] || [[ "$1" == "-q" ]]; then
+    QUICK_MODE=true
+    echo "🏃 RadioGrab Quick Deployment (Documentation/Config Only)"
+    echo "========================================================"
+else
+    echo "🚀 RadioGrab Full Deployment from Git"
+    echo "================================="
+fi
 
 # Change to radiograb directory
 cd /opt/radiograb
@@ -42,9 +50,14 @@ git log --oneline -5
 echo
 
 # Rebuild containers with new code
-echo "🔄 Rebuilding Docker containers..."
-docker compose down
-docker compose up -d --build
+if [[ "$QUICK_MODE" == "true" ]]; then
+    echo "📝 Quick mode: Restarting containers without rebuild..."
+    docker compose restart
+else
+    echo "🔄 Full rebuild: Rebuilding Docker containers..."
+    docker compose down
+    docker compose up -d --build
+fi
 
 # Wait for containers to be healthy
 echo "⏳ Waiting for containers to start..."
@@ -69,7 +82,13 @@ else
 fi
 
 echo
-echo "✅ Deployment complete!"
+if [[ "$QUICK_MODE" == "true" ]]; then
+    echo "✅ Quick deployment complete!"
+    echo "📝 For code changes, use: ./deploy-from-git.sh (full rebuild)"
+else
+    echo "✅ Full deployment complete!"
+    echo "📝 For docs/config changes, use: ./deploy-from-git.sh --quick"
+fi
 echo "🌐 Site: https://radiograb.svaha.com"
 echo "📊 Check containers: docker compose ps"
 echo "📋 View logs: docker logs radiograb-web-1"
