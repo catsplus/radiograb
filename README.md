@@ -9,12 +9,17 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v2.11.0 (July 30, 2025)
-**Latest Features**: 🏗️ **GENERIC ARCHITECTURE OVERHAUL** - Removed ALL station-specific hardcoded logic from parsers. System now uses completely generic, reusable parsers that work with any station format. ISO timestamp parser handles timezone-aware JSON calendars, show links parser works with any HTML structure, StreamTheWorld fallback logic is format-agnostic. **No station-specific code remains** - unlimited scalability without code changes. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v2.12.0 (July 30, 2025)
+**Latest Features**: 🎯 **STATION SCHEDULE DISCOVERY** - Complete smart show management system in Add Show interface. When station is pre-selected, automatically discover and display the station's programming schedule with "Find Shows" button. Shows with multiple airings display all air times separately with individual Add buttons. Clicking Add pre-fills all form fields (name, schedule, duration, description, host, genre) and converts schedule data to natural language format. Enhanced workflow: Stations → Shows → Add Show → Find Shows → Browse schedule → Add specific airings. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
+- **🎯 Station Schedule Discovery**: Automatically discover and display station programming schedules in Add Show interface
+- **📋 Smart Show Management**: Click "Find Shows" to browse station's published schedule with multiple airings support
+- **🖱️ One-Click Show Addition**: Click Add on discovered shows to pre-fill all form fields (name, schedule, description, host, genre)
+- **⏰ Multiple Airings Support**: Shows with repeat broadcasts display all air times separately with individual Add buttons
+- **🗣️ Natural Language Conversion**: Converts parsed schedule data to user-friendly format ("every Monday at 7:00 PM")
 - **🏗️ Generic Architecture**: 100% station-agnostic parsers - no hardcoded station logic anywhere
 - **ISO Timestamp Parser**: Handles any timezone-aware JSON calendar format (`_parse_iso_timestamp_json_schedule`)
 - **Show Links Parser**: Works with any HTML structure with show links (`_parse_show_links_schedule`)
