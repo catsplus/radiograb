@@ -100,13 +100,32 @@ class JavaScriptCalendarParser(CalendarParser):
                 }
                 chrome_options.add_experimental_option("prefs", prefs)
                 
-                # Setup Chrome service with webdriver manager
-                # Set cache directory to a writable location via environment variable
-                import os
-                cache_dir = "/var/radiograb/temp/.wdm"
-                os.makedirs(cache_dir, exist_ok=True)
-                os.environ['WDM_LOCAL'] = cache_dir
-                service = Service(ChromeDriverManager().install())
+                # First, try using system chromedriver
+                import shutil
+                system_chromedriver = shutil.which('chromedriver')
+                
+                if system_chromedriver:
+                    logger.info(f"Using system chromedriver: {system_chromedriver}")
+                    service = Service(system_chromedriver)
+                else:
+                    # Fallback to webdriver manager with environment variable
+                    import os
+                    
+                    # Set home directory for webdriver manager to a writable location
+                    original_home = os.environ.get('HOME')
+                    os.environ['HOME'] = '/var/radiograb/temp'
+                    
+                    try:
+                        cache_dir = "/var/radiograb/temp/.wdm"
+                        os.makedirs(cache_dir, exist_ok=True)
+                        service = Service(ChromeDriverManager().install())
+                    finally:
+                        # Restore original HOME if it existed
+                        if original_home:
+                            os.environ['HOME'] = original_home
+                        else:
+                            os.environ.pop('HOME', None)
+                
                 self.driver = webdriver.Chrome(service=service, options=chrome_options)
                 self.driver.set_page_load_timeout(self.timeout)
                 
