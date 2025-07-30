@@ -217,20 +217,44 @@ function redirectWithMessage($url, $type, $message) {
 }
 
 /**
- * Check if file exists in recordings directory
+ * Check if file exists in recordings directory (supports both old and new folder structure)
  */
 function recordingFileExists($filename) {
     if (!$filename) return false;
     $recordings_dir = '/var/radiograb/recordings/';
-    return file_exists($recordings_dir . $filename);
+    
+    // Try new folder structure first (call_letters/filename)
+    if (file_exists($recordings_dir . $filename)) {
+        return true;
+    }
+    
+    // Fallback to old structure (filename only in root)
+    $filename_only = basename($filename);
+    return file_exists($recordings_dir . $filename_only);
 }
 
 /**
- * Get recording file path
+ * Get recording file path (supports both old and new folder structure)
  */
 function getRecordingPath($filename) {
+    if (!$filename) return null;
     $recordings_dir = '/var/radiograb/recordings/';
-    return $recordings_dir . $filename;
+    
+    // Try new folder structure first (call_letters/filename)
+    $new_path = $recordings_dir . $filename;
+    if (file_exists($new_path)) {
+        return $new_path;
+    }
+    
+    // Fallback to old structure (filename only in root)
+    $filename_only = basename($filename);
+    $old_path = $recordings_dir . $filename_only;
+    if (file_exists($old_path)) {
+        return $old_path;
+    }
+    
+    // Return new path format even if file doesn't exist (for new recordings)
+    return $new_path;
 }
 
 /**

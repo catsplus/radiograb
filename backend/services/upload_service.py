@@ -100,14 +100,18 @@ class AudioUploadService:
                 unique_id = str(uuid.uuid4())[:8]
                 filename = f"{call_letters}_upload_{timestamp}_{unique_id}{file_extension}"
                 
-                # Move file to recordings directory  
-                final_path = self.recordings_dir / filename
+                # Create station-specific subdirectory
+                station_dir = self.recordings_dir / call_letters
+                station_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Move file to station-specific directory  
+                final_path = station_dir / filename
                 self._move_file(file_path, final_path)
                 
                 # Convert to MP3 if needed
                 if file_extension != '.mp3':
                     mp3_filename = filename.replace(file_extension, '.mp3')
-                    mp3_path = self.recordings_dir / mp3_filename
+                    mp3_path = station_dir / mp3_filename
                     
                     if self._convert_to_mp3(final_path, mp3_path):
                         # Remove original and use MP3
@@ -138,10 +142,11 @@ class AudioUploadService:
                     ).scalar()
                     track_number = (max_track or 0) + 1
                 
-                # Create recording entry
+                # Create recording entry with relative path from recordings directory
+                relative_path = f"{call_letters}/{filename}"
                 recording = Recording(
                     show_id=show_id,
-                    filename=filename,
+                    filename=relative_path,
                     title=title,
                     description=description,
                     duration_seconds=int(duration),
@@ -169,7 +174,7 @@ class AudioUploadService:
                 return UploadResult(
                     success=True,
                     recording_id=recording.id,
-                    filename=filename,
+                    filename=relative_path,
                     file_size=file_size,
                     duration=int(duration),
                     metadata=metadata
@@ -338,8 +343,13 @@ class AudioUploadService:
                     logger.error(f"Attempted to delete non-uploaded recording {recording_id}")
                     return False
                 
-                # Delete file
+                # Delete file (handle both new and old path formats)
                 file_path = self.recordings_dir / recording.filename
+                if not file_path.exists():
+                    # Try old format without subdirectory
+                    filename_only = Path(recording.filename).name
+                    file_path = self.recordings_dir / filename_only
+                
                 if file_path.exists():
                     file_path.unlink()
                 

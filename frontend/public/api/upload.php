@@ -237,8 +237,14 @@ function handleDeleteUpload() {
             return;
         }
         
-        // Delete the file
+        // Delete the file (handle both old and new folder structure)
         $file_path = "/var/radiograb/recordings/" . $recording['filename'];
+        if (!file_exists($file_path)) {
+            // Try old structure (filename only in root)
+            $filename_only = basename($recording['filename']);
+            $file_path = "/var/radiograb/recordings/" . $filename_only;
+        }
+        
         if (file_exists($file_path)) {
             unlink($file_path);
         }
