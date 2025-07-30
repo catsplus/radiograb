@@ -233,9 +233,28 @@ try {
                                     
                                     <!-- Calendar Verification Status -->
                                     <div class="mb-2">
-                                        <i class="fas fa-calendar-check text-info"></i>
-                                        <small class="text-muted">
-                                            Calendar verified: <?= $station['last_tested'] ? timeAgo($station['last_tested']) : 'Never' ?>
+                                        <?php if (!$station['last_tested']): ?>
+                                            <i class="fas fa-calendar-times text-muted"></i>
+                                            <small class="text-muted">
+                                                Last Verified: Never
+                                        <?php elseif ($station['last_test_result'] === 'success' && $station['show_count'] > 0): ?>
+                                            <i class="fas fa-calendar-check text-success"></i>
+                                            <small class="text-success">
+                                                Calendar found: <?= $station['show_count'] ?> shows imported (<?= timeAgo($station['last_tested']) ?>)
+                                        <?php elseif ($station['last_test_result'] === 'failed'): ?>
+                                            <i class="fas fa-calendar-times text-danger"></i>
+                                            <small class="text-danger">
+                                                Calendar verification failed: <?= timeAgo($station['last_tested']) ?>
+                                                <?php if ($station['last_test_error']): ?>
+                                                    <span title="<?= h($station['last_test_error']) ?>">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </span>
+                                                <?php endif; ?>
+                                        <?php else: ?>
+                                            <i class="fas fa-calendar-exclamation text-warning"></i>
+                                            <small class="text-warning">
+                                                Calendar verified but no shows found (<?= timeAgo($station['last_tested']) ?>)
+                                        <?php endif; ?>
                                             <button class="btn btn-sm btn-outline-primary ms-2 verify-calendar"
                                                     data-station-id="<?= $station['id'] ?>"
                                                     data-station-name="<?= h($station['name']) ?>"

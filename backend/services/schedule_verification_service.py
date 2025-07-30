@@ -193,10 +193,17 @@ class ScheduleVerificationService:
                         
                         logger.info(f"Deactivated show {show.name} - no longer in schedule")
                 
-                # Update station last_tested timestamp
+                # Update station last_tested timestamp and result based on findings
                 station.last_tested = datetime.now()
-                station.last_test_result = 'success'
-                station.last_test_error = None
+                
+                if result['shows_found'] > 0:
+                    station.last_test_result = 'success'
+                    station.last_test_error = None
+                    logger.info(f"Calendar verification successful: {result['shows_found']} shows found")
+                else:
+                    station.last_test_result = 'failed'
+                    station.last_test_error = "No shows found in current schedule"
+                    logger.warning(f"Calendar verification completed but no shows found")
                 
                 db.commit()
                 result['success'] = True
