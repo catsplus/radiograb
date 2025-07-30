@@ -13,22 +13,20 @@ function getCurrentVersion() {
     
     try {
         if (!$db) {
-            return 'v2.13.0'; // Fallback if no database connection
+            return 'v3.8.0'; // Fallback if no database connection
         }
         
-        $stmt = $db->prepare("SELECT version FROM system_info WHERE key_name = 'current_version' LIMIT 1");
-        $stmt->execute();
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $result = $db->fetchOne("SELECT version FROM system_info WHERE key_name = 'current_version' LIMIT 1");
         
         if ($result && !empty($result['version'])) {
             return $result['version'];
         } else {
-            return 'v2.13.0'; // Fallback version
+            return 'v3.8.0'; // Fallback version
         }
         
     } catch (Exception $e) {
         error_log("Error getting version from database: " . $e->getMessage());
-        return 'v2.13.0'; // Fallback version
+        return 'v3.8.0'; // Fallback version
     }
 }
 
@@ -42,22 +40,20 @@ function getVersionInfo() {
     try {
         if (!$db) {
             return [
-                'version' => 'v2.13.0',
-                'description' => 'Enhanced calendar discovery system',
+                'version' => 'v3.8.0',
+                'description' => 'Playlist upload system and dedicated forms',
                 'updated_at' => date('Y-m-d H:i:s')
             ];
         }
         
-        $stmt = $db->prepare("SELECT version, description, updated_at FROM system_info WHERE key_name = 'current_version' LIMIT 1");
-        $stmt->execute();
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $result = $db->fetchOne("SELECT version, description, updated_at FROM system_info WHERE key_name = 'current_version' LIMIT 1");
         
         if ($result) {
             return $result;
         } else {
             return [
-                'version' => 'v2.13.0',
-                'description' => 'Enhanced calendar discovery system',
+                'version' => 'v3.8.0',
+                'description' => 'Playlist upload system and dedicated forms',
                 'updated_at' => date('Y-m-d H:i:s')
             ];
         }
@@ -65,8 +61,8 @@ function getVersionInfo() {
     } catch (Exception $e) {
         error_log("Error getting version info from database: " . $e->getMessage());
         return [
-            'version' => 'v2.13.0',
-            'description' => 'Enhanced calendar discovery system',
+            'version' => 'v3.8.0',
+            'description' => 'Playlist upload system and dedicated forms',
             'updated_at' => date('Y-m-d H:i:s')
         ];
     }
@@ -87,18 +83,24 @@ function updateVersion($version, $description = '') {
         }
         
         // Check if version entry exists
-        $stmt = $db->prepare("SELECT id FROM system_info WHERE key_name = 'current_version'");
-        $stmt->execute();
-        $exists = $stmt->fetch(PDO::FETCH_ASSOC);
+        $exists = $db->fetchOne("SELECT id FROM system_info WHERE key_name = 'current_version'");
         
         if ($exists) {
             // Update existing
-            $stmt = $db->prepare("UPDATE system_info SET version = ?, description = ?, updated_at = NOW() WHERE key_name = 'current_version'");
-            $result = $stmt->execute([$version, $description]);
+            $result = $db->update('system_info', [
+                'version' => $version,
+                'description' => $description,
+                'updated_at' => date('Y-m-d H:i:s')
+            ], "key_name = ?", ['current_version']);
         } else {
             // Insert new
-            $stmt = $db->prepare("INSERT INTO system_info (key_name, version, description, created_at, updated_at) VALUES ('current_version', ?, ?, NOW(), NOW())");
-            $result = $stmt->execute([$version, $description]);
+            $result = $db->insert('system_info', [
+                'key_name' => 'current_version',
+                'version' => $version,
+                'description' => $description,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
         }
         
         return $result;
