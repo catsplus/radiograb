@@ -760,11 +760,8 @@ class JavaScriptCalendarParser(CalendarParser):
                     for element in elements:
                         show_name = element.text.strip()
                         if show_name and len(show_name) > 2:
-                            # Skip generic navigation items
-                            if not any(skip in show_name.lower() for skip in [
-                                'event', 'calendar', 'schedule', 'home', 'about', 'contact',
-                                'news', 'blog', 'archive', 'category', 'tag', 'search'
-                            ]):
+                            # Apply comprehensive filtering
+                            if not self._is_invalid_show_name(show_name):
                                 show = ShowSchedule(
                                     name=show_name,
                                     start_time=dt_time(9, 0),  # Default 9 AM
@@ -786,22 +783,22 @@ class JavaScriptCalendarParser(CalendarParser):
                     for element in text_elements:
                         text = element.text.strip()
                         if text and len(text) > 3 and len(text) < 100:
-                            # Look for patterns that suggest show names
-                            if any(keyword in text.lower() for keyword in [
-                                'show', 'program', 'with', 'radio', 'music', 'talk', 'news'
-                            ]) and not any(skip in text.lower() for skip in [
-                                'about', 'contact', 'home', 'schedule', 'calendar'
-                            ]):
-                                show = ShowSchedule(
-                                    name=text,
-                                    start_time=dt_time(9, 0),
-                                    end_time=dt_time(10, 0),
-                                    days=['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-                                    description=f"Radio program: {text}",
-                                    host="",
-                                    genre=""
-                                )
-                                shows.append(show)
+                            # Apply comprehensive filtering
+                            if not self._is_invalid_show_name(text):
+                                # Additional check for show-like patterns
+                                if any(keyword in text.lower() for keyword in [
+                                    'show', 'program', 'with', 'radio', 'music', 'talk', 'news'
+                                ]):
+                                    show = ShowSchedule(
+                                        name=text,
+                                        start_time=dt_time(9, 0),
+                                        end_time=dt_time(10, 0),
+                                        days=['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                                        description=f"Radio program: {text}",
+                                        host="",
+                                        genre=""
+                                    )
+                                    shows.append(show)
                 except Exception as e:
                     logger.debug(f"Error in text pattern parsing: {e}")
             
@@ -894,17 +891,22 @@ class JavaScriptCalendarParser(CalendarParser):
             for link in show_links:
                 show_name = link.get_text(strip=True)
                 if len(show_name) > 2 and len(show_name) < 100:
+                    # Apply the same filtering logic as the JavaScript parser
+                    if self._is_invalid_show_name(show_name):
+                        logger.debug(f"Filtered out invalid show name: {show_name}")
+                        continue
+                        
                     show = ShowSchedule(
                         name=show_name,
                         start_time=dt_time(9, 0),  # Default time
                         end_time=dt_time(10, 0),
                         days=['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-                        description=f"WTBR program: {show_name}",
+                        description=f"Radio program: {show_name}",
                         host="",
                         genre=""
                     )
                     shows.append(show)
-                    logger.info(f"Found WTBR show link: {show_name}")
+                    logger.info(f"Found valid show link: {show_name}")
         
         except Exception as e:
             logger.error(f"Error parsing WTBR schedule: {e}")
@@ -920,9 +922,9 @@ class JavaScriptCalendarParser(CalendarParser):
             headings = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
             for heading in headings:
                 text = heading.get_text(strip=True)
-                # Skip common navigation/header text
+                # Apply comprehensive filtering
                 if (len(text) > 3 and len(text) < 100 and 
-                    not any(skip in text.lower() for skip in ['schedule', 'calendar', 'about', 'contact', 'home', 'news'])):
+                    not self._is_invalid_show_name(text)):
                     
                     show = ShowSchedule(
                         name=text,
@@ -934,7 +936,7 @@ class JavaScriptCalendarParser(CalendarParser):
                         genre=""
                     )
                     shows.append(show)
-                    logger.debug(f"Found potential show from heading: {text}")
+                    logger.debug(f"Found valid show from heading: {text}")
         
         except Exception as e:
             logger.error(f"Error in generic schedule parsing: {e}")

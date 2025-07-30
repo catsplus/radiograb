@@ -260,9 +260,18 @@ function paginate($total, $perPage = 20, $currentPage = 1) {
 }
 
 /**
- * Get RadioGrab version number from VERSION file
+ * Get RadioGrab version number from database (with file fallback)
  */
 function getVersionNumber() {
+    // First try to get from database
+    require_once __DIR__ . '/version.php';
+    
+    $version = getCurrentVersion();
+    if ($version && $version !== 'v2.13.0') {
+        return $version;
+    }
+    
+    // Fallback to VERSION file if database fails
     $version_file = dirname(dirname(__DIR__)) . '/VERSION';
     if (file_exists($version_file)) {
         $version_content = trim(file_get_contents($version_file));
@@ -271,6 +280,7 @@ function getVersionNumber() {
             return $matches[0];
         }
     }
-    return 'Unknown';
+    
+    return 'v2.13.0'; // Final fallback
 }
 ?>
