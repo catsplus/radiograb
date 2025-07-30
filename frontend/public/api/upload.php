@@ -104,7 +104,7 @@ function handleFileUpload() {
     }
     
     // Use Python upload service to process the file
-    $python_script = dirname(dirname(dirname(__DIR__))) . '/backend/services/upload_service.py';
+    $python_script = '/opt/radiograb/backend/services/upload_service.py';
     $escaped_file = escapeshellarg($temp_filepath);
     $escaped_title = escapeshellarg($title);
     $escaped_description = escapeshellarg($description);
@@ -130,9 +130,13 @@ function handleFileUpload() {
     }
     
     if ($output === null) {
+        error_log("Upload command failed: $command");
         echo json_encode(['success' => false, 'error' => 'Failed to process upload']);
         return;
     }
+    
+    // Log output for debugging
+    error_log("Upload command output: " . $output);
     
     // Check if upload was successful
     if (strpos($output, '✅ Upload successful') !== false) {
@@ -177,7 +181,7 @@ function handleCreatePlaylist() {
     }
     
     // Use Python service to create playlist
-    $python_script = dirname(dirname(dirname(__DIR__))) . '/backend/services/upload_service.py';
+    $python_script = '/opt/radiograb/backend/services/upload_service.py';
     $escaped_name = escapeshellarg($name);
     
     $command = "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python {$python_script} " .
