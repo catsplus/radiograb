@@ -319,6 +319,10 @@ class JavaScriptCalendarParser(CalendarParser):
             if not show_name or len(show_name.strip()) < 2:
                 return None
             
+            # Filter out invalid show names (navigation elements, etc.)
+            if self._is_invalid_show_name(show_name):
+                return None
+            
             # Extract time information
             start_time = None
             end_time = None
@@ -379,9 +383,10 @@ class JavaScriptCalendarParser(CalendarParser):
                 if not days:
                     days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
             
-            # Set default time if none found
+            # Require valid time information - don't add shows without time
             if not start_time:
-                start_time = dt_time(9, 0)  # Default 9 AM
+                logger.debug(f"Skipping show '{show_name}' - no valid time information found")
+                return None
                 
             if not end_time and start_time:
                 end_time = dt_time((start_time.hour + 1) % 24, start_time.minute)  # Default 1 hour duration
@@ -1162,6 +1167,60 @@ class JavaScriptCalendarParser(CalendarParser):
         except Exception as e:
             logger.error(f"Error executing saved method: {e}")
             return []
+    
+    def _is_invalid_show_name(self, show_name: str) -> bool:
+        """Check if a show name is invalid (navigation elements, etc.)"""
+        if not show_name or len(show_name.strip()) < 3:
+            return True
+            
+        show_name_lower = show_name.lower().strip()
+        
+        # Common invalid patterns
+        invalid_patterns = [
+            # Navigation elements
+            'shows a - z', 'shows a-z', 'a-z', 'a - z',
+            'all shows', 'show index', 'program index',
+            'schedule', 'calendar', 'events',
+            
+            # Generic navigation
+            'home', 'about', 'contact', 'news', 'blog',
+            'archive', 'search', 'categories', 'tags',
+            
+            # Empty or too short
+            'show', 'program', 'event', 'radio',
+            
+            # Date/time only entries
+            'today', 'tomorrow', 'this week', 'next week',
+            
+            # Admin/technical
+            'admin', 'login', 'register', 'settings',
+            'dashboard', 'manage', 'edit',
+            
+            # Common website elements
+            'read more', 'view all', 'see all', 'more info',
+            'click here', 'learn more'
+        ]
+        
+        # Check for exact matches
+        if show_name_lower in invalid_patterns:
+            return True
+            
+        # Check for patterns that suggest navigation/admin elements
+        if any(pattern in show_name_lower for pattern in [
+            'show index', 'a - z', 'a-z', 'all shows', 'schedule',
+            'calendar', 'archive', 'category', 'more info'
+        ]):
+            return True
+            
+        # Reject if it's just a single letter or number
+        if len(show_name_lower) == 1:
+            return True
+            
+        # Reject if it's all numbers or dates
+        if show_name_lower.replace('-', '').replace('/', '').replace(' ', '').isdigit():
+            return True
+            
+        return False
     
     def _parse_days_string(self, days_str: str) -> List[str]:
         """Parse a string containing day information"""

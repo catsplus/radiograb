@@ -153,14 +153,14 @@ class ScheduleVerificationService:
                         del existing_shows[show_key]
                         
                     else:
-                        # Add new show
+                        # Add new show (inactive by default - user must manually activate)
                         new_show = Show(
                             name=show_name,
                             station_id=station_id,
                             schedule_pattern=schedule_pattern,
                             schedule_description=schedule_description,
                             description=f"{station.name} program: {show_name}",
-                            active=True,
+                            active=False,  # Inactive by default - user decides what to activate
                             created_at=datetime.now(),
                             updated_at=datetime.now()
                         )
