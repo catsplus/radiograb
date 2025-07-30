@@ -256,7 +256,7 @@ class StationDiscovery:
         return None
     
     def _extract_logo(self, soup: BeautifulSoup, base_url: str, station_id: Optional[int] = None) -> Dict:
-        """Extract station logo URL with enhanced detection and local storage"""
+        """Extract station logo URL with enhanced detection and intelligent scoring"""
         logo_result = {
             'logo_url': None,
             'local_logo_path': None,
@@ -264,29 +264,120 @@ class StationDiscovery:
             'facebook_url': None
         }
         
-        # Try common logo selectors on website
+        # Get domain name for scoring
+        domain = urlparse(base_url).netloc.replace('www.', '')
+        
+        # Find all potential logo images with scoring
+        logo_candidates = []
+        
+        # Strategy 1: Look for <img> tags within <a> links pointing to homepage
+        homepage_links = soup.find_all('a', href=re.compile(r'^(https?://)?' + re.escape(domain.replace('www.', '')) + r'/?$|^/?$'))
+        for link in homepage_links:
+            imgs = link.find_all('img')
+            for img in imgs:
+                if img.get('src'):
+                    logo_candidates.append({
+                        'url': urljoin(base_url, img['src']),
+                        'img': img,
+                        'context': 'homepage_link',
+                        'score': 0
+                    })
+        
+        # Strategy 2: Standard logo selectors
         logo_selectors = [
-            'img[alt*="logo" i]',
-            'img[src*="logo" i]',
-            'img[class*="logo" i]',
-            '.logo img',
-            '#logo img', 
-            'header img',
-            '.header img'
+            ('img[alt*="logo" i]', 'alt_logo'),
+            ('img[src*="logo" i]', 'src_logo'),
+            ('img[class*="logo" i]', 'class_logo'),
+            ('.logo img', 'logo_container'),
+            ('#logo img', 'logo_id'),
+            ('header img', 'header_img'),
+            ('.header img', 'header_class'),
+            ('nav img', 'nav_img'),
+            ('.nav img', 'nav_class')
         ]
         
-        website_logo_url = None
-        for selector in logo_selectors:
-            img = soup.select_one(selector)
-            if img and img.get('src'):
-                website_logo_url = urljoin(base_url, img['src'])
-                break
+        for selector, context in logo_selectors:
+            imgs = soup.select(selector)
+            for img in imgs[:2]:  # Limit to first 2 matches per selector
+                if img.get('src'):
+                    logo_candidates.append({
+                        'url': urljoin(base_url, img['src']),
+                        'img': img,
+                        'context': context,
+                        'score': 0
+                    })
         
-        # Try favicon as fallback
-        if not website_logo_url:
+        # Score each candidate
+        for candidate in logo_candidates:
+            img = candidate['img']
+            url = candidate['url']
+            score = 0
+            
+            # Bonus for homepage link context
+            if candidate['context'] == 'homepage_link':
+                score += 0.8
+            
+            # Bonus for logo-related contexts
+            if candidate['context'] in ['alt_logo', 'src_logo', 'class_logo', 'logo_container', 'logo_id']:
+                score += 0.6
+            
+            # Bonus for header/nav contexts
+            if candidate['context'] in ['header_img', 'header_class', 'nav_img', 'nav_class']:
+                score += 0.4
+            
+            # Path scoring - reward paths containing logo, header, or domain name
+            path = urlparse(url).path.lower()
+            if '/logo' in path or 'logo' in path:
+                score += 0.7
+            if '/header' in path or 'header' in path:
+                score += 0.5
+            if domain.split('.')[0] in path:  # Station name in path
+                score += 0.4
+            
+            # Alt text scoring
+            alt_text = (img.get('alt') or '').lower()
+            if 'logo' in alt_text:
+                score += 0.5
+            if domain.split('.')[0] in alt_text:
+                score += 0.3
+            
+            # Dimension scoring (if available)
+            width = img.get('width')
+            height = img.get('height')
+            if width and height:
+                try:
+                    w, h = int(width), int(height)
+                    # Penalize very small images unless they're clearly logos
+                    if w < 100 or h < 50:
+                        if 'logo' not in alt_text and 'logo' not in path:
+                            score -= 0.3
+                    # Reward reasonable logo dimensions
+                    elif 100 <= w <= 400 and 50 <= h <= 200:
+                        score += 0.2
+                except ValueError:
+                    pass
+            
+            # File format bonus
+            if url.lower().endswith(('.png', '.svg')):
+                score += 0.1
+            
+            candidate['score'] = score
+        
+        # Sort by score and select best candidate
+        logo_candidates.sort(key=lambda x: x['score'], reverse=True)
+        website_logo_url = None
+        
+        if logo_candidates and logo_candidates[0]['score'] > 0:
+            website_logo_url = logo_candidates[0]['url']
+            logger.info(f"Selected logo with score {logo_candidates[0]['score']:.2f}: {website_logo_url}")
+        
+        # Fallback to favicon if no good logo found
+        if not website_logo_url or (logo_candidates and logo_candidates[0]['score'] < 0.5):
             favicon = soup.find('link', rel='icon') or soup.find('link', rel='shortcut icon')
             if favicon and favicon.get('href'):
-                website_logo_url = urljoin(base_url, favicon['href'])
+                favicon_url = urljoin(base_url, favicon['href'])
+                if not website_logo_url or logo_candidates[0]['score'] < 0.3:
+                    website_logo_url = favicon_url
         
         # If we found a logo on the website, try to download it
         if website_logo_url and station_id:
