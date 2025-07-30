@@ -1,17 +1,17 @@
 <?php
 /**
- * RadioGrab - Shows Management
+ * RadioGrab - Playlists Management
  */
 
 session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
 
-// Handle show actions
+// Handle playlist actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         setFlashMessage('danger', 'Invalid security token');
-        header('Location: /shows.php');
+        header('Location: /playlists.php');
         exit;
     }
     
@@ -20,28 +20,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete' && isset($_POST['show_id'])) {
         try {
             $show_id = (int)$_POST['show_id'];
-            $db->delete('shows', 'id = ?', [$show_id]);
-            setFlashMessage('success', 'Show deleted successfully');
+            // Verify this is a playlist before deleting
+            $show = $db->fetchOne("SELECT show_type FROM shows WHERE id = ?", [$show_id]);
+            if ($show && $show['show_type'] === 'playlist') {
+                $db->delete('shows', 'id = ?', [$show_id]);
+                setFlashMessage('success', 'Playlist deleted successfully');
+            } else {
+                setFlashMessage('danger', 'Invalid playlist');
+            }
         } catch (Exception $e) {
-            setFlashMessage('danger', 'Failed to delete show');
+            setFlashMessage('danger', 'Failed to delete playlist');
         }
     }
     elseif ($action === 'toggle_status' && isset($_POST['show_id'])) {
         try {
             $show_id = (int)$_POST['show_id'];
-            $current_status = $db->fetchOne("SELECT active FROM shows WHERE id = ?", [$show_id])['active'];
-            $new_status = $current_status ? 0 : 1;
-            
-            $db->update('shows', ['active' => $new_status], 'id = ?', [$show_id]);
-            
-            $status_text = $new_status ? 'activated' : 'deactivated';
-            setFlashMessage('success', "Show {$status_text} successfully");
+            // Verify this is a playlist and get current status
+            $show = $db->fetchOne("SELECT active, show_type FROM shows WHERE id = ?", [$show_id]);
+            if ($show && $show['show_type'] === 'playlist') {
+                $new_status = $show['active'] ? 0 : 1;
+                $db->update('shows', ['active' => $new_status], 'id = ?', [$show_id]);
+                $status_text = $new_status ? 'activated' : 'deactivated';
+                setFlashMessage('success', "Playlist {$status_text} successfully");
+            } else {
+                setFlashMessage('danger', 'Invalid playlist');
+            }
         } catch (Exception $e) {
-            setFlashMessage('danger', 'Failed to update show status');
+            setFlashMessage('danger', 'Failed to update playlist status');
         }
     }
     
-    header('Location: /shows.php' . ($_GET ? '?' . http_build_query($_GET) : ''));
+    header('Location: /playlists.php' . ($_GET ? '?' . http_build_query($_GET) : ''));
     exit;
 }
 
@@ -50,8 +59,8 @@ $station_id = isset($_GET['station_id']) ? (int)$_GET['station_id'] : null;
 $status = isset($_GET['status']) ? $_GET['status'] : '';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Build query - only show scheduled shows (not playlists)
-$where_conditions = ["s.show_type = 'scheduled' OR s.show_type IS NULL"];
+// Build query - only show playlists
+$where_conditions = ["s.show_type = 'playlist'"];
 $params = [];
 
 if ($station_id) {
@@ -73,20 +82,20 @@ if ($search) {
     $params[] = $search_param;
 }
 
-$where_clause = $where_conditions ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+$where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
 
 try {
-    // Get shows with station and recording info
-    $shows = $db->fetchAll("
+    // Get playlists with station and track info
+    $playlists = $db->fetchAll("
         SELECT s.*, st.name as station_name, st.logo_url, st.call_letters, st.timezone as station_timezone,
-               COUNT(r.id) as recording_count,
-               MAX(r.recorded_at) as latest_recording,
+               COUNT(r.id) as track_count,
+               MAX(r.recorded_at) as latest_upload,
                s.long_description, s.genre, s.image_url, s.website_url,
                s.description_source, s.image_source, s.metadata_updated,
                s.show_type, s.allow_uploads, s.max_file_size_mb
         FROM shows s 
         JOIN stations st ON s.station_id = st.id 
-        LEFT JOIN recordings r ON s.id = r.show_id
+        LEFT JOIN recordings r ON s.id = r.show_id AND r.source_type = 'uploaded'
         $where_clause
         GROUP BY s.id 
         ORDER BY s.name
@@ -103,7 +112,7 @@ try {
     
 } catch (Exception $e) {
     $error = "Database error: " . $e->getMessage();
-    $shows = [];
+    $playlists = [];
     $stations = [];
     $station_info = null;
 }
@@ -113,11 +122,10 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $station_info ? h($station_info['call_letters']) . ' Shows' : 'Shows' ?> - RadioGrab</title>
+    <title><?= $station_info ? h($station_info['call_letters']) . ' Playlists' : 'Playlists' ?> - RadioGrab</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/assets/css/radiograb.css" rel="stylesheet">
-    <link href="/assets/css/on-air.css" rel="stylesheet">
 </head>
 <body>
     <!-- Navigation -->
@@ -138,10 +146,10 @@ try {
                         <a class="nav-link" href="/stations.php">Stations</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="/shows.php">Shows</a>
+                        <a class="nav-link" href="/shows.php">Shows</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/playlists.php">Playlists</a>
+                        <a class="nav-link active" href="/playlists.php">Playlists</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/recordings.php">Recordings</a>
@@ -179,64 +187,19 @@ try {
                             <i class="fas fa-arrow-left"></i> Back to Stations
                         </a>
                         <div>
-                            <h1><i class="fas fa-microphone"></i> <?= h($station_info['call_letters']) ?> Shows</h1>
-                            <p class="text-muted mb-0">Shows for <?= h($station_info['name']) ?></p>
+                            <h1><i class="fas fa-list-music"></i> <?= h($station_info['call_letters']) ?> Playlists</h1>
+                            <p class="text-muted mb-0">User-uploaded audio collections for <?= h($station_info['name']) ?></p>
                         </div>
                     </div>
                 <?php else: ?>
-                    <h1><i class="fas fa-microphone"></i> Radio Shows</h1>
-                    <p class="text-muted">Manage your recorded radio shows and schedules</p>
+                    <h1><i class="fas fa-list-music"></i> Playlists</h1>
+                    <p class="text-muted">Manage your user-uploaded audio collections and track ordering</p>
                 <?php endif; ?>
             </div>
             <div class="col-auto">
-                <a href="/add-show.php<?= $station_id ? "?station_id=$station_id" : '' ?>" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Add Show<?= $station_info ? ' to ' . h($station_info['call_letters']) : '' ?>
+                <a href="/add-show.php?show_type=playlist<?= $station_id ? "&station_id=$station_id" : '' ?>" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Playlist<?= $station_info ? ' for ' . h($station_info['call_letters']) : '' ?>
                 </a>
-            </div>
-        </div>
-
-        <!-- Next Recordings -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-primary">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Next Recordings</h5>
-                        <button class="btn btn-sm btn-outline-light" onclick="refreshNextRecordings()">
-                            <i class="fas fa-sync"></i> Refresh
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div id="next-recordings-loading" class="text-center py-3">
-                            <i class="fas fa-spinner fa-spin"></i> Loading next recordings...
-                        </div>
-                        <div id="next-recordings-content" style="display: none;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Schedule Verification Status -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-warning">
-                    <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-sync-alt"></i> Schedule Verification</h5>
-                        <div>
-                            <button class="btn btn-sm btn-outline-dark me-2" onclick="refreshVerificationStatus()">
-                                <i class="fas fa-sync"></i> Refresh
-                            </button>
-                            <button class="btn btn-sm btn-dark" onclick="runVerification()">
-                                <i class="fas fa-play"></i> Verify All Now
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div id="verification-loading" class="text-center py-3">
-                            <i class="fas fa-spinner fa-spin"></i> Loading verification status...
-                        </div>
-                        <div id="verification-content" style="display: none;"></div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -247,7 +210,7 @@ try {
                     <div class="col-md-4">
                         <label class="form-label">Search</label>
                         <input type="text" class="form-control" name="search" 
-                               value="<?= h($search) ?>" placeholder="Search shows...">
+                               value="<?= h($search) ?>" placeholder="Search playlists...">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Station</label>
@@ -263,7 +226,7 @@ try {
                     <div class="col-md-3">
                         <label class="form-label">Status</label>
                         <select class="form-select" name="status">
-                            <option value="">All Shows</option>
+                            <option value="">All Playlists</option>
                             <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active Only</option>
                             <option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Inactive Only</option>
                         </select>
@@ -280,49 +243,43 @@ try {
             </div>
         </div>
 
-        <!-- Shows List -->
-        <?php if (empty($shows)): ?>
+        <!-- Playlists List -->
+        <?php if (empty($playlists)): ?>
             <div class="card">
                 <div class="card-body text-center py-5">
-                    <i class="fas fa-microphone fa-3x text-muted mb-3"></i>
-                    <h3>No shows found</h3>
+                    <i class="fas fa-list-music fa-3x text-muted mb-3"></i>
+                    <h3>No playlists found</h3>
                     <?php if ($search || $station_id || $status): ?>
                         <p class="text-muted mb-4">Try adjusting your filters to see more results.</p>
-                        <a href="/shows.php" class="btn btn-primary">Clear Filters</a>
+                        <a href="/playlists.php" class="btn btn-primary">Clear Filters</a>
                     <?php else: ?>
-                        <p class="text-muted mb-4">Add stations and import their schedules to get started.</p>
-                        <a href="/stations.php" class="btn btn-primary">Manage Stations</a>
+                        <p class="text-muted mb-4">Create playlists to organize your uploaded audio collections.</p>
+                        <a href="/add-show.php?show_type=playlist" class="btn btn-primary">Create Your First Playlist</a>
                     <?php endif; ?>
                 </div>
             </div>
         <?php else: ?>
             <div class="row">
-                <?php foreach ($shows as $show): ?>
-                    <?php 
-                    // Skip On-Demand Recording shows with no recordings
-                    if (strpos($show['name'], 'On-Demand Recordings') !== false && $show['recording_count'] == 0) {
-                        continue;
-                    }
-                    ?>
+                <?php foreach ($playlists as $playlist): ?>
                     <div class="col-lg-6 col-xl-4 mb-4">
-                        <div class="card h-100 show-card" data-show-id="<?= $show['id'] ?>" data-station-call="<?= h($show['call_letters']) ?>">
-                            <!-- Show Image Header -->
-                            <?php if ($show['image_url']): ?>
+                        <div class="card h-100 playlist-card" data-playlist-id="<?= $playlist['id'] ?>" data-station-call="<?= h($playlist['call_letters']) ?>">
+                            <!-- Playlist Image Header -->
+                            <?php if ($playlist['image_url']): ?>
                                 <div class="card-img-top-container" style="height: 150px; overflow: hidden; position: relative;">
-                                    <img src="<?= h($show['image_url']) ?>" 
-                                         alt="<?= h($show['name']) ?>" 
+                                    <img src="<?= h($playlist['image_url']) ?>" 
+                                         alt="<?= h($playlist['name']) ?>" 
                                          class="card-img-top" 
                                          style="width: 100%; height: 100%; object-fit: cover;"
                                          onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                                     <div class="fallback-header bg-gradient text-white d-flex align-items-center justify-content-center" 
-                                         style="height: 100%; position: absolute; top: 0; left: 0; width: 100%; background: linear-gradient(135deg, #007bff, #0056b3); display: none;">
+                                         style="height: 100%; position: absolute; top: 0; left: 0; width: 100%; background: linear-gradient(135deg, #28a745, #20c997); display: none;">
                                         <div class="text-center">
-                                            <i class="fas fa-microphone fa-2x mb-2"></i>
-                                            <h6 class="mb-0"><?= h($show['name']) ?></h6>
+                                            <i class="fas fa-list-music fa-2x mb-2"></i>
+                                            <h6 class="mb-0"><?= h($playlist['name']) ?></h6>
                                         </div>
                                     </div>
                                     <!-- Image source badge -->
-                                    <?php if ($show['image_source']): ?>
+                                    <?php if ($playlist['image_source']): ?>
                                         <span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75">
                                             <?php
                                             $source_icons = [
@@ -331,9 +288,9 @@ try {
                                                 'station' => 'fa-building',
                                                 'default' => 'fa-image'
                                             ];
-                                            $icon = $source_icons[$show['image_source']] ?? 'fa-image';
+                                            $icon = $source_icons[$playlist['image_source']] ?? 'fa-image';
                                             ?>
-                                            <i class="fas <?= $icon ?>"></i> <?= ucfirst($show['image_source']) ?>
+                                            <i class="fas <?= $icon ?>"></i> <?= ucfirst($playlist['image_source']) ?>
                                         </span>
                                     <?php endif; ?>
                                 </div>
@@ -341,67 +298,70 @@ try {
                             
                             <div class="card-body">
                                 <div class="d-flex align-items-start mb-3">
-                                    <?php if (!$show['image_url']): ?>
-                                        <img src="<?= h(getStationLogo(['logo_url' => $show['logo_url']])) ?>" 
-                                             alt="<?= h($show['station_name']) ?>" 
+                                    <?php if (!$playlist['image_url']): ?>
+                                        <img src="<?= h(getStationLogo(['logo_url' => $playlist['logo_url']])) ?>" 
+                                             alt="<?= h($playlist['station_name']) ?>" 
                                              class="station-logo me-3"
                                              onerror="this.src='/assets/images/default-station-logo.png'">
                                     <?php endif; ?>
                                     <div class="flex-grow-1">
                                         <h5 class="card-title mb-1">
-                                            <?= h($show['name']) ?>
-                                            <?php if ($show['genre']): ?>
-                                                <small class="badge bg-light text-dark ms-2"><?= h($show['genre']) ?></small>
+                                            <?= h($playlist['name']) ?>
+                                            <?php if ($playlist['genre']): ?>
+                                                <small class="badge bg-success text-white ms-2"><?= h($playlist['genre']) ?></small>
                                             <?php endif; ?>
+                                            <small class="badge bg-primary text-white ms-1">
+                                                <i class="fas fa-list-music"></i> Playlist
+                                            </small>
                                         </h5>
-                                        <small class="text-muted"><?= h($show['station_name']) ?></small>
-                                        <?php if ($show['website_url']): ?>
+                                        <small class="text-muted"><?= h($playlist['station_name']) ?></small>
+                                        <?php if ($playlist['website_url']): ?>
                                             <div class="mt-1">
-                                                <a href="<?= h($show['website_url']) ?>" target="_blank" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-external-link-alt"></i> Show Page
+                                                <a href="<?= h($playlist['website_url']) ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-external-link-alt"></i> Playlist Page
                                                 </a>
                                             </div>
                                         <?php endif; ?>
                                     </div>
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" 
-                                               id="toggle<?= $show['id'] ?>"
-                                               <?= $show['active'] ? 'checked' : '' ?>
-                                               onchange="toggleShowStatus(<?= $show['id'] ?>)">
-                                        <label class="form-check-label" for="toggle<?= $show['id'] ?>">
-                                            <span class="badge <?= $show['active'] ? 'bg-success' : 'bg-secondary' ?>">
-                                                <?= $show['active'] ? 'Active' : 'Inactive' ?>
+                                               id="toggle<?= $playlist['id'] ?>"
+                                               <?= $playlist['active'] ? 'checked' : '' ?>
+                                               onchange="togglePlaylistStatus(<?= $playlist['id'] ?>)">
+                                        <label class="form-check-label" for="toggle<?= $playlist['id'] ?>">
+                                            <span class="badge <?= $playlist['active'] ? 'bg-success' : 'bg-secondary' ?>">
+                                                <?= $playlist['active'] ? 'Active' : 'Inactive' ?>
                                             </span>
                                         </label>
                                     </div>
                                 </div>
                                 
                                 <!-- Enhanced Description Section -->
-                                <?php if ($show['description'] || $show['long_description']): ?>
+                                <?php if ($playlist['description'] || $playlist['long_description']): ?>
                                     <div class="description-section mb-3">
                                         <?php 
-                                        $display_description = $show['long_description'] ?: $show['description'];
+                                        $display_description = $playlist['long_description'] ?: $playlist['description'];
                                         $is_truncated = strlen($display_description) > 150;
                                         $short_description = $is_truncated ? substr($display_description, 0, 150) . '...' : $display_description;
                                         ?>
                                         
                                         <div class="description-content">
-                                            <div class="description-text" id="desc-short-<?= $show['id'] ?>">
+                                            <div class="description-text" id="desc-short-<?= $playlist['id'] ?>">
                                                 <p class="card-text text-muted small mb-2"><?= h($short_description) ?></p>
                                             </div>
                                             
                                             <?php if ($is_truncated): ?>
-                                                <div class="description-text" id="desc-full-<?= $show['id'] ?>" style="display: none;">
+                                                <div class="description-text" id="desc-full-<?= $playlist['id'] ?>" style="display: none;">
                                                     <p class="card-text text-muted small mb-2"><?= h($display_description) ?></p>
                                                 </div>
-                                                <button class="btn btn-sm btn-link p-0 text-primary" id="desc-toggle-<?= $show['id'] ?>" onclick="toggleDescription(<?= $show['id'] ?>)">
+                                                <button class="btn btn-sm btn-link p-0 text-primary" id="desc-toggle-<?= $playlist['id'] ?>" onclick="toggleDescription(<?= $playlist['id'] ?>)">
                                                     <i class="fas fa-chevron-down"></i> Show more
                                                 </button>
                                             <?php endif; ?>
                                         </div>
                                         
                                         <!-- Description Source Badge -->
-                                        <?php if ($show['description_source']): ?>
+                                        <?php if ($playlist['description_source']): ?>
                                             <div class="mt-1">
                                                 <small class="badge bg-light text-dark">
                                                     <?php
@@ -411,139 +371,79 @@ try {
                                                         'manual' => 'fa-user-edit',
                                                         'generated' => 'fa-robot'
                                                     ];
-                                                    $source_colors = [
-                                                        'calendar' => 'bg-success',
-                                                        'website' => 'bg-info', 
-                                                        'manual' => 'bg-primary',
-                                                        'generated' => 'bg-secondary'
-                                                    ];
-                                                    $icon = $source_icons[$show['description_source']] ?? 'fa-question';
-                                                    $color = $source_colors[$show['description_source']] ?? 'bg-light';
+                                                    $icon = $source_icons[$playlist['description_source']] ?? 'fa-question';
                                                     ?>
-                                                    <i class="fas <?= $icon ?>"></i> <?= ucfirst($show['description_source']) ?> description
+                                                    <i class="fas <?= $icon ?>"></i> <?= ucfirst($playlist['description_source']) ?> description
                                                 </small>
-                                                
-                                                <?php if ($show['description_source'] === 'generated'): ?>
-                                                    <button class="btn btn-sm btn-outline-warning ms-1" 
-                                                            onclick="refreshMetadata(<?= $show['id'] ?>)" 
-                                                            title="Auto-detect description from calendar or website">
-                                                        <i class="fas fa-sync"></i> Auto-detect
-                                                    </button>
-                                                <?php elseif ($show['metadata_updated']): ?>
-                                                    <small class="text-muted ms-2">
-                                                        Updated <?= timeAgo($show['metadata_updated']) ?>
-                                                    </small>
-                                                <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
-                                    </div>
-                                <?php else: ?>
-                                    <!-- No Description - Show Auto-detect Button -->
-                                    <div class="description-section mb-3">
-                                        <div class="alert alert-light py-2 mb-2">
-                                            <small class="text-muted">
-                                                <i class="fas fa-info-circle"></i> No description available
-                                            </small>
-                                        </div>
-                                        <button class="btn btn-sm btn-outline-primary" 
-                                                onclick="refreshMetadata(<?= $show['id'] ?>)" 
-                                                title="Auto-detect description from calendar or website">
-                                            <i class="fas fa-search"></i> Auto-detect metadata
-                                        </button>
                                     </div>
                                 <?php endif; ?>
                                 
                                 <div class="mb-3">
                                     <div class="row text-center">
                                         <div class="col">
-                                            <div class="fw-bold"><?= $show['recording_count'] ?></div>
-                                            <small class="text-muted">Recordings</small>
+                                            <div class="fw-bold"><?= $playlist['track_count'] ?></div>
+                                            <small class="text-muted">Tracks</small>
                                         </div>
                                         <div class="col">
                                             <div class="fw-bold">
-                                                <?= $show['latest_recording'] ? timeAgo($show['latest_recording']) : 'Never' ?>
+                                                <?= $playlist['latest_upload'] ? timeAgo($playlist['latest_upload']) : 'Never' ?>
                                             </div>
-                                            <small class="text-muted">Latest</small>
+                                            <small class="text-muted">Latest Upload</small>
                                         </div>
                                     </div>
                                     
-                                    <?php if ($show['schedule_description']): ?>
-                                        <div class="mt-2">
-                                            <small class="text-muted">
-                                                <i class="fas fa-calendar"></i> 
-                                                <?= h($show['schedule_description']) ?>
-                                            </small>
-                                        </div>
-                                    <?php endif; ?>
+                                    <!-- Upload Settings -->
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-upload"></i> 
+                                            Max upload: <?= $playlist['max_file_size_mb'] ?>MB | 
+                                            Uploads: <?= $playlist['allow_uploads'] ? 'Enabled' : 'Disabled' ?>
+                                        </small>
+                                    </div>
                                     
-                                    <!-- Schedule Status -->
-                                    <?php if ($show['schedule_pattern']): ?>
-                                        <div class="mt-1">
-                                            <small class="text-success">
-                                                <i class="fas fa-check-circle"></i> 
-                                                Scheduled for automatic recording
-                                            </small>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="mt-1">
-                                            <small class="text-warning">
-                                                <i class="fas fa-exclamation-triangle"></i> 
-                                                No schedule configured
-                                            </small>
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    
-                                    <?php if ($show['duration_minutes']): ?>
-                                        <div class="mt-1">
-                                            <small class="text-muted">
-                                                <i class="fas fa-clock"></i> 
-                                                <?= $show['duration_minutes'] ?> minutes
-                                            </small>
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if ($show['host']): ?>
+                                    <?php if ($playlist['host']): ?>
                                         <div class="mt-1">
                                             <small class="text-muted">
                                                 <i class="fas fa-user"></i> 
-                                                <?= h($show['host']) ?>
+                                                <?= h($playlist['host']) ?>
                                             </small>
                                         </div>
                                     <?php endif; ?>
                                     
                                     <!-- Tags Display -->
                                     <div class="mt-2">
-                                        <div id="tags-display-<?= $show['id'] ?>">
-                                            <?php if ($show['tags']): ?>
-                                                <?php foreach (explode(',', $show['tags']) as $tag): ?>
+                                        <div id="tags-display-<?= $playlist['id'] ?>">
+                                            <?php if ($playlist['tags']): ?>
+                                                <?php foreach (explode(',', $playlist['tags']) as $tag): ?>
                                                     <span class="badge bg-light text-dark me-1"><?= h(trim($tag)) ?></span>
                                                 <?php endforeach; ?>
                                             <?php else: ?>
                                                 <small class="text-muted">No tags</small>
                                             <?php endif; ?>
                                         </div>
-                                        <div id="tags-edit-<?= $show['id'] ?>" style="display: none;">
+                                        <div id="tags-edit-<?= $playlist['id'] ?>" style="display: none;">
                                             <div class="input-group input-group-sm">
                                                 <input type="text" class="form-control" 
-                                                       id="tags-input-<?= $show['id'] ?>" 
-                                                       value="<?= h($show['tags'] ?? '') ?>"
+                                                       id="tags-input-<?= $playlist['id'] ?>" 
+                                                       value="<?= h($playlist['tags'] ?? '') ?>"
                                                        placeholder="Enter tags separated by commas"
                                                        maxlength="255">
                                                 <button class="btn btn-success" type="button" 
-                                                        onclick="saveTags(<?= $show['id'] ?>)">
+                                                        onclick="saveTags(<?= $playlist['id'] ?>)">
                                                     <i class="fas fa-check"></i>
                                                 </button>
                                                 <button class="btn btn-secondary" type="button" 
-                                                        onclick="cancelEditTags(<?= $show['id'] ?>)">
+                                                        onclick="cancelEditTags(<?= $playlist['id'] ?>)">
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
                                             <small class="text-muted">Use commas to separate tags</small>
                                         </div>
                                         <button class="btn btn-sm btn-link p-0 mt-1" 
-                                                onclick="editTags(<?= $show['id'] ?>)"
-                                                id="edit-tags-btn-<?= $show['id'] ?>">
+                                                onclick="editTags(<?= $playlist['id'] ?>)"
+                                                id="edit-tags-btn-<?= $playlist['id'] ?>">
                                             <i class="fas fa-edit"></i> Edit tags
                                         </button>
                                     </div>
@@ -551,24 +451,42 @@ try {
                             </div>
                             
                             <div class="card-footer bg-transparent">
+                                <!-- Playlist Upload Actions -->
+                                <div class="mb-2">
+                                    <div class="d-flex gap-2">
+                                        <button type="button" 
+                                                class="btn btn-success btn-sm flex-fill upload-file-btn"
+                                                data-show-id="<?= $playlist['id'] ?>"
+                                                data-show-name="<?= h($playlist['name']) ?>"
+                                                data-max-size="<?= $playlist['max_file_size_mb'] ?? 100 ?>">
+                                            <i class="fas fa-upload"></i> Upload Audio
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-outline-secondary btn-sm manage-playlist-btn"
+                                                data-show-id="<?= $playlist['id'] ?>"
+                                                data-show-name="<?= h($playlist['name']) ?>"
+                                                title="Manage Track Order">
+                                            <i class="fas fa-list-ol"></i> Order
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Max size: <?= $playlist['max_file_size_mb'] ?? 100 ?>MB | 
+                                        Supports: MP3, WAV, M4A, AAC, OGG, FLAC
+                                    </small>
+                                </div>
+                                
                                 <div class="btn-group w-100" role="group">
-                                    <a href="/edit-show.php?id=<?= $show['id'] ?>" 
+                                    <a href="/edit-show.php?id=<?= $playlist['id'] ?>" 
                                        class="btn btn-outline-primary btn-sm">
                                         <i class="fas fa-edit"></i> Edit
                                     </a>
-                                    <a href="/recordings.php?show_id=<?= $show['id'] ?>" 
+                                    <a href="/recordings.php?show_id=<?= $playlist['id'] ?>" 
                                        class="btn btn-outline-info btn-sm">
-                                        <i class="fas fa-file-audio"></i> Recordings
+                                        <i class="fas fa-file-audio"></i> Tracks
                                     </a>
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary btn-sm schedule-manager"
-                                            data-show-id="<?= $show['id'] ?>"
-                                            data-show-name="<?= h($show['name']) ?>"
-                                            title="Manage Schedule">
-                                        <i class="fas fa-clock"></i>
-                                    </button>
-                                    <?php if ($show['recording_count'] > 0): ?>
-                                        <a href="/feeds.php#show-<?= $show['id'] ?>" 
+                                    <?php if ($playlist['track_count'] > 0): ?>
+                                        <a href="/feeds.php#show-<?= $playlist['id'] ?>" 
                                            class="btn btn-outline-success btn-sm"
                                            title="RSS Feed">
                                             <i class="fas fa-rss"></i>
@@ -578,9 +496,9 @@ try {
                                             class="btn btn-outline-danger btn-sm delete-confirm"
                                             data-bs-toggle="modal" 
                                             data-bs-target="#deleteModal"
-                                            data-show-id="<?= $show['id'] ?>"
-                                            data-show-name="<?= h($show['name']) ?>"
-                                            data-item="show">
+                                            data-show-id="<?= $playlist['id'] ?>"
+                                            data-show-name="<?= h($playlist['name']) ?>"
+                                            data-item="playlist">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -597,24 +515,24 @@ try {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Delete Show</h5>
+                    <h5 class="modal-title">Delete Playlist</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to delete the show <strong id="showName"></strong>?</p>
+                    <p>Are you sure you want to delete the playlist <strong id="playlistName"></strong>?</p>
                     <p class="text-danger">
                         <i class="fas fa-exclamation-triangle"></i>
-                        This will also delete all associated recordings. This action cannot be undone.
+                        This will also delete all uploaded tracks. This action cannot be undone.
                     </p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <form method="POST" class="d-inline">
                         <input type="hidden" name="action" value="delete">
-                        <input type="hidden" name="show_id" id="deleteShowId">
+                        <input type="hidden" name="show_id" id="deletePlaylistId">
                         <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                         <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash"></i> Delete Show
+                            <i class="fas fa-trash"></i> Delete Playlist
                         </button>
                     </form>
                 </div>
@@ -681,7 +599,7 @@ try {
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Manage Playlist Order</h5>
+                    <h5 class="modal-title">Manage Track Order</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -729,38 +647,34 @@ try {
     <!-- Hidden forms for AJAX actions -->
     <form id="toggleStatusForm" method="POST" style="display: none;">
         <input type="hidden" name="action" value="toggle_status">
-        <input type="hidden" name="show_id" id="toggleShowId">
+        <input type="hidden" name="show_id" id="togglePlaylistId">
         <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
     </form>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/assets/js/radiograb.js"></script>
-    <script src="/assets/js/on-air-status.js"></script>
     <script>
-        let countdownIntervals = [];
-        let nextRecordingsData = [];
-
         // Handle delete modal
         document.addEventListener('DOMContentLoaded', function() {
             const deleteModal = document.getElementById('deleteModal');
             deleteModal.addEventListener('show.bs.modal', function(event) {
                 const button = event.relatedTarget;
-                const showId = button.getAttribute('data-show-id');
-                const showName = button.getAttribute('data-show-name');
+                const playlistId = button.getAttribute('data-show-id');
+                const playlistName = button.getAttribute('data-show-name');
                 
-                document.getElementById('deleteShowId').value = showId;
-                document.getElementById('showName').textContent = showName;
+                document.getElementById('deletePlaylistId').value = playlistId;
+                document.getElementById('playlistName').textContent = playlistName;
             });
 
-            // Load next recordings on page load
-            loadNextRecordings();
+            setupUploadHandlers();
+            setupPlaylistHandlers();
         });
         
-        // Toggle show status
-        function toggleShowStatus(showId) {
+        // Toggle playlist status
+        function togglePlaylistStatus(playlistId) {
             // Use AJAX for better UX
-            const toggle = document.getElementById(`toggle${showId}`);
+            const toggle = document.getElementById(`toggle${playlistId}`);
             const active = toggle.checked;
             
             fetch('/api/show-management.php', {
@@ -770,7 +684,7 @@ try {
                 },
                 body: JSON.stringify({
                     action: 'toggle_active',
-                    show_id: showId,
+                    show_id: playlistId,
                     active: active,
                     csrf_token: '<?= generateCSRFToken() ?>'
                 })
@@ -790,7 +704,7 @@ try {
                 } else {
                     // Revert toggle on error
                     toggle.checked = !active;
-                    alert('Failed to update show status: ' + (data.error || 'Unknown error'));
+                    alert('Failed to update playlist status: ' + (data.error || 'Unknown error'));
                 }
             })
             .catch(error => {
@@ -801,10 +715,10 @@ try {
         }
         
         // Description toggle function
-        function toggleDescription(showId) {
-            const shortDiv = document.getElementById(`desc-short-${showId}`);
-            const fullDiv = document.getElementById(`desc-full-${showId}`);
-            const toggleBtn = document.getElementById(`desc-toggle-${showId}`);
+        function toggleDescription(playlistId) {
+            const shortDiv = document.getElementById(`desc-short-${playlistId}`);
+            const fullDiv = document.getElementById(`desc-full-${playlistId}`);
+            const toggleBtn = document.getElementById(`desc-toggle-${playlistId}`);
             
             if (fullDiv.style.display === 'none') {
                 // Show full description
@@ -819,66 +733,22 @@ try {
             }
         }
         
-        // Refresh metadata function
-        function refreshMetadata(showId) {
-            const btn = document.querySelector(`[onclick="refreshMetadata(${showId})"]`);
-            const originalContent = btn.innerHTML;
-            
-            // Show loading state
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting...';
-            
-            fetch('/api/show-management.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'refresh_metadata',
-                    show_id: showId,
-                    csrf_token: '<?= generateCSRFToken() ?>'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Show success and reload page to display new metadata
-                    btn.innerHTML = '<i class="fas fa-check"></i> Detected!';
-                    btn.className = 'btn btn-sm btn-success';
-                    
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    // Show error
-                    btn.innerHTML = originalContent;
-                    btn.disabled = false;
-                    alert('Failed to refresh metadata: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                btn.innerHTML = originalContent;
-                btn.disabled = false;
-                alert('Network error: ' + error.message);
-            });
-        }
-        
         // Tags editing functions
-        function editTags(showId) {
-            document.getElementById(`tags-display-${showId}`).style.display = 'none';
-            document.getElementById(`tags-edit-${showId}`).style.display = 'block';
-            document.getElementById(`edit-tags-btn-${showId}`).style.display = 'none';
-            document.getElementById(`tags-input-${showId}`).focus();
+        function editTags(playlistId) {
+            document.getElementById(`tags-display-${playlistId}`).style.display = 'none';
+            document.getElementById(`tags-edit-${playlistId}`).style.display = 'block';
+            document.getElementById(`edit-tags-btn-${playlistId}`).style.display = 'none';
+            document.getElementById(`tags-input-${playlistId}`).focus();
         }
         
-        function cancelEditTags(showId) {
-            document.getElementById(`tags-display-${showId}`).style.display = 'block';
-            document.getElementById(`tags-edit-${showId}`).style.display = 'none';
-            document.getElementById(`edit-tags-btn-${showId}`).style.display = 'inline-block';
+        function cancelEditTags(playlistId) {
+            document.getElementById(`tags-display-${playlistId}`).style.display = 'block';
+            document.getElementById(`tags-edit-${playlistId}`).style.display = 'none';
+            document.getElementById(`edit-tags-btn-${playlistId}`).style.display = 'inline-block';
         }
         
-        function saveTags(showId) {
-            const input = document.getElementById(`tags-input-${showId}`);
+        function saveTags(playlistId) {
+            const input = document.getElementById(`tags-input-${playlistId}`);
             const tags = input.value.trim();
             
             fetch('/api/show-management.php', {
@@ -888,7 +758,7 @@ try {
                 },
                 body: JSON.stringify({
                     action: 'update_tags',
-                    show_id: showId,
+                    show_id: playlistId,
                     tags: tags,
                     csrf_token: '<?= generateCSRFToken() ?>'
                 })
@@ -897,7 +767,7 @@ try {
             .then(data => {
                 if (data.success) {
                     // Update tags display
-                    const tagsDisplay = document.getElementById(`tags-display-${showId}`);
+                    const tagsDisplay = document.getElementById(`tags-display-${playlistId}`);
                     if (tags) {
                         const tagList = tags.split(',').map(tag => 
                             `<span class="badge bg-light text-dark me-1">${tag.trim()}</span>`
@@ -908,7 +778,7 @@ try {
                     }
                     
                     // Hide edit mode
-                    cancelEditTags(showId);
+                    cancelEditTags(playlistId);
                 } else {
                     alert('Failed to update tags: ' + (data.error || 'Unknown error'));
                 }
@@ -918,347 +788,6 @@ try {
             });
         }
 
-        // Next recordings functions
-        function loadNextRecordings() {
-            const loading = document.getElementById('next-recordings-loading');
-            const content = document.getElementById('next-recordings-content');
-            
-            loading.style.display = 'block';
-            content.style.display = 'none';
-            
-            // Clear existing countdowns
-            countdownIntervals.forEach(interval => clearInterval(interval));
-            countdownIntervals = [];
-            
-            fetch('/api/show-management.php?action=get_next_recordings&limit=3')
-                .then(response => response.json())
-                .then(data => {
-                    loading.style.display = 'none';
-                    content.style.display = 'block';
-                    
-                    if (data.success && data.recordings && data.recordings.length > 0) {
-                        nextRecordingsData = data.recordings;
-                        displayNextRecordings(data.recordings);
-                        startCountdowns();
-                    } else {
-                        content.innerHTML = `
-                            <div class="text-center py-4">
-                                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                                <h5 class="text-muted">No upcoming recordings scheduled</h5>
-                                <p class="text-muted mb-0">Add shows with schedules to see upcoming recordings</p>
-                                <a href="/add-show.php<?= $station_id ? "?station_id=$station_id" : '' ?>" class="btn btn-primary mt-3">
-                                    <i class="fas fa-plus"></i> Add Show
-                                </a>
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    loading.style.display = 'none';
-                    content.style.display = 'block';
-                    content.innerHTML = `
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            Unable to load next recordings: ${error.message}
-                        </div>
-                    `;
-                });
-        }
-
-        function displayNextRecordings(recordings) {
-            const content = document.getElementById('next-recordings-content');
-            
-            let html = '<div class="row">';
-            
-            recordings.forEach((recording, index) => {
-                const colClass = recordings.length === 1 ? 'col-12' : recordings.length === 2 ? 'col-md-6' : 'col-md-4';
-                const badgeClass = index === 0 ? 'bg-success' : index === 1 ? 'bg-info' : 'bg-secondary';
-                const position = index === 0 ? 'Next' : index === 1 ? '2nd' : '3rd';
-                
-                html += `
-                    <div class="${colClass} mb-3">
-                        <div class="card border-${index === 0 ? 'success' : index === 1 ? 'info' : 'secondary'} h-100">
-                            <div class="card-body text-center">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="card-title text-start mb-0">${recording.title}</h6>
-                                    <span class="badge ${badgeClass} ms-2">${position}</span>
-                                </div>
-                                <p class="card-text mb-2">
-                                    <i class="fas fa-clock text-primary"></i> 
-                                    <strong>${recording.next_run}</strong>
-                                </p>
-                                <div class="countdown-display" id="countdown-${index}">
-                                    <div class="alert alert-${index === 0 ? 'success' : index === 1 ? 'info' : 'secondary'} py-2 mb-0">
-                                        <div class="countdown-timer" data-target="${recording.next_run}">
-                                            Calculating...
-                                        </div>
-                                    </div>
-                                </div>
-                                ${recording.tags ? `
-                                    <div class="mt-2">
-                                        <small class="text-muted">
-                                            <i class="fas fa-tags"></i> ${recording.tags}
-                                        </small>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            content.innerHTML = html;
-        }
-
-        function startCountdowns() {
-            const countdownElements = document.querySelectorAll('.countdown-timer');
-            
-            countdownElements.forEach((element, index) => {
-                const targetTime = new Date(element.dataset.target).getTime();
-                
-                const interval = setInterval(() => {
-                    const now = new Date().getTime();
-                    const distance = targetTime - now;
-                    
-                    if (distance < 0) {
-                        element.innerHTML = '<strong class="text-danger">Recording should be active!</strong>';
-                        clearInterval(interval);
-                        return;
-                    }
-                    
-                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                    
-                    let countdownText = '';
-                    if (days > 0) {
-                        countdownText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-                    } else if (hours > 0) {
-                        countdownText = `${hours}h ${minutes}m ${seconds}s`;
-                    } else if (minutes > 0) {
-                        countdownText = `${minutes}m ${seconds}s`;
-                    } else {
-                        countdownText = `${seconds}s`;
-                        element.parentElement.classList.add('alert-warning');
-                        element.parentElement.classList.remove('alert-success', 'alert-info', 'alert-secondary');
-                    }
-                    
-                    element.innerHTML = `<strong>${countdownText}</strong>`;
-                }, 1000);
-                
-                countdownIntervals.push(interval);
-            });
-        }
-
-        function refreshNextRecordings() {
-            loadNextRecordings();
-        }
-
-        // Schedule verification functions
-        function loadVerificationStatus() {
-            const loading = document.getElementById('verification-loading');
-            const content = document.getElementById('verification-content');
-            
-            loading.style.display = 'block';
-            content.style.display = 'none';
-            
-            fetch('/api/schedule-verification.php?action=get_verification_status')
-                .then(response => response.json())
-                .then(data => {
-                    loading.style.display = 'none';
-                    content.style.display = 'block';
-                    
-                    if (data.success) {
-                        displayVerificationStatus(data);
-                    } else {
-                        content.innerHTML = `
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle"></i> 
-                                Unable to load verification status: ${data.error || 'Unknown error'}
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    loading.style.display = 'none';
-                    content.style.display = 'block';
-                    content.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            Network error: ${error.message}
-                        </div>
-                    `;
-                });
-        }
-
-        function displayVerificationStatus(data) {
-            const content = document.getElementById('verification-content');
-            
-            // Summary row
-            let html = `
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <div class="card border-success">
-                            <div class="card-body text-center">
-                                <h5 class="card-title text-success">${data.summary.current}</h5>
-                                <p class="card-text">Current</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card border-warning">
-                            <div class="card-body text-center">
-                                <h5 class="card-title text-warning">${data.summary.due_soon}</h5>
-                                <p class="card-text">Due Soon</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card border-danger">
-                            <div class="card-body text-center">
-                                <h5 class="card-title text-danger">${data.summary.overdue}</h5>
-                                <p class="card-text">Overdue</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card border-secondary">
-                            <div class="card-body text-center">
-                                <h5 class="card-title text-secondary">${data.summary.never}</h5>
-                                <p class="card-text">Never Checked</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Stations needing attention
-            const needsAttention = data.stations.filter(s => s.verification_status !== 'current');
-            if (needsAttention.length > 0) {
-                html += `
-                    <div class="alert alert-info">
-                        <h6><i class="fas fa-info-circle"></i> Stations Needing Attention</h6>
-                        <div class="row">
-                `;
-                
-                needsAttention.slice(0, 6).forEach(station => {
-                    const statusClass = {
-                        'never': 'secondary',
-                        'overdue': 'danger',
-                        'due_soon': 'warning'
-                    }[station.verification_status] || 'secondary';
-                    
-                    const statusText = {
-                        'never': 'Never checked',
-                        'overdue': `${station.days_since_check} days ago`,
-                        'due_soon': `${station.days_since_check} days ago`
-                    }[station.verification_status] || 'Unknown';
-                    
-                    html += `
-                        <div class="col-md-4 mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold">${station.name}</span>
-                                <span class="badge bg-${statusClass}">${statusText}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                if (needsAttention.length > 6) {
-                    html += `
-                        <div class="col-12">
-                            <small class="text-muted">... and ${needsAttention.length - 6} more stations</small>
-                        </div>
-                    `;
-                }
-                
-                html += `
-                        </div>
-                    </div>
-                `;
-            } else {
-                html += `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i> All stations have been verified recently!
-                    </div>
-                `;
-            }
-            
-            content.innerHTML = html;
-        }
-
-        function refreshVerificationStatus() {
-            loadVerificationStatus();
-        }
-
-        function runVerification() {
-            const content = document.getElementById('verification-content');
-            
-            // Show loading state
-            content.innerHTML = `
-                <div class="alert alert-info">
-                    <i class="fas fa-spinner fa-spin"></i> Running schedule verification for all stations...
-                    <div class="progress mt-2">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
-                    </div>
-                </div>
-            `;
-            
-            fetch('/api/schedule-verification.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'manual_verify',
-                    csrf_token: '<?= generateCSRFToken() ?>'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const changesText = data.total_changes || 0;
-                    const stationsText = data.stations_checked || 0;
-                    
-                    content.innerHTML = `
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle"></i> 
-                            Verification completed! Checked ${stationsText} stations and found ${changesText} changes.
-                        </div>
-                    `;
-                    
-                    // Refresh the status after a short delay
-                    setTimeout(() => {
-                        loadVerificationStatus();
-                    }, 2000);
-                } else {
-                    content.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            Verification failed: ${data.error || 'Unknown error'}
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                content.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle"></i> 
-                        Network error: ${error.message}
-                    </div>
-                `;
-            });
-        }
-
-        // Load verification status on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadVerificationStatus();
-            setupUploadHandlers();
-            setupPlaylistHandlers();
-        });
-        
         // Upload functionality
         function setupUploadHandlers() {
             // Handle upload button clicks
@@ -1305,7 +834,7 @@ try {
                         
                         setTimeout(() => {
                             bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
-                            location.reload(); // Reload to show updated recording count
+                            location.reload(); // Reload to show updated track count
                         }, 1500);
                     } else {
                         statusDiv.innerHTML = `<i class="fas fa-times-circle text-danger"></i> ${data.error}`;
@@ -1325,7 +854,7 @@ try {
                     const showId = this.dataset.showId;
                     const showName = this.dataset.showName;
                     
-                    document.querySelector('#playlistModal .modal-title').textContent = `Manage Playlist - ${showName}`;
+                    document.querySelector('#playlistModal .modal-title').textContent = `Manage Track Order - ${showName}`;
                     loadPlaylistTracks(showId);
                     
                     new bootstrap.Modal(document.getElementById('playlistModal')).show();
@@ -1454,6 +983,17 @@ try {
             const mins = Math.floor(seconds / 60);
             const secs = seconds % 60;
             return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function timeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffInSeconds = (now - date) / 1000;
+            
+            if (diffInSeconds < 60) return 'just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+            return `${Math.floor(diffInSeconds / 86400)} days ago`;
         }
     </script>
 

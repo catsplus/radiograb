@@ -128,6 +128,9 @@ function getFeedUrl($show_id) {
                         <a class="nav-link" href="/shows.php">Shows</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="/playlists.php">Playlists</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="/recordings.php">Recordings</a>
                     </li>
                     <li class="nav-item">
