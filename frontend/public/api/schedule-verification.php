@@ -37,7 +37,7 @@ $action = $_GET['action'] ?? $_POST['action'] ?? '';
  * Execute schedule verification command
  */
 function executeScheduleVerification(string $command): array {
-    $fullCommand = "cd /opt/radiograb && docker exec radiograb-web-1 /opt/radiograb/venv/bin/python backend/services/schedule_verification_service.py $command 2>&1";
+    $fullCommand = "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python backend/services/schedule_verification_service.py $command 2>&1";
     
     $output = [];
     $returnCode = 0;
