@@ -601,16 +601,23 @@ try {
                 try {
                     // Get CSRF token
                     const csrfResponse = await fetch('/api/get-csrf-token.php');
+                    
+                    if (!csrfResponse.ok) {
+                        throw new Error(`HTTP ${csrfResponse.status}: ${csrfResponse.statusText}`);
+                    }
+                    
                     const csrfData = await csrfResponse.json();
                     
-                    if (!csrfData.success) {
-                        throw new Error('Failed to get CSRF token');
+                    if (!csrfData.success && !csrfData.csrf_token) {
+                        throw new Error(csrfData.error || 'Failed to get CSRF token');
                     }
+                    
+                    const csrfToken = csrfData.csrf_token;
                     
                     // Discover station schedule
                     const formData = new FormData();
                     formData.append('station_id', stationId);
-                    formData.append('csrf_token', csrfData.csrf_token);
+                    formData.append('csrf_token', csrfToken);
                     
                     const response = await fetch('/api/discover-station-schedule.php', {
                         method: 'POST',
