@@ -131,7 +131,8 @@ class AudioUploadService:
                 # Get next track number for playlists
                 track_number = None
                 if show.show_type == 'playlist':
-                    max_track = db.query(db.func.max(Recording.track_number)).filter(
+                    from sqlalchemy import func
+                    max_track = db.query(func.max(Recording.track_number)).filter(
                         Recording.show_id == show_id,
                         Recording.source_type == 'uploaded'
                     ).scalar()
