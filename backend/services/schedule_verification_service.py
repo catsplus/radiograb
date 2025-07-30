@@ -160,7 +160,6 @@ class ScheduleVerificationService:
                             schedule_pattern=schedule_pattern,
                             schedule_description=schedule_description,
                             description=f"{station.name} program: {show_name}",
-                            duration_minutes=show_data.duration_minutes or 60,
                             active=True,
                             created_at=datetime.now(),
                             updated_at=datetime.now()
