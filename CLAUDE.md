@@ -325,11 +325,52 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git stash && git pull origin m
 - **Database Backups**: Weekly automated backups with 3-week retention
 
 ### ✅ System Improvements
+- **Calendar Discovery Filtering**: Navigation elements (e.g., "Shows A-Z") filtered out, requires valid time schedules
+- **User-Controlled Show Activation**: New shows inactive by default - users manually choose which to activate
+- **Enhanced JavaScript Parsing**: Comprehensive show name validation with 40+ invalid pattern detection
 - **Timezone Fixes**: All containers use America/New_York
 - **Security Enhancements**: Proper MP3 downloads with CSRF protection
 - **UI Improvements**: Empty show hiding, progress tracking, real-time updates
 - **Recording Service v2.0**: Database-driven with duplicate prevention
 - **Quality Validation**: AAC→MP3 conversion with file size checks
+
+### 📅 Enhanced Calendar Discovery System (July 30, 2025)
+
+#### ✅ Smart Show Filtering
+The calendar discovery system now includes comprehensive filtering to prevent invalid entries:
+
+**Navigation Element Detection:**
+- Filters out: "Shows A-Z", "Schedule", "Calendar", "Home", "About", "Contact", "Archive"
+- Rejects generic terms: "Show", "Program", "Event", "Radio" (when standalone)
+- Blocks admin elements: "Login", "Dashboard", "Settings", "Manage"
+
+**Quality Validation:**
+- **Time Requirement**: Shows must have valid air dates/times to be added to database
+- **Minimum Length**: Show names must be at least 3 characters
+- **Pattern Matching**: 40+ invalid patterns detected and rejected
+- **Numeric Filtering**: Rejects date-only or number-only entries
+
+#### ✅ User-Controlled Activation
+**Default Behavior**: All discovered shows start as "Inactive" for user review
+**User Control**: Manual activation prevents unwanted auto-scheduling
+**Better Experience**: Users choose which shows to record instead of bulk auto-activation
+
+```bash
+# Calendar verification with new filtering
+ssh radiograb@167.71.84.143 "docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/schedule_verification_service.py --station-id 1"
+
+# Results show filtered, valid shows only:
+# ✅ "Fresh Air" (valid show with time)
+# ✅ "All Things Considered" (valid show with time)  
+# ❌ "Shows A-Z" (filtered out as navigation)
+# ❌ "Schedule" (filtered out as navigation)
+```
+
+#### 🔧 Technical Implementation
+- **`js_calendar_parser.py`**: Added `_is_invalid_show_name()` method with comprehensive pattern matching
+- **`schedule_verification_service.py`**: Changed default `active=False` for new shows
+- **Enhanced Error Handling**: Shows without valid times are skipped with debug logging
+- **Backward Compatibility**: Existing active shows remain unchanged
 
 ---
 
