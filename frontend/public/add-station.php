@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stream_url = trim($_POST['stream_url'] ?? '');
     $logo_url = trim($_POST['logo_url'] ?? '');
     $calendar_url = trim($_POST['calendar_url'] ?? '');
+    $call_letters = trim($_POST['call_letters'] ?? '');
     
     $errors = [];
     
@@ -53,6 +54,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($existing) {
                 $errors[] = 'A station with this website URL already exists';
             } else {
+                // Auto-generate call letters if not provided
+                if (empty($call_letters)) {
+                    // Try to extract call letters from name or website
+                    if (preg_match('/\b([A-Z]{3,5})\b/', $name, $matches)) {
+                        $call_letters = $matches[1];
+                    } else {
+                        // Generate from domain (e.g., wext.com -> WEXT)
+                        $parsed_url = parse_url($website_url);
+                        $domain = $parsed_url['host'] ?? '';
+                        $domain_part = preg_replace('/^www\./', '', $domain);
+                        $domain_name = strtoupper(preg_replace('/\.[^.]+$/', '', $domain_part));
+                        if (strlen($domain_name) >= 3 && strlen($domain_name) <= 5) {
+                            $call_letters = $domain_name;
+                        } else {
+                            // Fallback: use first 4 chars of station name
+                            $call_letters = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $name), 0, 4));
+                        }
+                    }
+                }
+                
                 // Insert new station
                 $station_id = $db->insert('stations', [
                     'name' => $name,
@@ -60,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'stream_url' => $stream_url ?: null,
                     'logo_url' => $logo_url ?: null,
                     'calendar_url' => $calendar_url ?: null,
+                    'call_letters' => $call_letters ?: null,
                     'status' => 'active'
                 ]);
                 
@@ -192,6 +214,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                        value="<?= h($_POST['name'] ?? '') ?>"
                                        placeholder="KEXP 90.3 FM"
                                        required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="call_letters" class="form-label">Call Letters</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="call_letters" 
+                                       name="call_letters" 
+                                       value="<?= h($_POST['call_letters'] ?? '') ?>"
+                                       placeholder="WEXT"
+                                       maxlength="5"
+                                       pattern="[A-Za-z]{2,5}"
+                                       style="text-transform: uppercase;">
+                                <div class="form-text">
+                                    Station call letters (2-5 letters). Will be auto-generated if not provided.
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -391,6 +429,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Apply discovered values to form fields
                 if (suggestions.name) {
                     document.getElementById('name').value = suggestions.name;
+                }
+                if (suggestions.call_letters) {
+                    document.getElementById('call_letters').value = suggestions.call_letters;
                 }
                 if (suggestions.stream_url) {
                     document.getElementById('stream_url').value = suggestions.stream_url;

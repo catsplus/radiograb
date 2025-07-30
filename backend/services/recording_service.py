@@ -69,9 +69,6 @@ class EnhancedRecordingService:
         # Ensure directories exist
         for directory in [self.recordings_dir, self.temp_dir, self.logs_dir]:
             directory.mkdir(parents=True, exist_ok=True)
-            # Set proper permissions
-            os.system(f"chown -R www-data:www-data {directory}")
-            os.system(f"chmod -R 755 {directory}")
         
         logger.info(f"Enhanced Recording Service initialized")
         logger.info(f"Recordings: {self.recordings_dir}")
