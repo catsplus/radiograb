@@ -100,6 +100,9 @@ class JavaScriptCalendarParser(CalendarParser):
                 }
                 chrome_options.add_experimental_option("prefs", prefs)
                 
+                # Use Chromium browser which should be installed via apt
+                chrome_options.binary_location = '/usr/bin/chromium-browser'
+                
                 # First, try using system chromedriver
                 import shutil
                 system_chromedriver = shutil.which('chromedriver')

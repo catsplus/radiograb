@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/New_York
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Install system dependencies
+# Install system dependencies including Chromium for WebDriver
 RUN apt-get update && apt-get install -y \
     gettext-base \
     python3 \
@@ -30,6 +30,7 @@ RUN apt-get update && apt-get install -y \
     cron \
     certbot \
     python3-certbot-nginx \
+    chromium-browser \
     && rm -rf /var/lib/apt/lists/*
 
 # Create application directory
