@@ -23,8 +23,12 @@ radiograb-housekeeping-1: # Cleanup (every 6 hours)
 **CRITICAL**: Files are baked into containers - host changes require rebuild!
 
 ```bash
-# Standard Deployment
-git add . && git commit -m "Update" && git push origin main
+# Quick Deployment (docs/config changes) - 30 seconds
+git add . && git commit -m "Update docs" && git push origin main
+ssh radiograb@167.71.84.143 "cd /opt/radiograb && ./deploy-from-git.sh --quick"
+
+# Full Deployment (code changes) - 5+ minutes  
+git add . && git commit -m "Update code" && git push origin main
 ssh radiograb@167.71.84.143 "cd /opt/radiograb && ./deploy-from-git.sh"
 
 # Emergency Direct Edit
