@@ -437,7 +437,7 @@ def parse_google_sheets_direct(sheets_url):
         
         for table in tables:
             rows = table.find_all('tr')
-            if len(rows) < 4:  # Need at least 4 rows for WTBR format
+            if len(rows) < 4:  # Need at least 4 rows for table format
                 continue
                 
             # For Google Sheets schedules, the typical structure is:

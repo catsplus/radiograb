@@ -245,18 +245,18 @@ class CalendarParser:
     def _parse_custom_schedule(self, method: str, response, url: str) -> List[ShowSchedule]:
         """Parse schedule using custom station-specific methods"""
         if method == 'custom_wyso':
-            return self._parse_wyso_schedule(response, url)
+            return self._parse_show_links_schedule(response, url)
         else:
             logger.warning(f"Unknown custom method: {method}")
             return []
     
-    def _parse_wyso_schedule(self, response, url: str) -> List[ShowSchedule]:
-        """Custom parser for WYSO's JavaScript-rendered schedule"""
+    def _parse_show_links_schedule(self, response, url: str) -> List[ShowSchedule]:
+        """Generic parser for schedules with show links and program elements"""
         shows = []
         try:
             soup = BeautifulSoup(response.content, 'html.parser')
             
-            # Strategy 1: Look for show links in WYSO's all-shows page structure
+            # Strategy 1: Look for show links in page structure
             show_links = soup.find_all('a', href=re.compile(r'/show/'))
             for link in show_links:
                 show_name = link.get_text().strip()
@@ -268,7 +268,7 @@ class CalendarParser:
                             start_time=time(9, 0),  # Default 9 AM
                             end_time=time(10, 0),   # Default 1 hour
                             days=['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-                            description=f"WYSO program: {show_name}",
+                            description=f"Radio program: {show_name}",
                             host="",
                             genre="",
                             duration_minutes=60
@@ -286,14 +286,14 @@ class CalendarParser:
                             start_time=time(9, 0),
                             end_time=time(10, 0),
                             days=['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-                            description=f"WYSO streaming program: {program_name}",
+                            description=f"Radio streaming program: {program_name}",
                             host="",
                             genre="",
                             duration_minutes=60
                         )
                         shows.append(show_schedule)
             
-            # Strategy 3: Look for elements with PromoAudioShowA-title class (WYSO specific)
+            # Strategy 3: Look for elements with promo/show title classes
             if not shows:
                 title_elements = soup.find_all(class_='PromoAudioShowA-title')
                 for element in title_elements:
@@ -306,7 +306,7 @@ class CalendarParser:
                                 start_time=time(9, 0),
                                 end_time=time(10, 0),
                                 days=['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-                                description=f"WYSO show: {show_name}",
+                                description=f"Radio show: {show_name}",
                                 host="",
                                 genre="",
                                 duration_minutes=60
@@ -348,11 +348,11 @@ class CalendarParser:
                     seen_names.add(show.name.lower())
                     unique_shows.append(show)
             
-            logger.info(f"WYSO custom parser found {len(unique_shows)} unique shows from {len(shows)} total matches")
+            logger.info(f"Show links parser found {len(unique_shows)} unique shows from {len(shows)} total matches")
             return unique_shows
             
         except Exception as e:
-            logger.error(f"Error in WYSO custom parser: {e}")
+            logger.error(f"Error in show links parser: {e}")
             return []
     
     def _parse_html_schedule(self, content: bytes, url: str) -> List[ShowSchedule]:
@@ -385,7 +385,7 @@ class CalendarParser:
             if len(rows) < 2:
                 return shows
             
-            # First, try to parse as Google Sheets format (WTBR style)
+            # Try to parse as Google Sheets embedded format
             google_sheets_shows = self._parse_google_sheets_table(table, rows)
             if google_sheets_shows:
                 shows.extend(google_sheets_shows)
@@ -433,7 +433,7 @@ class CalendarParser:
         return shows
     
     def _parse_google_sheets_table(self, table, rows) -> List[ShowSchedule]:
-        """Parse Google Sheets table format (like WTBR schedule)"""
+        """Parse Google Sheets embedded table format"""
         shows = []
         
         try:
@@ -573,10 +573,10 @@ class CalendarParser:
             
             # Handle different JSON structures
             if isinstance(data, list):
-                # Check if this looks like WERU's calendar format
+                # Check if this looks like ISO timestamp JSON calendar format
                 if data and isinstance(data[0], dict) and 'start' in data[0] and 'title' in data[0]:
-                    # WERU-specific format with ISO timestamps
-                    shows = self._parse_weru_json_schedule(data)
+                    # ISO timestamp format with timezone support
+                    shows = self._parse_iso_timestamp_json_schedule(data)
                 else:
                     # Standard JSON format
                     for item in data:
@@ -597,8 +597,8 @@ class CalendarParser:
         
         return shows
     
-    def _parse_weru_json_schedule(self, data: List[Dict[str, Any]]) -> List[ShowSchedule]:
-        """Parse WERU's specific JSON calendar format with ISO timestamps"""
+    def _parse_iso_timestamp_json_schedule(self, data: List[Dict[str, Any]]) -> List[ShowSchedule]:
+        """Parse JSON calendar format with ISO timestamps and timezone support"""
         shows = []
         from datetime import datetime
         import pytz
@@ -620,7 +620,7 @@ class CalendarParser:
                     continue
                 
                 try:
-                    # Parse ISO timestamp - WERU uses -0400 (EDT) offset
+                    # Parse ISO timestamp with timezone offset (e.g., -0400 EDT)
                     # Python's fromisoformat doesn't handle -0400 format, so use dateutil
                     from dateutil import parser as dateutil_parser
                     start_dt = dateutil_parser.parse(start_iso)
@@ -664,22 +664,22 @@ class CalendarParser:
                             start_time=start_time,
                             end_time=end_time,
                             days=[day],
-                            description=f"WERU program: {title}",
+                            description=f"Radio program: {title}",
                             host=item.get('text', '').strip(),
                             genre=item.get('data', {}).get('category', '') if isinstance(item.get('data'), dict) else ''
                         )
                         show_schedules[show_key] = show_schedule
-                        logger.debug(f"WERU: Added {title} at {start_time} on {day}")
+                        logger.debug(f"ISO JSON: Added {title} at {start_time} on {day}")
                         
                 except Exception as e:
-                    logger.debug(f"Error parsing WERU timestamp {start_iso}: {e}")
+                    logger.debug(f"Error parsing ISO timestamp {start_iso}: {e}")
                     continue
             
             shows = list(show_schedules.values())
-            logger.info(f"WERU JSON parser found {len(shows)} unique shows")
+            logger.info(f"ISO timestamp JSON parser found {len(shows)} unique shows")
             
         except Exception as e:
-            logger.error(f"Error in WERU JSON parser: {e}")
+            logger.error(f"Error in ISO timestamp JSON parser: {e}")
         
         return shows
     

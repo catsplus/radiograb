@@ -343,11 +343,14 @@ class StreamTestingFixes:
         # StreamTheWorld URL variations
         if 'streamtheworld.com' in url_lower:
             base_url = original_url
-            if '/WYSOHD2.mp3' in original_url:
-                # Try different quality streams 
+            # For streamtheworld.com URLs, try different quality variants
+            if 'HD2.mp3' in original_url:
+                # Try different quality streams for HD2 variants
+                base_stream = original_url.replace('HD2.mp3', '.mp3')
+                hd1_stream = original_url.replace('HD2.mp3', 'HD1.mp3')
                 alternatives.extend([
-                    original_url.replace('/WYSOHD2.mp3', '/WYSO.mp3'),
-                    original_url.replace('/WYSOHD2.mp3', '/WYSOHD1.mp3'),
+                    base_stream,
+                    hd1_stream,
                     original_url.replace('https://', 'http://'),
                     original_url.replace(':443', ':80')
                 ])
