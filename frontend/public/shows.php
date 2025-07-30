@@ -95,10 +95,17 @@ try {
     // Get stations for filter
     $stations = $db->fetchAll("SELECT id, name FROM stations ORDER BY name");
     
+    // Get station info if filtering by station
+    $station_info = null;
+    if ($station_id) {
+        $station_info = $db->fetchOne("SELECT id, name, call_letters FROM stations WHERE id = ?", [$station_id]);
+    }
+    
 } catch (Exception $e) {
     $error = "Database error: " . $e->getMessage();
     $shows = [];
     $stations = [];
+    $station_info = null;
 }
 ?>
 <!DOCTYPE html>
@@ -106,7 +113,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shows - RadioGrab</title>
+    <title><?= $station_info ? h($station_info['call_letters']) . ' Shows' : 'Shows' ?> - RadioGrab</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/assets/css/radiograb.css" rel="stylesheet">
@@ -163,12 +170,24 @@ try {
         <!-- Page Header -->
         <div class="row mb-4">
             <div class="col">
-                <h1><i class="fas fa-microphone"></i> Radio Shows</h1>
-                <p class="text-muted">Manage your recorded radio shows and schedules</p>
+                <?php if ($station_info): ?>
+                    <div class="d-flex align-items-center mb-2">
+                        <a href="/stations.php" class="btn btn-outline-secondary btn-sm me-2">
+                            <i class="fas fa-arrow-left"></i> Back to Stations
+                        </a>
+                        <div>
+                            <h1><i class="fas fa-microphone"></i> <?= h($station_info['call_letters']) ?> Shows</h1>
+                            <p class="text-muted mb-0">Shows for <?= h($station_info['name']) ?></p>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <h1><i class="fas fa-microphone"></i> Radio Shows</h1>
+                    <p class="text-muted">Manage your recorded radio shows and schedules</p>
+                <?php endif; ?>
             </div>
             <div class="col-auto">
-                <a href="/add-show.php" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Add Show
+                <a href="/add-show.php<?= $station_id ? "?station_id=$station_id" : '' ?>" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Show<?= $station_info ? ' to ' . h($station_info['call_letters']) : '' ?>
                 </a>
             </div>
         </div>
@@ -953,7 +972,7 @@ try {
                                 <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
                                 <h5 class="text-muted">No upcoming recordings scheduled</h5>
                                 <p class="text-muted mb-0">Add shows with schedules to see upcoming recordings</p>
-                                <a href="/add-show.php" class="btn btn-primary mt-3">
+                                <a href="/add-show.php<?= $station_id ? "?station_id=$station_id" : '' ?>" class="btn btn-primary mt-3">
                                     <i class="fas fa-plus"></i> Add Show
                                 </a>
                             </div>
