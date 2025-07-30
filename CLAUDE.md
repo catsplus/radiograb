@@ -37,6 +37,8 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && docker compose down && docker 
 - **Multi-Tool Strategy**: streamripper/ffmpeg/wget with automatic selection
 - **Quality Validation**: File size (2KB/sec min), format verification, AAC→MP3 conversion
 - **Station Discovery**: Radio Browser API + web scraping with intelligent matching
+- **JavaScript-Aware Parsing**: Selenium WebDriver with Chromium browser for dynamic calendars
+- **Station Schedule Discovery**: Automated discovery of show schedules with multiple airings support
 - **Test & On-Demand**: 10-second tests + manual recordings with duplicate prevention
 - **Call Letters Format**: `WYSO_ShowName_20250727_1400.mp3` naming
 - **RSS Feeds**: Individual show feeds + master combined feed
@@ -94,6 +96,37 @@ docker logs radiograb-recorder-1 --tail 50 | grep -i schedule
 - **Keywords**: Recognizes "original", "repeat", "encore", "rerun", "also"
 - **Database**: Separate `show_schedules` table with priority system
 - **Management**: `show_schedules_manager.py` for complex scheduling
+
+## 🌐 JAVASCRIPT-AWARE SCHEDULE DISCOVERY
+
+### Station Schedule Discovery System
+- **Add Show Integration**: "Find Shows" button discovers station schedules automatically
+- **Multiple Airings Support**: Groups shows by name, displays all broadcast times
+- **Interactive Selection**: Individual "Add" buttons for each show/airing combination
+- **CSRF Protection**: Full security integration with session management
+
+### JavaScript Calendar Parsing (`js_calendar_parser.py`)
+- **Chromium WebDriver**: Uses system-installed `chromium-browser` for JavaScript execution
+- **Dynamic Content**: Handles calendars that load via JavaScript/AJAX
+- **WordPress Support**: Specialized parsers for Calendarize It, The Events Calendar, FullCalendar
+- **Fallback Strategy**: Gracefully falls back to standard HTML parsing if WebDriver fails
+- **Cache Management**: Uses writable `/var/radiograb/temp/.wdm` directory for driver cache
+
+### API Endpoints
+- **`/api/discover-station-schedule.php`**: Station schedule discovery
+- **`/api/schedule-verification.php`**: Calendar verification and testing
+- **Browser Testing**: All APIs tested through actual browser workflows
+
+### Technical Implementation
+```bash
+# Container Dependencies
+chromium-browser                    # Installed via apt-get (lighter than Chrome)
+selenium>=4.15.0                   # WebDriver automation
+webdriver-manager>=4.0.0          # ChromeDriver management
+
+# Usage
+docker exec radiograb-web-1 /opt/radiograb/venv/bin/python backend/services/js_calendar_parser.py
+```
 
 ## 🔧 TECHNICAL REQUIREMENTS
 

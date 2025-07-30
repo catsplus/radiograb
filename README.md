@@ -46,7 +46,7 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **User-Agent Support**: Saved User-Agent per station for HTTP 403 handling and stream compatibility
 - **Call Sign File Naming**: Human-readable 4-letter call signs (WEHC, WERU, WTBR, WYSO) instead of numeric IDs
 - **Multi-Tool Recording**: Automatic tool selection (streamripper/ffmpeg/wget) with quality validation (2KB/sec minimum)
-- **JavaScript-Aware Parsing**: Selenium WebDriver handles dynamic calendar pages
+- **JavaScript-Aware Parsing**: Selenium WebDriver with Chromium browser handles dynamic calendar pages and AJAX content
 - **Docker Containerized**: Complete Docker setup with 5 specialized containers
 - **SSL/HTTPS Ready**: Automatic Let's Encrypt certificate management
 - **Timezone Synchronized**: All containers use Eastern Time for consistent timestamps
@@ -165,7 +165,8 @@ RadioGrab uses a 5-container Docker architecture:
 - **MP3 Metadata Service**: Automated metadata writing for all recordings with FFmpeg integration
 - **Upload Service**: Audio file validation, format conversion, and playlist integration
 - **Enhanced Recording Engine**: Python services with database-driven architecture, User-Agent support, and duplicate prevention
-- **Schedule Parser**: JavaScript-aware calendar extraction with stream discovery
+- **Schedule Parser**: JavaScript-aware calendar extraction with Chromium WebDriver for dynamic content
+- **Calendar Verification**: Browser-tested verification system with detailed error reporting and fallback parsing
 - **Stream Validator**: Tests streams with comprehensive error handling and User-Agent persistence
 - **RSS Generator**: Creates podcast feeds from recordings with playlist support and proper call letters naming
 
@@ -310,6 +311,12 @@ RadioGrab uses MySQL 8.0 with the following structure:
 - Clear browser cache and cookies
 - Check PHP session configuration
 - Verify CSRF debug endpoint: `/api/debug-csrf.php`
+
+**Calendar Verification Errors**
+- Check if station has proper call letters configured
+- Verify calendar URL is accessible and not JavaScript-protected
+- Use "Re-check calendar now" button for manual verification
+- Check logs: `docker logs radiograb-web-1 --tail 50`
 
 For more troubleshooting help, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
