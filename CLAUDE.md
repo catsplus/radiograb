@@ -117,6 +117,14 @@ docker logs radiograb-recorder-1 --tail 50 | grep -i schedule
 - **`/api/schedule-verification.php`**: Calendar verification and testing
 - **Browser Testing**: All APIs tested through actual browser workflows
 
+### 🧪 Testing Requirements
+**CRITICAL**: All tests and debugging should simulate actual user browser interactions using Chromium browser. This includes:
+- Testing calendar verification through web interface (not direct API calls)
+- Using browser-based CSRF token workflows
+- Simulating actual user clicks, form submissions, and page interactions
+- Verifying JavaScript functionality works as users experience it
+- Testing with browser session management and cookie handling
+
 ### Technical Implementation
 ```bash
 # Container Dependencies
