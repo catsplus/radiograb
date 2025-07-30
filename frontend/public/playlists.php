@@ -197,8 +197,8 @@ try {
                 <?php endif; ?>
             </div>
             <div class="col-auto">
-                <a href="/add-show.php?show_type=playlist<?= $station_id ? "&station_id=$station_id" : '' ?>" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Create Playlist<?= $station_info ? ' for ' . h($station_info['call_letters']) : '' ?>
+                <a href="/add-playlist.php" class="btn btn-success">
+                    <i class="fas fa-plus-circle"></i> Add Playlist
                 </a>
             </div>
         </div>
@@ -254,7 +254,7 @@ try {
                         <a href="/playlists.php" class="btn btn-primary">Clear Filters</a>
                     <?php else: ?>
                         <p class="text-muted mb-4">Create playlists to organize your uploaded audio collections.</p>
-                        <a href="/add-show.php?show_type=playlist" class="btn btn-primary">Create Your First Playlist</a>
+                        <a href="/add-playlist.php" class="btn btn-success">Create Your First Playlist</a>
                     <?php endif; ?>
                 </div>
             </div>
