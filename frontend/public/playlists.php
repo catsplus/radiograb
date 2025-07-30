@@ -7,6 +7,10 @@ session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
 
+// Set page variables for shared template
+$page_title = 'Playlists';
+$active_nav = 'playlists';
+
 // Handle playlist actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -108,6 +112,10 @@ try {
     $station_info = null;
     if ($station_id) {
         $station_info = $db->fetchOne("SELECT id, name, call_letters FROM stations WHERE id = ?", [$station_id]);
+        // Update page title if filtering by station
+        if ($station_info) {
+            $page_title = $station_info['call_letters'] . ' Playlists';
+        }
     }
     
 } catch (Exception $e) {
@@ -116,67 +124,327 @@ try {
     $stations = [];
     $station_info = null;
 }
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $station_info ? h($station_info['call_letters']) . ' Playlists' : 'Playlists' ?> - RadioGrab</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="/assets/css/radiograb.css" rel="stylesheet">
-</head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-radio"></i> RadioGrab
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/stations.php">Stations</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/shows.php">Shows</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/playlists.php">Playlists</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/recordings.php">Recordings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/feeds.php">RSS Feeds</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
 
-    <!-- Flash Messages -->
-    <?php foreach (getFlashMessages() as $flash): ?>
-        <div class="alert alert-<?= $flash['type'] ?> alert-dismissible fade show" role="alert">
-            <?= h($flash['message']) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endforeach; ?>
+// Set playlist-specific CSS
+$additional_css = '
+<style>
+    .playlist-hero {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 3rem 0 2rem;
+        margin-bottom: 2rem;
+    }
+    .playlist-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .playlist-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .playlist-stats {
+        background: rgba(40, 167, 69, 0.1);
+        border-radius: 10px;
+        padding: 1rem;
+    }
+    .upload-area {
+        border: 2px dashed #28a745;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        background: rgba(40, 167, 69, 0.05);
+        transition: all 0.3s ease;
+    }
+    .upload-area.dragover {
+        border-color: #20c997;
+        background: rgba(32, 201, 151, 0.1);
+    }
+    .status-badge.active {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+    }
+    .status-badge.inactive {
+        background: #6c757d;
+        color: white;
+    }
+    .track-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .track-item {
+        cursor: move;
+        transition: background-color 0.2s;
+    }
+    .track-item:hover {
+        background-color: rgba(40, 167, 69, 0.05);
+    }
+    .track-item.ui-sortable-helper {
+        background-color: rgba(40, 167, 69, 0.1);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .playlist-actions .btn {
+        margin: 0.25rem;
+    }
+    .progress-upload {
+        transition: width 0.3s ease;
+    }
+    
+    /* Green theme for playlists */
+    .text-primary { color: #28a745 !important; }
+    .btn-primary { 
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    }
+    .btn-primary:hover {
+        background: linear-gradient(45deg, #218838, #1ea085);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    }
+    .btn-outline-primary {
+        color: #28a745;
+        border-color: #28a745;
+    }
+    .btn-outline-primary:hover {
+        background: #28a745;
+        border-color: #28a745;
+    }
+    .navbar-brand { color: white !important; }
+    .nav-link.active { background: rgba(40, 167, 69, 0.3) !important; }
+    
+    /* Upload modal styling */
+    .modal-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+    .modal-header .btn-close {
+        filter: invert(1);
+    }
+</style>';
 
-    <!-- Main Content -->
-    <div class="container mt-4">
-        <?php if (isset($error)): ?>
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle"></i> <?= h($error) ?>
-            </div>
-        <?php endif; ?>
+// Set playlist-specific JavaScript
+$additional_js = '
+<script>
+    // Handle delete modal
+    document.addEventListener("DOMContentLoaded", function() {
+        const deleteModal = document.getElementById("deleteModal");
+        deleteModal.addEventListener("show.bs.modal", function(event) {
+            const button = event.relatedTarget;
+            const playlistId = button.getAttribute("data-show-id");
+            const playlistName = button.getAttribute("data-show-name");
+            
+            document.getElementById("deletePlaylistId").value = playlistId;
+            document.getElementById("playlistName").textContent = playlistName;
+        });
+
+        setupUploadHandlers();
+        setupPlaylistHandlers();
+    });
+    
+    // Toggle playlist status
+    function togglePlaylistStatus(playlistId) {
+        const toggle = document.getElementById(`toggle${playlistId}`);
+        const active = toggle.checked;
+        
+        fetch("/api/show-management.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                action: "toggle_active",
+                show_id: playlistId,
+                active: active,
+                csrf_token: "' . generateCSRFToken() . '"
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const badge = toggle.parentElement.querySelector(".badge");
+                if (active) {
+                    badge.className = "badge bg-success";
+                    badge.textContent = "Active";
+                } else {
+                    badge.className = "badge bg-secondary";
+                    badge.textContent = "Inactive";
+                }
+            } else {
+                toggle.checked = !active;
+                alert("Failed to update playlist status: " + (data.error || "Unknown error"));
+            }
+        })
+        .catch(error => {
+            toggle.checked = !active;
+            alert("Network error: " + error.message);
+        });
+    }
+    
+    // Upload functionality and other JavaScript functions...
+    function setupUploadHandlers() {
+        document.querySelectorAll(".upload-file-btn").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const showId = this.dataset.showId;
+                const showName = this.dataset.showName;
+                const maxSize = this.dataset.maxSize;
+                
+                document.getElementById("upload_show_id").value = showId;
+                document.getElementById("upload_max_size").textContent = maxSize;
+                document.querySelector("#uploadModal .modal-title").textContent = `Upload Audio - ${showName}`;
+                
+                document.getElementById("uploadForm").reset();
+                document.querySelector(".upload-progress").style.display = "none";
+                
+                new bootstrap.Modal(document.getElementById("uploadModal")).show();
+            });
+        });
+        
+        document.getElementById("uploadButton").addEventListener("click", function() {
+            const form = document.getElementById("uploadForm");
+            const formData = new FormData(form);
+            const progressBar = document.querySelector(".upload-progress");
+            const statusDiv = document.querySelector(".upload-status");
+            
+            progressBar.style.display = "block";
+            statusDiv.textContent = "Uploading...";
+            document.querySelector(".progress-bar").style.width = "0%";
+            
+            fetch("/api/upload.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.innerHTML = "<i class=\"fas fa-check-circle text-success\"></i> Upload successful!";
+                    document.querySelector(".progress-bar").style.width = "100%";
+                    
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(document.getElementById("uploadModal")).hide();
+                        location.reload();
+                    }, 1500);
+                } else {
+                    statusDiv.innerHTML = `<i class=\"fas fa-times-circle text-danger\"></i> ${data.error}`;
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `<i class=\"fas fa-times-circle text-danger\"></i> Upload failed: ${error.message}`;
+            });
+        });
+    }
+    
+    function setupPlaylistHandlers() {
+        document.querySelectorAll(".manage-playlist-btn").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const showId = this.dataset.showId;
+                const showName = this.dataset.showName;
+                
+                document.querySelector("#playlistModal .modal-title").textContent = `Manage Track Order - ${showName}`;
+                loadPlaylistTracks(showId);
+                
+                new bootstrap.Modal(document.getElementById("playlistModal")).show();
+            });
+        });
+    }
+    
+    // Additional playlist management functions...
+    function loadPlaylistTracks(showId) {
+        const loading = document.getElementById("playlist-loading");
+        const content = document.getElementById("playlist-content");
+        
+        loading.style.display = "block";
+        content.style.display = "none";
+        
+        fetch(`/api/playlist-tracks.php?show_id=${showId}`)
+        .then(response => response.json())
+        .then(data => {
+            loading.style.display = "none";
+            
+            if (data.success) {
+                const tbody = document.getElementById("playlist-tracks");
+                tbody.innerHTML = "";
+                
+                data.tracks.forEach(track => {
+                    const row = createTrackRow(track);
+                    tbody.appendChild(row);
+                });
+                
+                initializeDragDrop();
+                content.style.display = "block";
+            } else {
+                content.innerHTML = `<div class=\"alert alert-danger\">${data.error}</div>`;
+                content.style.display = "block";
+            }
+        })
+        .catch(error => {
+            loading.style.display = "none";
+            content.innerHTML = `<div class=\"alert alert-danger\">Failed to load tracks: ${error.message}</div>`;
+            content.style.display = "block";
+        });
+    }
+    
+    function createTrackRow(track) {
+        const row = document.createElement("tr");
+        row.dataset.recordingId = track.id;
+        row.innerHTML = `
+            <td class=\"drag-handle\" style=\"cursor: move;\">
+                <i class=\"fas fa-grip-vertical text-muted\"></i>
+            </td>
+            <td>
+                <input type=\"number\" class=\"form-control form-control-sm track-number\" 
+                       value=\"${track.track_number}\" min=\"1\" style=\"width: 60px;\">
+            </td>
+            <td>
+                <strong>${escapeHtml(track.title)}</strong>
+                ${track.description ? `<br><small class=\"text-muted\">${escapeHtml(track.description)}</small>` : ""}
+            </td>
+            <td>${formatDuration(track.duration_seconds)}</td>
+            <td>${timeAgo(track.recorded_at)}</td>
+            <td>
+                <button class=\"btn btn-sm btn-outline-danger delete-track\" 
+                        data-recording-id=\"${track.id}\" title=\"Delete\">
+                    <i class=\"fas fa-trash\"></i>
+                </button>
+            </td>
+        `;
+        return row;
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function formatDuration(seconds) {
+        if (!seconds) return "--";
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, "0")}`;
+    }
+    
+    function timeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInSeconds = (now - date) / 1000;
+        
+        if (diffInSeconds < 60) return "just now";
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+        return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    }
+</script>';
+
+// Include shared header
+require_once '../includes/header.php';
+
+// Show error if present
+if (isset($error)): ?>
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i> <?= h($error) ?>
+    </div>
+<?php endif; ?>
 
         <!-- Page Header -->
         <div class="row mb-4">
@@ -651,364 +919,7 @@ try {
         <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
     </form>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/assets/js/radiograb.js"></script>
-    <script>
-        // Handle delete modal
-        document.addEventListener('DOMContentLoaded', function() {
-            const deleteModal = document.getElementById('deleteModal');
-            deleteModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const playlistId = button.getAttribute('data-show-id');
-                const playlistName = button.getAttribute('data-show-name');
-                
-                document.getElementById('deletePlaylistId').value = playlistId;
-                document.getElementById('playlistName').textContent = playlistName;
-            });
-
-            setupUploadHandlers();
-            setupPlaylistHandlers();
-        });
-        
-        // Toggle playlist status
-        function togglePlaylistStatus(playlistId) {
-            // Use AJAX for better UX
-            const toggle = document.getElementById(`toggle${playlistId}`);
-            const active = toggle.checked;
-            
-            fetch('/api/show-management.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'toggle_active',
-                    show_id: playlistId,
-                    active: active,
-                    csrf_token: '<?= generateCSRFToken() ?>'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update badge
-                    const badge = toggle.parentElement.querySelector('.badge');
-                    if (active) {
-                        badge.className = 'badge bg-success';
-                        badge.textContent = 'Active';
-                    } else {
-                        badge.className = 'badge bg-secondary';
-                        badge.textContent = 'Inactive';
-                    }
-                } else {
-                    // Revert toggle on error
-                    toggle.checked = !active;
-                    alert('Failed to update playlist status: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                // Revert toggle on error
-                toggle.checked = !active;
-                alert('Network error: ' + error.message);
-            });
-        }
-        
-        // Description toggle function
-        function toggleDescription(playlistId) {
-            const shortDiv = document.getElementById(`desc-short-${playlistId}`);
-            const fullDiv = document.getElementById(`desc-full-${playlistId}`);
-            const toggleBtn = document.getElementById(`desc-toggle-${playlistId}`);
-            
-            if (fullDiv.style.display === 'none') {
-                // Show full description
-                shortDiv.style.display = 'none';
-                fullDiv.style.display = 'block';
-                toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show less';
-            } else {
-                // Show short description
-                shortDiv.style.display = 'block';
-                fullDiv.style.display = 'none';
-                toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show more';
-            }
-        }
-        
-        // Tags editing functions
-        function editTags(playlistId) {
-            document.getElementById(`tags-display-${playlistId}`).style.display = 'none';
-            document.getElementById(`tags-edit-${playlistId}`).style.display = 'block';
-            document.getElementById(`edit-tags-btn-${playlistId}`).style.display = 'none';
-            document.getElementById(`tags-input-${playlistId}`).focus();
-        }
-        
-        function cancelEditTags(playlistId) {
-            document.getElementById(`tags-display-${playlistId}`).style.display = 'block';
-            document.getElementById(`tags-edit-${playlistId}`).style.display = 'none';
-            document.getElementById(`edit-tags-btn-${playlistId}`).style.display = 'inline-block';
-        }
-        
-        function saveTags(playlistId) {
-            const input = document.getElementById(`tags-input-${playlistId}`);
-            const tags = input.value.trim();
-            
-            fetch('/api/show-management.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'update_tags',
-                    show_id: playlistId,
-                    tags: tags,
-                    csrf_token: '<?= generateCSRFToken() ?>'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update tags display
-                    const tagsDisplay = document.getElementById(`tags-display-${playlistId}`);
-                    if (tags) {
-                        const tagList = tags.split(',').map(tag => 
-                            `<span class="badge bg-light text-dark me-1">${tag.trim()}</span>`
-                        ).join('');
-                        tagsDisplay.innerHTML = tagList;
-                    } else {
-                        tagsDisplay.innerHTML = '<small class="text-muted">No tags</small>';
-                    }
-                    
-                    // Hide edit mode
-                    cancelEditTags(playlistId);
-                } else {
-                    alert('Failed to update tags: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                alert('Network error: ' + error.message);
-            });
-        }
-
-        // Upload functionality
-        function setupUploadHandlers() {
-            // Handle upload button clicks
-            document.querySelectorAll('.upload-file-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const showId = this.dataset.showId;
-                    const showName = this.dataset.showName;
-                    const maxSize = this.dataset.maxSize;
-                    
-                    document.getElementById('upload_show_id').value = showId;
-                    document.getElementById('upload_max_size').textContent = maxSize;
-                    document.querySelector('#uploadModal .modal-title').textContent = `Upload Audio - ${showName}`;
-                    
-                    // Reset form
-                    document.getElementById('uploadForm').reset();
-                    document.querySelector('.upload-progress').style.display = 'none';
-                    
-                    new bootstrap.Modal(document.getElementById('uploadModal')).show();
-                });
-            });
-            
-            // Handle upload form submission
-            document.getElementById('uploadButton').addEventListener('click', function() {
-                const form = document.getElementById('uploadForm');
-                const formData = new FormData(form);
-                const progressBar = document.querySelector('.upload-progress');
-                const statusDiv = document.querySelector('.upload-status');
-                
-                // Show progress
-                progressBar.style.display = 'block';
-                statusDiv.textContent = 'Uploading...';
-                document.querySelector('.progress-bar').style.width = '0%';
-                
-                // Upload file
-                fetch('/api/upload.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        statusDiv.innerHTML = '<i class="fas fa-check-circle text-success"></i> Upload successful!';
-                        document.querySelector('.progress-bar').style.width = '100%';
-                        
-                        setTimeout(() => {
-                            bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
-                            location.reload(); // Reload to show updated track count
-                        }, 1500);
-                    } else {
-                        statusDiv.innerHTML = `<i class="fas fa-times-circle text-danger"></i> ${data.error}`;
-                    }
-                })
-                .catch(error => {
-                    statusDiv.innerHTML = `<i class="fas fa-times-circle text-danger"></i> Upload failed: ${error.message}`;
-                });
-            });
-        }
-        
-        // Playlist management functionality
-        function setupPlaylistHandlers() {
-            // Handle playlist management button clicks
-            document.querySelectorAll('.manage-playlist-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const showId = this.dataset.showId;
-                    const showName = this.dataset.showName;
-                    
-                    document.querySelector('#playlistModal .modal-title').textContent = `Manage Track Order - ${showName}`;
-                    loadPlaylistTracks(showId);
-                    
-                    new bootstrap.Modal(document.getElementById('playlistModal')).show();
-                });
-            });
-        }
-        
-        function loadPlaylistTracks(showId) {
-            const loading = document.getElementById('playlist-loading');
-            const content = document.getElementById('playlist-content');
-            
-            loading.style.display = 'block';
-            content.style.display = 'none';
-            
-            fetch(`/api/playlist-tracks.php?show_id=${showId}`)
-            .then(response => response.json())
-            .then(data => {
-                loading.style.display = 'none';
-                
-                if (data.success) {
-                    const tbody = document.getElementById('playlist-tracks');
-                    tbody.innerHTML = '';
-                    
-                    data.tracks.forEach(track => {
-                        const row = createTrackRow(track);
-                        tbody.appendChild(row);
-                    });
-                    
-                    // Initialize drag and drop
-                    initializeDragDrop();
-                    content.style.display = 'block';
-                } else {
-                    content.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
-                    content.style.display = 'block';
-                }
-            })
-            .catch(error => {
-                loading.style.display = 'none';
-                content.innerHTML = `<div class="alert alert-danger">Failed to load tracks: ${error.message}</div>`;
-                content.style.display = 'block';
-            });
-        }
-        
-        function createTrackRow(track) {
-            const row = document.createElement('tr');
-            row.dataset.recordingId = track.id;
-            row.innerHTML = `
-                <td class="drag-handle" style="cursor: move;">
-                    <i class="fas fa-grip-vertical text-muted"></i>
-                </td>
-                <td>
-                    <input type="number" class="form-control form-control-sm track-number" 
-                           value="${track.track_number}" min="1" style="width: 60px;">
-                </td>
-                <td>
-                    <strong>${escapeHtml(track.title)}</strong>
-                    ${track.description ? `<br><small class="text-muted">${escapeHtml(track.description)}</small>` : ''}
-                </td>
-                <td>${formatDuration(track.duration_seconds)}</td>
-                <td>${timeAgo(track.recorded_at)}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-danger delete-track" 
-                            data-recording-id="${track.id}" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            `;
-            return row;
-        }
-        
-        function initializeDragDrop() {
-            const tbody = document.getElementById('playlist-tracks');
-            let draggedElement = null;
-            
-            // Add drag events to all rows
-            tbody.querySelectorAll('tr').forEach(row => {
-                row.draggable = true;
-                
-                row.addEventListener('dragstart', function(e) {
-                    draggedElement = this;
-                    this.style.opacity = '0.5';
-                });
-                
-                row.addEventListener('dragend', function(e) {
-                    this.style.opacity = '';
-                });
-                
-                row.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                });
-                
-                row.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    if (draggedElement !== this) {
-                        const rect = this.getBoundingClientRect();
-                        const middle = rect.top + rect.height / 2;
-                        
-                        if (e.clientY < middle) {
-                            this.parentNode.insertBefore(draggedElement, this);
-                        } else {
-                            this.parentNode.insertBefore(draggedElement, this.nextSibling);
-                        }
-                        
-                        updateTrackNumbers();
-                    }
-                });
-            });
-        }
-        
-        function updateTrackNumbers() {
-            const rows = document.querySelectorAll('#playlist-tracks tr');
-            rows.forEach((row, index) => {
-                const input = row.querySelector('.track-number');
-                input.value = index + 1;
-            });
-        }
-        
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        function formatDuration(seconds) {
-            if (!seconds) return '--';
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-        
-        function timeAgo(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffInSeconds = (now - date) / 1000;
-            
-            if (diffInSeconds < 60) return 'just now';
-            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-            return `${Math.floor(diffInSeconds / 86400)} days ago`;
-        }
-    </script>
-
-    <!-- Footer -->
-    <footer class="bg-light mt-5 py-3">
-        <div class="container">
-            <div class="row">
-                <div class="col text-center text-muted">
-                    <small>
-                        RadioGrab - Radio Recorder | 
-                        Version: <?= getVersionNumber() ?>
-                    </small>
-                </div>
-            </div>
-        </div>
-    </footer>
-</body>
-</html>
+<?php
+// Include shared footer
+require_once '../includes/footer.php';
+?>
