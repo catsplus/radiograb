@@ -25,7 +25,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Get action from GET, POST, or JSON input
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
+
+// If no action found and this is a POST request, check JSON input
+if (!$action && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if ($input && isset($input['action'])) {
+        $action = $input['action'];
+    }
+}
 
 try {
     switch ($action) {
