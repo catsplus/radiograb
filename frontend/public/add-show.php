@@ -212,6 +212,51 @@ try {
 
         <div class="row">
             <div class="col-lg-8">
+                <!-- Station Schedule Discovery (shown when station is pre-selected) -->
+                <?php if ($station_id): ?>
+                    <div class="card mb-4" id="schedule-discovery-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-search"></i> Discover Station Schedule</h5>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="discover-schedule-btn">
+                                <i class="fas fa-sync-alt"></i> Find Shows
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-0">
+                                Click "Find Shows" to automatically discover this station's programming schedule.
+                                You can then add shows directly from their published schedule.
+                            </p>
+                            
+                            <!-- Loading state -->
+                            <div id="discovery-loading" class="text-center py-4" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Analyzing station website and discovering shows...</p>
+                            </div>
+                            
+                            <!-- Error state -->
+                            <div id="discovery-error" class="alert alert-warning mt-3" style="display: none;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span id="discovery-error-message"></span>
+                            </div>
+                            
+                            <!-- Results -->
+                            <div id="discovery-results" style="display: none;">
+                                <div class="mt-3">
+                                    <h6 class="text-success mb-3">
+                                        <i class="fas fa-check-circle"></i> 
+                                        Found <span id="shows-count">0</span> shows
+                                    </h6>
+                                    <div id="discovered-shows" class="list-group">
+                                        <!-- Shows will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <!-- Add Show Form -->
                 <div class="card">
                     <div class="card-header">
@@ -467,6 +512,12 @@ try {
                 });
             });
             
+            // Handle station schedule discovery
+            const discoverBtn = document.getElementById('discover-schedule-btn');
+            if (discoverBtn) {
+                discoverBtn.addEventListener('click', discoverStationSchedule);
+            }
+            
             // Handle show type changes
             const showTypeRadios = document.querySelectorAll('input[name="show_type"]');
             const scheduledFields = document.getElementById('scheduled-fields');
@@ -529,6 +580,229 @@ try {
                     return;
                 }
             });
+            
+            // Station schedule discovery function
+            async function discoverStationSchedule() {
+                const stationId = <?= $station_id ?: 0 ?>;
+                if (!stationId) return;
+                
+                const loadingDiv = document.getElementById('discovery-loading');
+                const errorDiv = document.getElementById('discovery-error');
+                const resultsDiv = document.getElementById('discovery-results');
+                const discoverBtn = document.getElementById('discover-schedule-btn');
+                
+                // Show loading state
+                loadingDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+                resultsDiv.style.display = 'none';
+                discoverBtn.disabled = true;
+                discoverBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Discovering...';
+                
+                try {
+                    // Get CSRF token
+                    const csrfResponse = await fetch('/api/get-csrf-token.php');
+                    const csrfData = await csrfResponse.json();
+                    
+                    if (!csrfData.success) {
+                        throw new Error('Failed to get CSRF token');
+                    }
+                    
+                    // Discover station schedule
+                    const formData = new FormData();
+                    formData.append('station_id', stationId);
+                    formData.append('csrf_token', csrfData.csrf_token);
+                    
+                    const response = await fetch('/api/discover-station-schedule.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!data.success) {
+                        throw new Error(data.error || 'Failed to discover schedule');
+                    }
+                    
+                    // Hide loading and show results
+                    loadingDiv.style.display = 'none';
+                    resultsDiv.style.display = 'block';
+                    
+                    // Update shows count
+                    document.getElementById('shows-count').textContent = data.shows.length;
+                    
+                    // Populate discovered shows
+                    const showsContainer = document.getElementById('discovered-shows');
+                    showsContainer.innerHTML = '';
+                    
+                    if (data.shows.length === 0) {
+                        showsContainer.innerHTML = '<div class="list-group-item text-muted text-center">No shows found in station schedule</div>';
+                        return;
+                    }
+                    
+                    data.shows.forEach(show => {
+                        const showItem = createShowListItem(show, stationId);
+                        showsContainer.appendChild(showItem);
+                    });
+                    
+                } catch (error) {
+                    // Show error state
+                    loadingDiv.style.display = 'none';
+                    errorDiv.style.display = 'block';
+                    document.getElementById('discovery-error-message').textContent = error.message;
+                } finally {
+                    // Reset button
+                    discoverBtn.disabled = false;
+                    discoverBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Find Shows';
+                }
+            }
+            
+            // Create a show list item with multiple airings
+            function createShowListItem(show, stationId) {
+                const item = document.createElement('div');
+                item.className = 'list-group-item';
+                
+                // Create airings list
+                let airingsHtml = '';
+                show.airings.forEach((airing, index) => {
+                    const daysText = airing.days.map(day => day.charAt(0).toUpperCase() + day.slice(1)).join(', ');
+                    const timeText = `${airing.start_time}${airing.end_time ? ' - ' + airing.end_time : ''}`;
+                    const durationText = airing.duration_minutes ? ` (${airing.duration_minutes} min)` : '';
+                    
+                    airingsHtml += `
+                        <div class="d-flex justify-content-between align-items-center py-1 ${index > 0 ? 'border-top' : ''}">
+                            <div class="flex-grow-1">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> ${daysText} at ${timeText}${durationText}
+                                </small>
+                            </div>
+                            <button type="button" 
+                                    class="btn btn-sm btn-success add-airing-btn"
+                                    data-show-name="${escapeHtml(show.name)}"
+                                    data-schedule="${generateScheduleText(airing)}"
+                                    data-duration="${airing.duration_minutes || 60}"
+                                    data-description="${escapeHtml(show.description || '')}"
+                                    data-host="${escapeHtml(show.host || '')}"
+                                    data-genre="${escapeHtml(show.genre || '')}">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">${escapeHtml(show.name)}</h6>
+                            ${show.description ? `<p class="mb-1 text-muted small">${escapeHtml(show.description)}</p>` : ''}
+                            ${show.host ? `<small class="text-info"><i class="fas fa-user"></i> ${escapeHtml(show.host)}</small>` : ''}
+                            ${show.genre ? `<small class="text-secondary ms-2"><i class="fas fa-tag"></i> ${escapeHtml(show.genre)}</small>` : ''}
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        ${airingsHtml}
+                    </div>
+                `;
+                
+                // Add event listeners for Add buttons
+                item.querySelectorAll('.add-airing-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        addShowFromDiscovery(this);
+                    });
+                });
+                
+                return item;
+            }
+            
+            // Generate natural language schedule text from airing data
+            function generateScheduleText(airing) {
+                const days = airing.days;
+                const startTime = airing.start_time;
+                
+                // Convert 24-hour time to 12-hour format
+                const [hours, minutes] = startTime.split(':');
+                const hour = parseInt(hours);
+                const minute = parseInt(minutes);
+                
+                let displayHour = hour;
+                let ampm = 'AM';
+                
+                if (hour === 0) {
+                    displayHour = 12;
+                } else if (hour === 12) {
+                    ampm = 'PM';
+                } else if (hour > 12) {
+                    displayHour = hour - 12;
+                    ampm = 'PM';
+                }
+                
+                const timeStr = `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
+                
+                // Handle different day patterns
+                if (days.length === 1) {
+                    return `every ${days[0]} at ${timeStr}`;
+                } else if (days.length === 5 && 
+                          days.includes('monday') && days.includes('tuesday') && 
+                          days.includes('wednesday') && days.includes('thursday') && 
+                          days.includes('friday')) {
+                    return `weekdays at ${timeStr}`;
+                } else if (days.length === 2 && days.includes('saturday') && days.includes('sunday')) {
+                    return `weekends at ${timeStr}`;
+                } else if (days.length === 7) {
+                    return `daily at ${timeStr}`;
+                } else {
+                    const daysList = days.map(day => day.charAt(0).toUpperCase() + day.slice(1)).join(', ');
+                    return `${daysList} at ${timeStr}`;
+                }
+            }
+            
+            // Add show from discovery to the form
+            function addShowFromDiscovery(button) {
+                const showName = button.getAttribute('data-show-name');
+                const schedule = button.getAttribute('data-schedule');
+                const duration = button.getAttribute('data-duration');
+                const description = button.getAttribute('data-description');
+                const host = button.getAttribute('data-host');
+                const genre = button.getAttribute('data-genre');
+                
+                // Fill form fields
+                document.getElementById('name').value = showName;
+                document.getElementById('schedule_text').value = schedule;
+                document.getElementById('duration_minutes').value = duration;
+                
+                if (description) {
+                    document.getElementById('description').value = description;
+                }
+                if (host) {
+                    document.getElementById('host').value = host;
+                }
+                if (genre) {
+                    document.getElementById('genre').value = genre;
+                }
+                
+                // Set to scheduled show type
+                document.getElementById('show_type_scheduled').checked = true;
+                updateFormFields();
+                
+                // Scroll to form
+                document.getElementById('add-show-form').scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                // Highlight the form briefly
+                const formCard = document.querySelector('#add-show-form').closest('.card');
+                formCard.style.border = '2px solid #28a745';
+                setTimeout(() => {
+                    formCard.style.border = '';
+                }, 2000);
+            }
+            
+            // HTML escape function
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
         });
     </script>
 
