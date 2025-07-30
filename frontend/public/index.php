@@ -8,6 +8,10 @@ session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
 
+// Set page variables for shared template
+$page_title = 'Dashboard';
+$active_nav = 'dashboard';
+
 // Get dashboard statistics
 try {
     $stats = [
@@ -45,77 +49,16 @@ try {
     $recent_recordings = [];
     $active_shows = [];
 }
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RadioGrab - Radio Recorder Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="/assets/css/radiograb.css" rel="stylesheet">
-</head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-radio"></i> RadioGrab
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/stations.php">Stations</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/shows.php">Shows</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/playlists.php">Playlists</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/recordings.php">Recordings</a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-cog"></i> Settings
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/settings.php">Configuration</a></li>
-                            <li><a class="dropdown-item" href="/logs.php">Logs</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/about.php">About</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
 
-    <!-- Flash Messages -->
-    <?php foreach (getFlashMessages() as $flash): ?>
-        <div class="alert alert-<?= $flash['type'] ?> alert-dismissible fade show" role="alert">
-            <?= h($flash['message']) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endforeach; ?>
+// Include shared header
+require_once '../includes/header.php';
 
-    <!-- Main Content -->
-    <div class="container mt-4">
-        <?php if (isset($error)): ?>
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle"></i> <?= h($error) ?>
-            </div>
-        <?php endif; ?>
+// Show error if present
+if (isset($error)): ?>
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i> <?= h($error) ?>
+    </div>
+<?php endif; ?>
 
         <!-- Page Header -->
         <div class="row mb-4">
@@ -315,106 +258,94 @@ try {
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-light mt-5 py-3">
-        <div class="container">
-            <div class="row">
-                <div class="col text-center text-muted">
-                    <small>
-                        RadioGrab - Radio Recorder | 
-                        Version: <?= getVersionNumber() ?>
-                    </small>
-                </div>
-            </div>
-        </div>
-    </footer>
+<?php
+// Set additional JavaScript for dashboard functionality
+$additional_js = '
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Load next recordings on page load
+        loadNextRecordings();
+    });
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/assets/js/radiograb.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load next recordings on page load
-            loadNextRecordings();
-        });
-
-        function loadNextRecordings() {
-            const loading = document.getElementById('next-recordings-loading');
-            const content = document.getElementById('next-recordings-content');
-            
-            loading.style.display = 'block';
-            content.style.display = 'none';
-            
-            fetch('/api/show-management.php?action=get_next_recordings&limit=3')
-                .then(response => response.json())
-                .then(data => {
-                    loading.style.display = 'none';
-                    content.style.display = 'block';
-                    
-                    if (data.success && data.recordings && data.recordings.length > 0) {
-                        displayNextRecordings(data.recordings);
-                    } else {
-                        content.innerHTML = `
-                            <div class="text-center py-3">
-                                <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
-                                <p class="text-muted mb-0">No upcoming recordings scheduled</p>
-                                <small class="text-muted">Add shows with schedules to see upcoming recordings</small>
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    loading.style.display = 'none';
-                    content.style.display = 'block';
+    function loadNextRecordings() {
+        const loading = document.getElementById("next-recordings-loading");
+        const content = document.getElementById("next-recordings-content");
+        
+        loading.style.display = "block";
+        content.style.display = "none";
+        
+        fetch("/api/show-management.php?action=get_next_recordings&limit=3")
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = "none";
+                content.style.display = "block";
+                
+                if (data.success && data.recordings && data.recordings.length > 0) {
+                    displayNextRecordings(data.recordings);
+                } else {
                     content.innerHTML = `
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            Unable to load next recordings: ${error.message}
+                        <div class="text-center py-3">
+                            <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No upcoming recordings scheduled</p>
+                            <small class="text-muted">Add shows with schedules to see upcoming recordings</small>
                         </div>
                     `;
-                });
-        }
-
-        function displayNextRecordings(recordings) {
-            const content = document.getElementById('next-recordings-content');
-            
-            let html = '<div class="row">';
-            
-            recordings.forEach((recording, index) => {
-                const colClass = recordings.length === 1 ? 'col-12' : recordings.length === 2 ? 'col-md-6' : 'col-md-4';
-                
-                html += `
-                    <div class="${colClass} mb-3">
-                        <div class="card border-primary">
-                            <div class="card-body">
-                                <h6 class="card-title">${recording.title}</h6>
-                                <p class="card-text">
-                                    <i class="fas fa-clock text-primary"></i> 
-                                    <strong>${recording.next_run}</strong>
-                                </p>
-                                ${recording.tags ? `
-                                    <div class="mb-2">
-                                        <small class="text-muted">
-                                            <i class="fas fa-tags"></i> ${recording.tags}
-                                        </small>
-                                    </div>
-                                ` : ''}
-                                <div class="badge bg-primary">
-                                    ${index === 0 ? 'Next' : index === 1 ? '2nd' : '3rd'}
-                                </div>
-                            </div>
-                        </div>
+                }
+            })
+            .catch(error => {
+                loading.style.display = "none";
+                content.style.display = "block";
+                content.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Unable to load next recordings: ${error.message}
                     </div>
                 `;
             });
-            
-            html += '</div>';
-            content.innerHTML = html;
-        }
+    }
 
-        function refreshNextRecordings() {
-            loadNextRecordings();
-        }
-    </script>
-</body>
-</html>
+    function displayNextRecordings(recordings) {
+        const content = document.getElementById("next-recordings-content");
+        
+        let html = "<div class=\"row\">";
+        
+        recordings.forEach((recording, index) => {
+            const colClass = recordings.length === 1 ? "col-12" : recordings.length === 2 ? "col-md-6" : "col-md-4";
+            
+            html += `
+                <div class="${colClass} mb-3">
+                    <div class="card border-primary">
+                        <div class="card-body">
+                            <h6 class="card-title">${recording.title}</h6>
+                            <p class="card-text">
+                                <i class="fas fa-clock text-primary"></i> 
+                                <strong>${recording.next_run}</strong>
+                            </p>
+                            ${recording.tags ? `
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-tags"></i> ${recording.tags}
+                                    </small>
+                                </div>
+                            ` : ""}
+                            <div class="badge bg-primary">
+                                ${index === 0 ? "Next" : index === 1 ? "2nd" : "3rd"}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += "</div>";
+        content.innerHTML = html;
+    }
+
+    function refreshNextRecordings() {
+        loadNextRecordings();
+    }
+</script>';
+
+// Include shared footer
+require_once '../includes/footer.php';
+?>

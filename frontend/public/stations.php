@@ -7,6 +7,10 @@ session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
 
+// Set page variables for shared template
+$page_title = 'Stations';
+$active_nav = 'stations';
+
 // Handle station deletion
 if ($_POST['action'] ?? '' === 'delete' && isset($_POST['station_id'])) {
     if (verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -41,65 +45,19 @@ try {
     $error = "Database error: " . $e->getMessage();
     $stations = [];
 }
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stations - RadioGrab</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="/assets/css/radiograb.css" rel="stylesheet">
-    <link href="/assets/css/on-air.css" rel="stylesheet">
-</head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-radio"></i> RadioGrab
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/stations.php">Stations</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/shows.php">Shows</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/playlists.php">Playlists</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/recordings.php">Recordings</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
 
-    <!-- Flash Messages -->
-    <?php foreach (getFlashMessages() as $flash): ?>
-        <div class="alert alert-<?= $flash['type'] ?> alert-dismissible fade show" role="alert">
-            <?= h($flash['message']) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endforeach; ?>
+// Set additional CSS for stations page
+$additional_css = '<link href="/assets/css/on-air.css" rel="stylesheet">';
 
-    <!-- Main Content -->
-    <div class="container mt-4">
-        <?php if (isset($error)): ?>
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle"></i> <?= h($error) ?>
-            </div>
-        <?php endif; ?>
+// Include shared header
+require_once '../includes/header.php';
+
+// Show error if present
+if (isset($error)): ?>
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i> <?= h($error) ?>
+    </div>
+<?php endif; ?>
 
         <!-- Page Header -->
         <div class="row mb-4">
@@ -406,11 +364,11 @@ try {
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/assets/js/radiograb.js"></script>
-    <script src="/assets/js/on-air-status.js"></script>
-    <script>
+<?php
+// Set additional JavaScript for stations page functionality
+$additional_js = '
+<script src="/assets/js/on-air-status.js"></script>
+<script>
         let currentStationId = null;
         
         // Handle delete modal
@@ -1034,24 +992,12 @@ try {
         }
         
         // Initialize test recording checks when page loads
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener("DOMContentLoaded", function() {
             checkForTestRecordings();
         });
         
-    </script>
+    </script>';
 
-    <!-- Footer -->
-    <footer class="bg-light mt-5 py-3">
-        <div class="container">
-            <div class="row">
-                <div class="col text-center text-muted">
-                    <small>
-                        RadioGrab - Radio Recorder | 
-                        Version: <?= getVersionNumber() ?>
-                    </small>
-                </div>
-            </div>
-        </div>
-    </footer>
-</body>
-</html>
+// Include shared footer
+require_once '../includes/footer.php';
+?>
