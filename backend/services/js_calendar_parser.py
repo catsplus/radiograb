@@ -101,7 +101,11 @@ class JavaScriptCalendarParser(CalendarParser):
                 chrome_options.add_experimental_option("prefs", prefs)
                 
                 # Setup Chrome service with webdriver manager
-                service = Service(ChromeDriverManager().install())
+                # Set cache directory to a writable location
+                import os
+                cache_dir = "/var/radiograb/temp/.wdm"
+                os.makedirs(cache_dir, exist_ok=True)
+                service = Service(ChromeDriverManager(cache_valid_range=1, path=cache_dir).install())
                 self.driver = webdriver.Chrome(service=service, options=chrome_options)
                 self.driver.set_page_load_timeout(self.timeout)
                 
