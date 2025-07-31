@@ -117,7 +117,6 @@ $additional_css = '
 // Set playlist-specific JavaScript - Load external file to avoid PHP parsing issues
 $additional_js = '<script src="/assets/js/playlists.js"></script>';
 
-<?php
 // Include shared header
 require_once '../includes/header.php';
 
