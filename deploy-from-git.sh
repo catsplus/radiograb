@@ -53,7 +53,7 @@ echo
 if [[ "$QUICK_MODE" == "true" ]]; then
     # Check if any code files changed
     CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-    CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(php|py|js|css|html)$' || true)
+    CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(php|py|js|css|html) || true)
     
     if [[ -n "$CODE_CHANGES" ]]; then
         echo "📝 Quick mode: Code changes detected, performing full rebuild..."
@@ -77,6 +77,14 @@ sleep 10
 # Check container status
 echo "🩺 Container health check:"
 docker compose ps
+
+# Apply database migrations
+echo "⚙️ Applying database migrations..."
+/opt/radiograb/scripts/apply-migrations.sh
+
+# Seed the database
+echo "🌱 Seeding the database..."
+docker exec radiograb-web-1 php /opt/radiograb/scripts/seed_admin.php
 
 # Test basic functionality
 echo "🧪 Basic functionality test:"
