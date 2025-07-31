@@ -93,6 +93,142 @@ function formatDaysList($days) {
 }
 
 /**
+ * Calculate next air date based on cron pattern
+ */
+function getNextAirDate($schedule_pattern) {
+    if (empty($schedule_pattern)) {
+        return null;
+    }
+    
+    // Handle cron format: "minute hour day month day_of_week"
+    if (preg_match('/^(\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*|[\d,\-]+)$/', $schedule_pattern, $matches)) {
+        $minute = $matches[1];
+        $hour = $matches[2];
+        $day_of_week = $matches[5];
+        
+        if ($minute === '*' || $hour === '*') {
+            return null; // Can't calculate next date for wildcard times
+        }
+        
+        $target_hour = (int)$hour;
+        $target_minute = (int)$minute;
+        
+        // Get current time in EST
+        $now = new DateTime('now', new DateTimeZone('America/New_York'));
+        $next_air = clone $now;
+        
+        // Parse day of week
+        if ($day_of_week === '*') {
+            // Every day - find next occurrence
+            $next_air->setTime($target_hour, $target_minute, 0);
+            if ($next_air <= $now) {
+                $next_air->add(new DateInterval('P1D'));
+            }
+        } elseif (preg_match('/^(\d+)-(\d+)$/', $day_of_week, $dow_matches)) {
+            // Range like "1-5" (Monday-Friday)
+            $start_dow = (int)$dow_matches[1];
+            $end_dow = (int)$dow_matches[2];
+            
+            $next_air->setTime($target_hour, $target_minute, 0);
+            
+            // Find next day in range
+            $found = false;
+            for ($i = 0; $i < 14; $i++) { // Check next 2 weeks
+                $test_date = clone $next_air;
+                $test_date->add(new DateInterval("P{$i}D"));
+                $current_dow = (int)$test_date->format('w'); // 0=Sunday
+                
+                if ($current_dow >= $start_dow && $current_dow <= $end_dow) {
+                    if ($test_date > $now) {
+                        $next_air = $test_date;
+                        $found = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!$found) return null;
+        } elseif (strpos($day_of_week, ',') !== false) {
+            // Comma-separated like "0,6" (Sunday,Saturday)
+            $days = array_map('intval', explode(',', $day_of_week));
+            
+            $next_air->setTime($target_hour, $target_minute, 0);
+            
+            // Find next matching day
+            $found = false;
+            for ($i = 0; $i < 14; $i++) { // Check next 2 weeks
+                $test_date = clone $next_air;
+                $test_date->add(new DateInterval("P{$i}D"));
+                $current_dow = (int)$test_date->format('w');
+                
+                if (in_array($current_dow, $days)) {
+                    if ($test_date > $now) {
+                        $next_air = $test_date;
+                        $found = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!$found) return null;
+        } else {
+            // Single day
+            $target_dow = (int)$day_of_week;
+            $next_air->setTime($target_hour, $target_minute, 0);
+            
+            // Find next occurrence of this day
+            $current_dow = (int)$next_air->format('w');
+            
+            if ($current_dow == $target_dow && $next_air > $now) {
+                // Today and not passed yet
+                return $next_air;
+            } else {
+                // Find next occurrence
+                $days_ahead = ($target_dow - $current_dow + 7) % 7;
+                if ($days_ahead == 0) $days_ahead = 7; // Next week
+                $next_air->add(new DateInterval("P{$days_ahead}D"));
+            }
+        }
+        
+        return $next_air;
+    }
+    
+    return null;
+}
+
+/**
+ * Format next air date for display
+ */
+function formatNextAirDate($next_air_date) {
+    if (!$next_air_date) {
+        return null;
+    }
+    
+    $now = new DateTime('now', new DateTimeZone('America/New_York'));
+    $diff = $now->diff($next_air_date);
+    
+    // Format the date
+    $date_str = $next_air_date->format('l, M j \a\t g:i A');
+    
+    // Add relative time
+    if ($diff->days == 0) {
+        $relative = 'Today';
+    } elseif ($diff->days == 1) {
+        $relative = 'Tomorrow';
+    } elseif ($diff->days < 7) {
+        $relative = 'in ' . $diff->days . ' day' . ($diff->days > 1 ? 's' : '');
+    } else {
+        $weeks = floor($diff->days / 7);
+        $relative = 'in ' . $weeks . ' week' . ($weeks > 1 ? 's' : '');
+    }
+    
+    return [
+        'formatted' => $date_str,
+        'relative' => $relative
+    ];
+}
+
+/**
  * Format cron day of week values to human readable
  */
 function formatCronDays($day_of_week) {
@@ -553,6 +689,23 @@ require_once '../includes/header.php';
                                             </small>
                                         </div>
                                     <?php endif; ?>
+                                    
+                                    <!-- Next Air Date -->
+                                    <?php 
+                                    if ($show['schedule_pattern']) {
+                                        $next_air_date = getNextAirDate($show['schedule_pattern']);
+                                        $next_air_formatted = formatNextAirDate($next_air_date);
+                                        
+                                        if ($next_air_formatted): ?>
+                                            <div class="mt-1">
+                                                <small class="text-primary">
+                                                    <i class="fas fa-clock"></i> 
+                                                    <strong>Next Air Date:</strong> <?= h($next_air_formatted['formatted']) ?>
+                                                    <span class="badge bg-light text-primary ms-1"><?= h($next_air_formatted['relative']) ?></span>
+                                                </small>
+                                            </div>
+                                        <?php endif;
+                                    } ?>
                                     
                                     <!-- Schedule Status -->
                                     <?php if ($show['schedule_pattern']): ?>
