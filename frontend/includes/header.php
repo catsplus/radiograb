@@ -2,6 +2,7 @@
 /**
  * RadioGrab - Shared Header Template
  */
+require_once 'database.php'; // Load database connection
 require_once 'branding.php'; // Load branding functions
 
 // If title is not set, use default
