@@ -335,4 +335,21 @@ function formatDurationForRSS($seconds) {
     
     return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
 }
+
+function getBaseUrl() {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    $host = $_SERVER['HTTP_HOST'];
+    $script = dirname($_SERVER['SCRIPT_NAME']);
+    return $protocol . $host . rtrim($script, '/api');
+}
+
+function recordingFileExists($filename) {
+    // Check if recording file exists in the recordings directory
+    return file_exists('/var/radiograb/recordings/' . $filename);
+}
+
+function getRecordingUrl($filename) {
+    // Generate public URL for recording file
+    return getBaseUrl() . '/recordings/' . $filename;
+}
 ?>
