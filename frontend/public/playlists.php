@@ -706,6 +706,7 @@ $additional_js = '
         });
     }
 </script>
+';
 
 <?php
 // Include shared header
