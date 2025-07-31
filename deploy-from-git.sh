@@ -78,7 +78,22 @@ sleep 10
 echo "🩺 Container health check:"
 docker compose ps
 
+# Apply database migrations
+echo "⚙️ Applying database migrations..."
+if [ -f "/opt/radiograb/scripts/apply-migrations.sh" ]; then
+    chmod +x /opt/radiograb/scripts/apply-migrations.sh
+    /opt/radiograb/scripts/apply-migrations.sh
+else
+    echo "   ⚠️  Migration script not found, skipping migrations"
+fi
 
+# Seed the database
+echo "🌱 Seeding the database..."
+if docker exec radiograb-web-1 php /opt/radiograb/scripts/seed_admin.php; then
+    echo "   ✅ Database seeded successfully"
+else
+    echo "   ⚠️  Database seeding failed or admin user already exists"
+fi
 
 # Test basic functionality
 echo "🧪 Basic functionality test:"
@@ -105,3 +120,4 @@ fi
 echo "🌐 Site: https://radiograb.svaha.com"
 echo "📊 Check containers: docker compose ps"
 echo "📋 View logs: docker logs radiograb-web-1"
+echo
