@@ -344,7 +344,7 @@ require_once '../includes/header.php';
                                                 </div>
                                             </div>
                                         <?php else: ?>
-                                            <div class="player-controls text-center">
+                                            <div class="audio-player text-center">
                                                 <div class="text-muted">
                                                     <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
                                                     <p>Recording file not found</p>
