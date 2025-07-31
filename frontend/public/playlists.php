@@ -256,7 +256,7 @@ $additional_js = '
                 action: "toggle_active",
                 show_id: playlistId,
                 active: active,
-                csrf_token: "' . generateCSRFToken() . '"
+                csrf_token: "<?= generateCSRFToken() ?>"
             })
         })
         .then(response => response.json())
