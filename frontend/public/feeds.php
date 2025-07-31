@@ -140,49 +140,110 @@ require_once '../includes/header.php';
                 <h1><i class="fas fa-rss"></i> RSS Podcast Feeds</h1>
                 <p class="text-muted">Manage RSS feeds for your recorded shows - compatible with iTunes and podcast apps</p>
             </div>
+            <div class="col-auto">
+                <a href="/custom-feeds.php" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Custom Feed
+                </a>
+            </div>
         </div>
 
-        <!-- Master Feed Card -->
+        <!-- Enhanced Feed Types Navigation -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card border-primary">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-rss"></i> Master Feed - All Shows Combined</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <p class="mb-2"><strong>Subscribe to all your recorded shows in one feed!</strong></p>
-                                <p class="small text-muted mb-3">This master feed combines recordings from all your shows into a single RSS feed, ordered by recording date (most recent first). Perfect for getting all your content in one podcast subscription.</p>
+                <nav class="nav nav-pills nav-fill">
+                    <a class="nav-link active" href="#universal-feeds" data-bs-toggle="tab">
+                        <i class="fas fa-globe"></i> Universal Feeds
+                    </a>
+                    <a class="nav-link" href="#station-feeds" data-bs-toggle="tab">
+                        <i class="fas fa-broadcast-tower"></i> Station Feeds
+                    </a>
+                    <a class="nav-link" href="#show-feeds" data-bs-toggle="tab">
+                        <i class="fas fa-microphone"></i> Show Feeds
+                    </a>
+                    <a class="nav-link" href="#playlist-feeds" data-bs-toggle="tab">
+                        <i class="fas fa-list-music"></i> Playlist Feeds
+                    </a>
+                    <a class="nav-link" href="/custom-feeds.php">
+                        <i class="fas fa-cog"></i> Custom Feeds
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Feed Content Tabs -->
+        <div class="tab-content">
+            <!-- Universal Feeds Tab -->
+            <div class="tab-pane fade show active" id="universal-feeds">
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-4">
+                        <div class="card border-primary h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-globe"></i> All Shows Feed</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2"><strong>Subscribe to all your radio recordings in one feed!</strong></p>
+                                <p class="small text-muted mb-3">This universal feed combines recordings from all your radio shows (excluding playlists) into a single RSS feed, ordered by recording date.</p>
                                 
                                 <div class="mb-3">
-                                    <label class="form-label">Master Feed URL:</label>
+                                    <label class="form-label">Feed URL:</label>
                                     <div class="input-group">
                                         <input type="text" 
                                                class="form-control" 
-                                               value="<?= htmlspecialchars($_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . '/api/master-feed.php') ?>"
+                                               value="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=universal&slug=all-shows"
                                                readonly>
                                         <button class="btn btn-outline-secondary copy-feed-url" 
                                                 type="button"
-                                                data-feed-url="<?= htmlspecialchars($_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . '/api/master-feed.php') ?>">
+                                                data-feed-url="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=universal&slug=all-shows">
                                             <i class="fas fa-copy"></i>
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-4">
+                                
                                 <div class="d-grid gap-2">
-                                    <a href="/api/master-feed.php" 
-                                       class="btn btn-primary"
-                                       target="_blank">
-                                        <i class="fas fa-rss"></i> View Master Feed
+                                    <a href="/api/enhanced-feeds.php?type=universal&slug=all-shows" 
+                                       class="btn btn-primary" target="_blank">
+                                        <i class="fas fa-rss"></i> View Feed
                                     </a>
-                                    <button type="button" 
-                                            class="btn btn-outline-info" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#qrModal"
-                                            data-feed-url="<?= htmlspecialchars($_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . '/api/master-feed.php') ?>"
-                                            data-show-name="Master Feed - All Shows">
+                                    <button type="button" class="btn btn-outline-info copy-feed-url"
+                                            data-feed-url="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=universal&slug=all-shows">
+                                        <i class="fas fa-qrcode"></i> QR Code
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="card border-success h-100">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="fas fa-list-music"></i> All Playlists Feed</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2"><strong>Subscribe to all your playlists in one feed!</strong></p>
+                                <p class="small text-muted mb-3">This universal feed combines all tracks from your user-created playlists, maintaining their custom order and metadata.</p>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Feed URL:</label>
+                                    <div class="input-group">
+                                        <input type="text" 
+                                               class="form-control" 
+                                               value="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=universal&slug=all-playlists"
+                                               readonly>
+                                        <button class="btn btn-outline-secondary copy-feed-url" 
+                                                type="button"
+                                                data-feed-url="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=universal&slug=all-playlists">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <a href="/api/enhanced-feeds.php?type=universal&slug=all-playlists" 
+                                       class="btn btn-success" target="_blank">
+                                        <i class="fas fa-rss"></i> View Feed
+                                    </a>
+                                    <button type="button" class="btn btn-outline-info copy-feed-url"
+                                            data-feed-url="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=universal&slug=all-playlists">
                                         <i class="fas fa-qrcode"></i> QR Code
                                     </button>
                                 </div>
@@ -191,143 +252,345 @@ require_once '../includes/header.php';
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- RSS Information Card -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5><i class="fas fa-info-circle"></i> Individual Show Feeds</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <p>Each show also gets its own RSS feed containing only recordings from that specific show.</p>
-                                <p class="mb-0">Use individual feeds if you want to subscribe to specific shows separately.</p>
+            
+            <!-- Station Feeds Tab -->
+            <div class="tab-pane fade" id="station-feeds">
+                <?php
+                try {
+                    $stations = $db->fetchAll("
+                        SELECT st.*, 
+                               COUNT(DISTINCT s.id) as show_count,
+                               COUNT(DISTINCT r.id) as recording_count
+                        FROM stations st
+                        LEFT JOIN shows s ON st.id = s.station_id AND s.active = 1 AND s.show_type != 'playlist'
+                        LEFT JOIN recordings r ON s.id = r.show_id
+                        WHERE st.status = 'active'
+                        GROUP BY st.id
+                        ORDER BY st.name
+                    ");
+                } catch (Exception $e) {
+                    $stations = [];
+                }
+                ?>
+                
+                <div class="row">
+                    <?php foreach ($stations as $station): ?>
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-start mb-3">
+                                        <img src="<?= h(getStationLogo(['logo_url' => $station['logo_url']])) ?>" 
+                                             alt="<?= h($station['name']) ?>" 
+                                             class="station-logo me-3"
+                                             onerror="this.src='/assets/images/default-station-logo.png'">
+                                        <div class="flex-grow-1">
+                                            <h5 class="card-title mb-1"><?= h($station['name']) ?></h5>
+                                            <small class="text-muted"><?= h($station['call_letters']) ?></small>
+                                        </div>
+                                        <?php if ($station['recording_count'] > 0): ?>
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-rss"></i> Active
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">No Recordings</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="row text-center">
+                                            <div class="col">
+                                                <div class="fw-bold"><?= $station['show_count'] ?></div>
+                                                <small class="text-muted">Shows</small>
+                                            </div>
+                                            <div class="col">
+                                                <div class="fw-bold"><?= $station['recording_count'] ?></div>
+                                                <small class="text-muted">Recordings</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <?php if ($station['recording_count'] > 0): ?>
+                                            <div class="mt-3">
+                                                <label class="form-label">Station Feed URL:</label>
+                                                <div class="input-group">
+                                                    <input type="text" 
+                                                           class="form-control form-control-sm" 
+                                                           value="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=station&id=<?= $station['id'] ?>"
+                                                           readonly>
+                                                    <button class="btn btn-outline-secondary btn-sm copy-feed-url" 
+                                                            type="button"
+                                                            data-feed-url="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=station&id=<?= $station['id'] ?>">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-footer bg-transparent">
+                                    <?php if ($station['recording_count'] > 0): ?>
+                                        <div class="d-grid">
+                                            <a href="/api/enhanced-feeds.php?type=station&id=<?= $station['id'] ?>" 
+                                               class="btn btn-outline-primary btn-sm" target="_blank">
+                                                <i class="fas fa-rss"></i> View Station Feed
+                                            </a>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="text-center text-muted">
+                                            <small>No recordings available</small>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="d-grid">
-                                    <form method="POST" class="d-inline">
-                                        <input type="hidden" name="action" value="regenerate_all">
-                                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                                        <button type="submit" class="btn btn-outline-primary">
-                                            <i class="fas fa-sync"></i> Regenerate All Feeds
-                                        </button>
-                                    </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            
+            <!-- Show Feeds Tab -->
+            <div class="tab-pane fade" id="show-feeds">
+                <!-- RSS Information Card -->
+                <div class="row mb-4">
+                    <div class="col-12">  
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-info-circle"></i> Individual Show Feeds</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <p>Each show gets its own RSS feed containing only recordings from that specific show.</p>
+                                        <p class="mb-0">Use individual feeds if you want to subscribe to specific shows separately.</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="d-grid">
+                                            <form method="POST" class="d-inline">
+                                                <input type="hidden" name="action" value="regenerate_all">
+                                                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                                <button type="submit" class="btn btn-outline-primary">
+                                                    <i class="fas fa-sync"></i> Regenerate All Feeds
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Shows List -->
-        <?php if (empty($shows)): ?>
-            <div class="card">
-                <div class="card-body text-center py-5">
-                    <i class="fas fa-rss fa-3x text-muted mb-3"></i>
-                    <h3>No shows with recordings</h3>
-                    <p class="text-muted mb-4">RSS feeds are generated automatically for shows that have recordings.</p>
-                    <a href="/add-station.php" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add Your First Station
-                    </a>
-                </div>
-            </div>
-        <?php else: ?>
-            <div class="row">
-                <?php foreach ($shows as $show): ?>
-                    <div class="col-lg-6 col-xl-4 mb-4">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <div class="d-flex align-items-start mb-3">
-                                    <img src="<?= h(getStationLogo($show)) ?>" 
-                                         alt="<?= h($show['station_name']) ?>" 
-                                         class="station-logo me-3"
-                                         onerror="this.src='/assets/images/default-station-logo.png'">
-                                    <div class="flex-grow-1">
-                                        <h5 class="card-title mb-1"><?= h($show['name']) ?></h5>
-                                        <small class="text-muted"><?= h($show['station_name']) ?></small>
-                                    </div>
-                                    <?php if ($show['recording_count'] > 0): ?>
-                                        <span class="badge bg-success">
-                                            <i class="fas fa-rss"></i> Active
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="badge bg-secondary">No Recordings</span>
-                                    <?php endif; ?>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <div class="row text-center">
-                                        <div class="col">
-                                            <div class="fw-bold"><?= $show['recording_count'] ?></div>
-                                            <small class="text-muted">Recordings</small>
-                                        </div>
-                                        <div class="col">
-                                            <div class="fw-bold">
-                                                <?= $show['latest_recording'] ? timeAgo($show['latest_recording']) : 'Never' ?>
+                <!-- Shows List -->
+                <?php if (empty($shows)): ?>
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-rss fa-3x text-muted mb-3"></i>
+                            <h3>No shows with recordings</h3>
+                            <p class="text-muted mb-4">RSS feeds are generated automatically for shows that have recordings.</p>
+                            <a href="/add-station.php" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add Your First Station
+                            </a>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="row">
+                        <?php foreach ($shows as $show): ?>
+                            <?php if ($show['show_type'] !== 'playlist'): // Exclude playlists from show feeds ?>
+                                <div class="col-lg-6 col-xl-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-start mb-3">
+                                                <img src="<?= h(getStationLogo($show)) ?>" 
+                                                     alt="<?= h($show['station_name']) ?>" 
+                                                     class="station-logo me-3"
+                                                     onerror="this.src='/assets/images/default-station-logo.png'">
+                                                <div class="flex-grow-1">
+                                                    <h5 class="card-title mb-1"><?= h($show['name']) ?></h5>
+                                                    <small class="text-muted"><?= h($show['station_name']) ?></small>
+                                                </div>
+                                                <?php if ($show['recording_count'] > 0): ?>
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-rss"></i> Active
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-secondary">No Recordings</span>
+                                                <?php endif; ?>
                                             </div>
-                                            <small class="text-muted">Latest</small>
+                                            
+                                            <div class="mb-3">
+                                                <div class="row text-center">
+                                                    <div class="col">
+                                                        <div class="fw-bold"><?= $show['recording_count'] ?></div>
+                                                        <small class="text-muted">Recordings</small>
+                                                    </div>
+                                                    <div class="col">
+                                                        <div class="fw-bold">
+                                                            <?= $show['latest_recording'] ? timeAgo($show['latest_recording']) : 'Never' ?>
+                                                        </div>
+                                                        <small class="text-muted">Latest</small>
+                                                    </div>
+                                                </div>
+                                                
+                                                <?php if ($show['recording_count'] > 0): ?>
+                                                    <div class="mt-3">
+                                                        <label class="form-label">RSS Feed URL:</label>
+                                                        <div class="input-group">
+                                                            <input type="text" 
+                                                                   class="form-control form-control-sm" 
+                                                                   value="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=show&id=<?= $show['id'] ?>"
+                                                                   readonly>
+                                                            <button class="btn btn-outline-secondary btn-sm copy-feed-url" 
+                                                                    type="button"
+                                                                    data-feed-url="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=show&id=<?= $show['id'] ?>">
+                                                                <i class="fas fa-copy"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="card-footer bg-transparent">
+                                            <?php if ($show['recording_count'] > 0): ?>
+                                                <div class="btn-group w-100" role="group">
+                                                    <a href="/api/enhanced-feeds.php?type=show&id=<?= $show['id'] ?>" 
+                                                       class="btn btn-outline-primary btn-sm"
+                                                       target="_blank">
+                                                        <i class="fas fa-rss"></i> View Feed
+                                                    </a>
+                                                    <form method="POST" class="d-inline flex-fill">
+                                                        <input type="hidden" name="action" value="regenerate">
+                                                        <input type="hidden" name="show_id" value="<?= $show['id'] ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                                            <i class="fas fa-sync"></i> Regenerate
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            <?php else: ?>
+                                                <div class="text-center text-muted">
+                                                    <small>No recordings available</small>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            
+            <!-- Playlist Feeds Tab -->  
+            <div class="tab-pane fade" id="playlist-feeds">
+                <?php
+                try {
+                    $playlists = $db->fetchAll("
+                        SELECT s.*, st.name as station_name, st.logo_url,
+                               COUNT(r.id) as track_count,
+                               MAX(r.recorded_at) as latest_upload
+                        FROM shows s 
+                        JOIN stations st ON s.station_id = st.id 
+                        LEFT JOIN recordings r ON s.id = r.show_id
+                        WHERE s.active = 1 AND s.show_type = 'playlist'
+                        GROUP BY s.id 
+                        ORDER BY s.name
+                    ");
+                } catch (Exception $e) {
+                    $playlists = [];
+                }
+                ?>
+                
+                <?php if (empty($playlists)): ?>
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-list-music fa-3x text-muted mb-3"></i>
+                            <h3>No playlists yet</h3>
+                            <p class="text-muted mb-4">Create playlists by uploading tracks to user playlist shows.</p>
+                            <a href="/shows.php" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> View Shows
+                            </a>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="row">
+                        <?php foreach ($playlists as $playlist): ?>
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-start mb-3">
+                                            <div class="flex-grow-1">
+                                                <h5 class="card-title mb-1"><?= h($playlist['name']) ?></h5>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-list-music"></i> Playlist
+                                                </small>
+                                            </div>
+                                            <?php if ($playlist['track_count'] > 0): ?>
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-rss"></i> Active
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary">Empty</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <div class="row text-center">
+                                                <div class="col">
+                                                    <div class="fw-bold"><?= $playlist['track_count'] ?></div>
+                                                    <small class="text-muted">Tracks</small>
+                                                </div>
+                                                <div class="col">
+                                                    <div class="fw-bold">
+                                                        <?= $playlist['latest_upload'] ? timeAgo($playlist['latest_upload']) : 'Never' ?>
+                                                    </div>
+                                                    <small class="text-muted">Latest</small>
+                                                </div>
+                                            </div>
+                                            
+                                            <?php if ($playlist['track_count'] > 0): ?>
+                                                <div class="mt-3">
+                                                    <label class="form-label">Playlist Feed URL:</label>
+                                                    <div class="input-group">
+                                                        <input type="text" 
+                                                               class="form-control form-control-sm" 
+                                                               value="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=playlist&id=<?= $playlist['id'] ?>"
+                                                               readonly>
+                                                        <button class="btn btn-outline-secondary btn-sm copy-feed-url" 
+                                                                type="button"
+                                                                data-feed-url="<?= getBaseUrl() ?>/api/enhanced-feeds.php?type=playlist&id=<?= $playlist['id'] ?>">
+                                                            <i class="fas fa-copy"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                     
-                                    <?php if ($show['recording_count'] > 0): ?>
-                                        <div class="mt-3">
-                                            <label class="form-label">RSS Feed URL:</label>
-                                            <div class="input-group">
-                                                <input type="text" 
-                                                       class="form-control form-control-sm" 
-                                                       value="<?= htmlspecialchars($_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . getFeedUrl($show['id'])) ?>"
-                                                       readonly>
-                                                <button class="btn btn-outline-secondary btn-sm copy-feed-url" 
-                                                        type="button"
-                                                        data-feed-url="<?= htmlspecialchars($_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . getFeedUrl($show['id'])) ?>">
-                                                    <i class="fas fa-copy"></i>
-                                                </button>
+                                    <div class="card-footer bg-transparent">
+                                        <?php if ($playlist['track_count'] > 0): ?>
+                                            <div class="d-grid gap-2">
+                                                <a href="/api/enhanced-feeds.php?type=playlist&id=<?= $playlist['id'] ?>" 
+                                                   class="btn btn-outline-primary btn-sm" target="_blank">
+                                                    <i class="fas fa-rss"></i> View Playlist Feed
+                                                </a>
+                                                <a href="/playlists.php?show_id=<?= $playlist['id'] ?>" 
+                                                   class="btn btn-outline-info btn-sm">
+                                                    <i class="fas fa-edit"></i> Manage Playlist
+                                                </a>
                                             </div>
-                                        </div>
-                                    <?php endif; ?>
+                                        <?php else: ?>
+                                            <div class="text-center text-muted">
+                                                <small>No tracks uploaded</small>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div class="card-footer bg-transparent">
-                                <?php if ($show['recording_count'] > 0): ?>
-                                    <div class="btn-group w-100" role="group">
-                                        <a href="<?= getFeedUrl($show['id']) ?>" 
-                                           class="btn btn-outline-primary btn-sm"
-                                           target="_blank">
-                                            <i class="fas fa-rss"></i> View Feed
-                                        </a>
-                                        <form method="POST" class="d-inline">
-                                            <input type="hidden" name="action" value="regenerate">
-                                            <input type="hidden" name="show_id" value="<?= $show['id'] ?>">
-                                            <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                                            <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                                <i class="fas fa-sync"></i> Regenerate
-                                            </button>
-                                        </form>
-                                        <button type="button" 
-                                                class="btn btn-outline-info btn-sm" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#qrModal"
-                                                data-feed-url="<?= htmlspecialchars($_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . getFeedUrl($show['id'])) ?>"
-                                                data-show-name="<?= h($show['name']) ?>">
-                                            <i class="fas fa-qrcode"></i>
-                                        </button>
-                                    </div>
-                                <?php else: ?>
-                                    <div class="text-center text-muted">
-                                        <small>No recordings available for RSS feed</small>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
+                <?php endif; ?>
             </div>
-        <?php endif; ?>
+        </div>
     </div>
 
     <!-- QR Code Modal -->
