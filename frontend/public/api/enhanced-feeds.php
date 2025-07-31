@@ -343,13 +343,4 @@ function getBaseUrl() {
     return $protocol . $host . rtrim($script, '/api');
 }
 
-function recordingFileExists($filename) {
-    // Check if recording file exists in the recordings directory
-    return file_exists('/var/radiograb/recordings/' . $filename);
-}
-
-function getRecordingUrl($filename) {
-    // Generate public URL for recording file
-    return getBaseUrl() . '/recordings/' . $filename;
-}
 ?>
