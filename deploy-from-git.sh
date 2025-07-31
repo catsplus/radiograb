@@ -53,65 +53,7 @@ echo
 if [[ "$QUICK_MODE" == "true" ]]; then
     # Check if any code files changed
     CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-    CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(php|py|js|css|html)
-    
-    if [[ -n "$CODE_CHANGES" ]]; then
-        echo "📝 Quick mode: Code changes detected, performing full rebuild..."
-        echo "   Changed files: $CODE_CHANGES"
-        docker compose down
-        docker compose up -d --build
-    else
-        echo "📝 Quick mode: Only config/docs changed, restarting containers..."
-        docker compose restart
-    fi
-else
-    echo "🔄 Full rebuild: Rebuilding Docker containers..."
-    docker compose down
-    docker compose up -d --build
-fi
-
-# Wait for containers to be healthy
-echo "⏳ Waiting for containers to start..."
-sleep 10
-
-# Check container status
-echo "🩺 Container health check:"
-docker compose ps
-
-# Apply database migrations
-echo "⚙️ Applying database migrations..."
-/opt/radiograb/scripts/apply-migrations.sh
-
-# Seed the database
-echo "🌱 Seeding the database..."
-docker exec radiograb-web-1 php /opt/radiograb/scripts/seed_admin.php
-
-# Test basic functionality
-echo "🧪 Basic functionality test:"
-if curl -s -f https://radiograb.svaha.com/ > /dev/null; then
-    echo "   ✅ Website is accessible"
-else
-    echo "   ❌ Website not accessible"
-fi
-
-if curl -s -f https://radiograb.svaha.com/api/get-csrf-token.php | grep -q csrf_token; then
-    echo "   ✅ CSRF token API working"
-else
-    echo "   ❌ CSRF token API not working"
-fi
-
-echo
-if [[ "$QUICK_MODE" == "true" ]]; then
-    echo "✅ Quick deployment complete!"
-    echo "📝 For code changes, use: ./deploy-from-git.sh (full rebuild)"
-else
-    echo "✅ Full deployment complete!"
-    echo "📝 For docs/config changes, use: ./deploy-from-git.sh --quick"
-fi
-echo "🌐 Site: https://radiograb.svaha.com"
-echo "📊 Check containers: docker compose ps"
-echo "📋 View logs: docker logs radiograb-web-1"
-echo || true)
+    CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(php|py|js|css|html)$' || true)
     
     if [[ -n "$CODE_CHANGES" ]]; then
         echo "📝 Quick mode: Code changes detected, performing full rebuild..."
