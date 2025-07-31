@@ -14,7 +14,10 @@ from urllib.parse import urljoin, urlparse, parse_qs
 from bs4 import BeautifulSoup, Tag
 from dataclasses import dataclass
 import icalendar
-from backend.services.calendar_parser import CalendarParser, ShowSchedule
+try:
+    from backend.services.calendar_parser import CalendarParser, ShowSchedule
+except ImportError:
+    from calendar_parser import CalendarParser, ShowSchedule
 
 logger = logging.getLogger(__name__)
 
