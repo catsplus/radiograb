@@ -707,6 +707,7 @@ $additional_js = '
     }
 </script>
 
+<?php
 // Include shared header
 require_once '../includes/header.php';
 
