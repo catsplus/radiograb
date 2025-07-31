@@ -224,7 +224,7 @@ $additional_css = '
 </style>';
 
 // Set playlist-specific JavaScript
-$additional_js = '
+$additional_js = <<<'JS'
 <script>
     // Handle delete modal
     document.addEventListener("DOMContentLoaded", function() {
@@ -706,7 +706,7 @@ $additional_js = '
         });
     }
 </script>
-';
+JS;
 
 <?php
 // Include shared header
