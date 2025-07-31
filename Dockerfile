@@ -63,6 +63,10 @@ RUN rm -f /etc/nginx/sites-enabled/default && \
 RUN sed -i 's/listen = \/run\/php\/php8.1-fpm.sock/listen = 127.0.0.1:9000/' /etc/php/8.1/fpm/pool.d/www.conf && \
     sed -i 's/;clear_env = no/clear_env = no/' /etc/php/8.1/fpm/pool.d/www.conf
 
+# Copy custom PHP configuration for upload limits
+COPY docker/php-custom.ini /etc/php/8.1/fpm/conf.d/99-radiograb.ini
+COPY docker/php-custom.ini /etc/php/8.1/cli/conf.d/99-radiograb.ini
+
 # Configure Supervisor  
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
