@@ -51,8 +51,19 @@ echo
 
 # Rebuild containers with new code
 if [[ "$QUICK_MODE" == "true" ]]; then
-    echo "📝 Quick mode: Restarting containers without rebuild..."
-    docker compose restart
+    # Check if any code files changed
+    CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+    CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(php|py|js|css|html)$' || true)
+    
+    if [[ -n "$CODE_CHANGES" ]]; then
+        echo "📝 Quick mode: Code changes detected, performing full rebuild..."
+        echo "   Changed files: $CODE_CHANGES"
+        docker compose down
+        docker compose up -d --build
+    else
+        echo "📝 Quick mode: Only config/docs changed, restarting containers..."
+        docker compose restart
+    fi
 else
     echo "🔄 Full rebuild: Rebuilding Docker containers..."
     docker compose down
