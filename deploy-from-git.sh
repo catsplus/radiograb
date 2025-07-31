@@ -23,7 +23,7 @@ cd /opt/radiograb
 # Check if we're in a git repository
 if [ ! -d ".git" ]; then
     echo "❌ Error: Not a git repository!"
-    echo "Run setup: git init && git remote add origin https://github.com/mattbaya/misc.git"
+    echo "Run setup: git init && git remote add origin https://github.com/mattbaya/radiograb.git"
     exit 1
 fi
 
@@ -80,11 +80,20 @@ docker compose ps
 
 # Apply database migrations
 echo "⚙️ Applying database migrations..."
-/opt/radiograb/scripts/apply-migrations.sh
+if [ -f "/opt/radiograb/scripts/apply-migrations.sh" ]; then
+    chmod +x /opt/radiograb/scripts/apply-migrations.sh
+    /opt/radiograb/scripts/apply-migrations.sh
+else
+    echo "   ⚠️  Migration script not found, skipping migrations"
+fi
 
 # Seed the database
 echo "🌱 Seeding the database..."
-docker exec radiograb-web-1 php /opt/radiograb/scripts/seed_admin.php
+if docker exec radiograb-web-1 php /opt/radiograb/scripts/seed_admin.php; then
+    echo "   ✅ Database seeded successfully"
+else
+    echo "   ⚠️  Database seeding failed or admin user already exists"
+fi
 
 # Test basic functionality
 echo "🧪 Basic functionality test:"
@@ -111,4 +120,3 @@ fi
 echo "🌐 Site: https://radiograb.svaha.com"
 echo "📊 Check containers: docker compose ps"
 echo "📋 View logs: docker logs radiograb-web-1"
-echo

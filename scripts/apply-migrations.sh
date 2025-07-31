@@ -12,9 +12,25 @@ echo "MySQL is healthy."
 
 # Apply migrations
 MIGRATIONS_DIR="/opt/radiograb/database/migrations"
-for MIGRATION_FILE in $(ls $MIGRATIONS_DIR/*.sql | sort); do
-    echo "Applying migration: $MIGRATION_FILE"
-    docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 radiograb < "$MIGRATION_FILE"
-_done
+if [ ! -d "$MIGRATIONS_DIR" ]; then
+    echo "Migrations directory not found: $MIGRATIONS_DIR"
+    exit 1
+fi
 
-echo "All migrations applied."
+# Check if there are any .sql files
+if ! ls "$MIGRATIONS_DIR"/*.sql > /dev/null 2>&1; then
+    echo "No migration files found in $MIGRATIONS_DIR"
+    exit 0
+fi
+
+# Apply migrations in order
+for MIGRATION_FILE in $(ls "$MIGRATIONS_DIR"/*.sql | sort); do
+    echo "Applying migration: $(basename "$MIGRATION_FILE")"
+    if docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 radiograb < "$MIGRATION_FILE"; then
+        echo "   ✅ Migration applied successfully"
+    else
+        echo "   ⚠️  Migration failed or already applied"
+    fi
+done
+
+echo "All migrations processed."
