@@ -699,23 +699,23 @@ require_once '../includes/header.php';
                                         if ($next_air_formatted): ?>
                                             <div class="mt-1">
                                                 <small class="text-primary">
-                                                    <i class="fas fa-clock"></i> 
-                                                    <strong>Next Air Date:</strong> <?= h($next_air_formatted['formatted']) ?>
+                                                    <i class="fas fa-clock" title="Next scheduled recording time"></i> 
+                                                    <strong>Next Recording:</strong> <?= h($next_air_formatted['formatted']) ?>
                                                     <span class="badge bg-light text-primary ms-1"><?= h($next_air_formatted['relative']) ?></span>
+                                                </small>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="mt-1">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar-times" title="No upcoming airings found in current calendar"></i> 
+                                                    No airings in current calendar
                                                 </small>
                                             </div>
                                         <?php endif;
                                     } ?>
                                     
-                                    <!-- Schedule Status -->
-                                    <?php if ($show['schedule_pattern']): ?>
-                                        <div class="mt-1">
-                                            <small class="text-success">
-                                                <i class="fas fa-check-circle"></i> 
-                                                Scheduled for automatic recording
-                                            </small>
-                                        </div>
-                                    <?php else: ?>
+                                    <!-- Schedule Status - Only show if no schedule configured -->
+                                    <?php if (!$show['schedule_pattern']): ?>
                                         <div class="mt-1">
                                             <small class="text-warning">
                                                 <i class="fas fa-exclamation-triangle"></i> 

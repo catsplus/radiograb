@@ -29,7 +29,7 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **MP3 Metadata Implementation**: Automatic metadata writing for all recordings (artist=show name, album=station name, recording date, description)
 - **Multi-Format Audio Support**: Upload MP3, WAV, M4A, AAC, OGG, FLAC with automatic MP3 conversion
 - **Multiple Show Airings**: Support for original + repeat broadcasts with natural language scheduling ("Mondays at 7 PM and Thursdays at 3 PM")
-- **Real-Time ON-AIR Indicators**: Live visual feedback for shows currently recording with animated progress tracking
+- **Smart Recording Status**: Clean, unobtrusive recording indicators that only appear for actively recording shows with compact progress tracking
 - **Automatic Show Recording**: APScheduler-based system that automatically records shows at scheduled times
 - **TTL Recording Management**: Configurable expiry periods (days/weeks/months/indefinite) with automatic cleanup
 - **Schedule Management**: Web interface for adding/editing show schedules with automatic scheduler integration
@@ -76,8 +76,8 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **Playlist Track Ordering**: Automatic sequential track numbering with drag & drop reordering support
 - **Audio Format Conversion**: Automatic conversion of uploaded files (WAV, M4A, AAC, OGG, FLAC) to MP3 format
 - **Multiple Airings Detection**: Automatically parses complex schedules like "Original Monday 7PM, repeat Thursday 3PM, encore Sunday 6PM"
-- **Real-Time Status Updates**: JavaScript checks recording status every 30 seconds with animated progress bars
-- **Browser Integration**: Page title updates with 🔴 indicator and site-wide recording banners
+- **Refined Status Updates**: JavaScript checks recording status every 30 seconds with minimal, compact progress indicators
+- **Smart Browser Integration**: Page title updates with 🔴 indicator and contextual recording notifications only for active recordings
 - **TTL Cleanup System**: Daily cron job removes expired recordings based on configurable retention policies
 - **APScheduler Integration**: Cron-based automatic recording of shows at scheduled times with proper day-of-week conversion
 - **Schedule Synchronization**: Real-time scheduler updates when shows are added/modified
@@ -136,6 +136,7 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 
 ### 📋 **Quick Setup Guides**
 - [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment and installation
+- [Database Setup](DATABASE_SETUP.md) - Fresh database initialization and migration guide
 - [SSL Setup](docs/SSL_PRESERVATION_GUIDE.md) - HTTPS configuration
 
 ### 🔧 **Technical Documentation**
@@ -299,11 +300,28 @@ radiograb/
 | `SSL_EMAIL` | Email for Let's Encrypt | `admin@your-domain.com` |
 
 ### Database Configuration
-RadioGrab uses MySQL 8.0 with the following structure:
+RadioGrab uses MySQL 8.0 with a comprehensive 13-table schema:
+
+#### Core Tables
 - **stations**: Radio station information with User-Agent and streaming data
 - **shows**: Show definitions, schedules, and playlist configuration (show_type, allow_uploads, max_file_size_mb)
 - **recordings**: Individual recording entries with metadata, track ordering, and source tracking (source_type, track_number, original_filename)
-- **feeds**: RSS feed metadata with playlist support
+- **cron_jobs**: APScheduler job tracking for automated recordings
+
+#### Enhanced Features
+- **custom_feeds / custom_feed_shows**: Custom RSS feed system with user-selected shows
+- **station_feeds**: Pre-configured RSS feeds per station
+- **show_schedules**: Multiple airings support (original + repeat broadcasts)
+
+#### Admin & System
+- **users**: Admin authentication system
+- **site_settings**: Customizable branding and configuration
+- **stream_tests**: Stream testing history and validation results
+- **system_info**: System metadata and version tracking
+- **schema_migrations**: Database migration tracking
+- **feed_generation_log**: RSS generation monitoring and debugging
+
+For detailed database setup information, see [DATABASE_SETUP.md](DATABASE_SETUP.md).
 
 ## 🆘 Troubleshooting
 

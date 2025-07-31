@@ -9,8 +9,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-your_db_password}
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-      - ./database/migrations:/docker-entrypoint-initdb.d/migrations
+      - ./database/init-database.sql:/docker-entrypoint-initdb.d/01-init-database.sql
     restart: unless-stopped
     ports:
       - "3306:3306"

@@ -87,6 +87,11 @@ else
     echo "   ⚠️  Migration script not found, skipping migrations"
 fi
 
+# Verify tables exist
+echo "🔍 Verifying database tables..."
+docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 radiograb -e "SHOW TABLES;"
+
+
 # Seed the database
 echo "🌱 Seeding the database..."
 if docker exec radiograb-web-1 php /opt/radiograb/scripts/seed_admin.php; then

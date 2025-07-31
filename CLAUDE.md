@@ -89,12 +89,14 @@ docker logs radiograb-recorder-1 --tail 50 | grep -i schedule
 /var/radiograb/logos/             # Station logos
 ```
 
-## 📺 ON-AIR INDICATOR SYSTEM
+## 📺 RECORDING STATUS SYSTEM
 
+- **Smart Indicators**: Small `🔴 Recording` badges only appear for actively recording shows
 - **Real-time Updates**: JavaScript checks every 30s via `/api/recording-status.php`
-- **Visual Elements**: Pulsing red badges, progress bars, browser tab indicators
-- **Progress Tracking**: Elapsed/remaining time, completion percentage
-- **Site-wide Banners**: Recording notifications across all pages
+- **Compact Progress**: Minimal progress bars showing remaining time only
+- **Contextual Banners**: Recording notifications only when shows are actually recording
+- **Multiple Recording Support**: Clear display of simultaneous recordings with show names
+- **Clean UI**: Removed redundant "Scheduled for automatic recording" messages
 
 ## 📺 MULTIPLE SHOW AIRINGS SYSTEM
 
@@ -317,7 +319,7 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git stash && git pull origin m
 - **Enhanced RSS Feed System**: Comprehensive RSS/podcast architecture with multiple feed types (July 31, 2025)
 - **Playlist Upload System**: Multi-format audio uploads with MP3 conversion and metadata tagging
 - **Multiple Show Airings**: "Mon 7PM and Thu 3PM" parsing with priority system
-- **ON-AIR Indicators**: Real-time recording status with animated badges
+- **Recording Status UI**: Clean, minimal recording indicators with smart visibility (August 1, 2025)
 - **TTL Management**: Configurable recording retention with automatic cleanup
 - **Enhanced Stream Discovery**: Radio Browser API integration with intelligent matching
 - **Call Sign Implementation**: WYSO_ShowName_timestamp.mp3 format

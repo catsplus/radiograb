@@ -16,6 +16,21 @@
     gap: 4px;
 }
 
+/* Small Recording Badge (replaces large pulsing banner) */
+.recording-badge {
+    background: #dc3545;
+    color: white;
+    font-weight: 500;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 8px;
+    margin-left: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    box-shadow: 0 1px 3px rgba(220, 53, 69, 0.3);
+}
+
 .on-air-badge::before {
     content: "●";
     color: #fff;

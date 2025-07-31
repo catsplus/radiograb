@@ -122,7 +122,7 @@ class OnAirStatusManager {
     }
 
     /**
-     * Add ON-AIR indicator to a show card
+     * Add ON-AIR indicator to a show card (small badge style)
      */
     addOnAirIndicator(card, recording) {
         // Remove existing indicator
@@ -131,56 +131,54 @@ class OnAirStatusManager {
         // Add recording class
         card.classList.add('recording');
         
-        // Create ON-AIR badge
-        const onAirBadge = document.createElement('span');
-        onAirBadge.className = 'on-air-badge on-air-indicator-element';
-        onAirBadge.innerHTML = 'ON-AIR';
+        // Create small recording badge
+        const recordingBadge = document.createElement('span');
+        recordingBadge.className = 'recording-badge on-air-indicator-element';
+        recordingBadge.innerHTML = '🔴 Recording';
         
-        // Create progress info
+        // Create progress info (smaller, less intrusive)
         const progressInfo = document.createElement('div');
-        progressInfo.className = 'recording-progress-info on-air-indicator-element';
+        progressInfo.className = 'recording-progress-info on-air-indicator-element mt-2';
         progressInfo.innerHTML = `
-            <div class="recording-progress">
+            <div class="recording-progress mb-1">
                 <div class="recording-progress-bar" style="width: ${recording.progress_percent}%"></div>
             </div>
-            <div class="d-flex justify-content-between mt-1">
-                <small class="recording-time elapsed">
-                    ${this.formatDuration(recording.elapsed_seconds)} elapsed
-                </small>
+            <div class="d-flex justify-content-between">
                 <small class="recording-time remaining">
                     ${this.formatDuration(recording.remaining_seconds)} remaining
                 </small>
             </div>
         `;
         
-        // Insert ON-AIR badge after the Active/Inactive status
-        const formSwitch = card.querySelector('.form-check.form-switch');
-        if (formSwitch) {
-            // Create a container for the ON-AIR badge after the form switch
-            const onAirContainer = document.createElement('div');
-            onAirContainer.className = 'mt-2 on-air-indicator-element';
-            onAirContainer.appendChild(onAirBadge);
-            
-            // Insert after the form switch
-            formSwitch.parentNode.insertBefore(onAirContainer, formSwitch.nextSibling);
+        // Insert recording badge next to the show title
+        const cardTitle = card.querySelector('.card-title');
+        if (cardTitle) {
+            cardTitle.appendChild(recordingBadge);
         } else {
-            // Fallback: add to card header if no form switch found
+            // Fallback: add to card header
             const cardHeader = card.querySelector('.card-header, h5, h6');
             if (cardHeader) {
-                cardHeader.appendChild(onAirBadge);
+                cardHeader.appendChild(recordingBadge);
             } else {
-                card.insertBefore(onAirBadge, card.firstChild);
+                card.insertBefore(recordingBadge, card.firstChild);
             }
         }
         
-        // Add progress info to card body but before action buttons
+        // Add compact progress info after the schedule information
         const cardBody = card.querySelector('.card-body');
         if (cardBody) {
-            const actionButtonsRow = cardBody.querySelector('.d-flex.flex-wrap.gap-2, .btn-group, .text-center:has(button)');
-            if (actionButtonsRow) {
-                cardBody.insertBefore(progressInfo, actionButtonsRow);
+            // Find a good spot - after the statistics but before action buttons
+            const statsRow = cardBody.querySelector('.row.text-center');
+            if (statsRow) {
+                statsRow.parentNode.insertBefore(progressInfo, statsRow.nextSibling);
             } else {
-                cardBody.appendChild(progressInfo);
+                // Find action buttons and insert before them
+                const actionButtonsRow = cardBody.querySelector('.btn-group, .text-center:has(button)');
+                if (actionButtonsRow) {
+                    cardBody.insertBefore(progressInfo, actionButtonsRow);
+                } else {
+                    cardBody.appendChild(progressInfo);
+                }
             }
         } else {
             card.appendChild(progressInfo);
@@ -229,13 +227,14 @@ class OnAirStatusManager {
     }
 
     /**
-     * Update recording banners on dashboard/main pages
+     * Update recording banners on dashboard/main pages (only for actively recording shows)
      */
     updateRecordingBanners() {
         // Remove existing banners
         const existingBanners = document.querySelectorAll('.on-air-banner-container');
         existingBanners.forEach(banner => banner.remove());
         
+        // Only show banner if there are active recordings
         if (this.currentRecordings.length > 0) {
             this.createRecordingBanner();
         }
@@ -338,13 +337,17 @@ class OnAirStatusManager {
             const recording = this.currentRecordings[0];
             banner.innerHTML = `
                 <span class="recording-icon">🔴</span>
-                <strong>LIVE RECORDING:</strong> ${recording.show_name} on ${recording.station_name}
+                <strong>Recording:</strong> ${recording.show_name} on ${recording.station_name}
                 <span class="ms-3">${this.formatDuration(recording.remaining_seconds)} remaining</span>
             `;
         } else {
+            // Show details of multiple recordings
+            const recordingList = this.currentRecordings.map(r => 
+                `${r.show_name} (${r.station_name})`
+            ).join(', ');
             banner.innerHTML = `
                 <span class="recording-icon">🔴</span>
-                <strong>LIVE RECORDINGS:</strong> ${this.currentRecordings.length} shows currently being captured
+                <strong>Recording ${this.currentRecordings.length} shows:</strong> ${recordingList}
             `;
         }
         
