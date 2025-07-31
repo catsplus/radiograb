@@ -705,7 +705,7 @@ $additional_js = '
             alert("Network error: " + error.message);
         });
     }
-</script>';
+</script>
 
 // Include shared header
 require_once '../includes/header.php';
