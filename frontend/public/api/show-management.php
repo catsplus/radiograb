@@ -73,6 +73,8 @@ try {
 }
 
 function handleToggleActive() {
+    global $db;
+    
     $input = json_decode(file_get_contents('php://input'), true);
     if (!$input) {
         parse_str(file_get_contents('php://input'), $input);
@@ -86,8 +88,29 @@ function handleToggleActive() {
         return;
     }
     
-    $result = executeShowManagement("--toggle-show {$show_id} " . ($active ? '--activate' : '--deactivate'));
-    echo json_encode($result);
+    try {
+        // Update the show status in the database
+        $db->update('shows', ['active' => $active ? 1 : 0], 'id = ?', [$show_id]);
+        
+        // Get show name for response
+        $show = $db->fetchOne("SELECT name FROM shows WHERE id = ?", [$show_id]);
+        $show_name = $show ? $show['name'] : 'Show';
+        
+        $status_text = $active ? 'activated' : 'deactivated';
+        
+        echo json_encode([
+            'success' => true,
+            'message' => "Show '{$show_name}' {$status_text} successfully",
+            'show_id' => $show_id,
+            'active' => $active
+        ]);
+        
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'error' => 'Failed to update show status: ' . $e->getMessage()
+        ]);
+    }
 }
 
 function handleUpdateTags() {

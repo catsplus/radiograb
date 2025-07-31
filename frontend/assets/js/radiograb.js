@@ -43,6 +43,11 @@ class RadioGrab {
         document.querySelectorAll('.delete-confirm').forEach(btn => {
             btn.addEventListener('click', this.confirmDelete.bind(this));
         });
+        
+        // Recording delete buttons with modal
+        document.querySelectorAll('.delete-recording').forEach(btn => {
+            btn.addEventListener('click', this.showDeleteRecordingModal.bind(this));
+        });
     }
     
     initAudioPlayers() {
@@ -356,6 +361,21 @@ class RadioGrab {
             e.preventDefault();
             return false;
         }
+    }
+    
+    showDeleteRecordingModal(e) {
+        e.preventDefault();
+        const btn = e.target.closest('.delete-recording');
+        const recordingId = btn.dataset.recordingId;
+        const recordingTitle = btn.dataset.recordingTitle;
+        
+        // Update modal content
+        document.getElementById('deleteRecordingId').value = recordingId;
+        document.getElementById('recordingTitle').textContent = recordingTitle;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        modal.show();
     }
     
     showAlert(type, message) {

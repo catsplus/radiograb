@@ -238,7 +238,7 @@ if (isset($error)): ?>
                             <p class="card-text text-muted small mb-3"><?= h($playlist['description']) ?></p>
                         <?php endif; ?>
 
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="badge bg-primary track-count-badge">
                                 <i class="fas fa-music"></i> <?= $playlist['track_count'] ?> tracks
                             </span>
@@ -249,6 +249,14 @@ if (isset($error)): ?>
                                 <span class="badge bg-secondary">Inactive</span>
                             <?php endif; ?>
                         </div>
+                        
+                        <?php if ($playlist['track_count'] > 0): ?>
+                            <div class="d-grid">
+                                <a href="/playlist-player.php?id=<?= $playlist['id'] ?>" class="btn btn-outline-primary">
+                                    <i class="fas fa-play"></i> Play Playlist
+                                </a>
+                            </div>
+                        <?php endif; ?>
 
                         <?php if ($playlist['latest_upload']): ?>
                             <div class="mt-2">

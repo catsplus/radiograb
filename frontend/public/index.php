@@ -21,12 +21,13 @@ try {
         'total_size' => $db->fetchOne("SELECT COALESCE(SUM(file_size_bytes), 0) as size FROM recordings")['size']
     ];
     
-    // Recent recordings
+    // Recent recordings (exclude playlist uploads)
     $recent_recordings = $db->fetchAll("
         SELECT r.*, s.name as show_name, st.name as station_name 
         FROM recordings r 
         JOIN shows s ON r.show_id = s.id 
         JOIN stations st ON s.station_id = st.id 
+        WHERE s.show_type != 'playlist' AND r.source_type != 'uploaded'
         ORDER BY r.recorded_at DESC 
         LIMIT 10
     ");
