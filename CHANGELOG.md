@@ -1,5 +1,65 @@
 # RadioGrab Changelog
 
+## [3.9.0] - 2025-07-31 - Enhanced RSS Feed System
+
+### 📡 Comprehensive RSS/Podcast Feed Architecture
+- **Multiple Feed Types**: Complete RSS feed system with 5 distinct feed types
+  - **Universal Feeds**: "All Shows" and "All Playlists" aggregated collections
+  - **Station Feeds**: Automatically generated feeds for each station including all shows  
+  - **Custom Feeds**: User-created feeds by selecting specific shows with custom metadata
+  - **Playlist Feeds**: Dedicated feeds for user-created playlists with manual track ordering
+  - **Individual Show Feeds**: Enhanced show-specific feeds with improved metadata
+
+### 🎨 Enhanced Web Interface
+- **Tabbed Navigation**: Complete redesign of `/feeds.php` with tabbed interface
+  - Universal Feeds tab with "All Shows" and "All Playlists" cards
+  - Station Feeds tab with grid view and statistics
+  - Show Feeds tab with regeneration capability  
+  - Playlist Feeds tab with management links
+  - Custom Feeds tab linking to management interface
+- **Custom Feed Management**: New `/custom-feeds.php` interface
+  - Modal-based feed creation with show selection
+  - Grouped show selection by station with checkboxes
+  - Custom metadata fields (title, description, cover image)
+  - Feed management with copy URLs and delete functionality
+  - One-click URL copying to clipboard
+
+### 🔧 Technical Implementation
+- **Database Schema**: 4 new tables for comprehensive feed management
+  - `custom_feeds`: Feed definitions with slug-based URLs and metadata
+  - `custom_feed_shows`: Junction table for many-to-many show relationships
+  - `station_feeds`: Pre-configured station feed settings
+  - `feed_generation_log`: Feed generation tracking and monitoring
+  - Enhanced `shows` table with RSS metadata fields
+- **Unified API**: `/api/enhanced-feeds.php` endpoint with type-based routing
+  - Supports all feed types through query parameters
+  - Content ordering: playlists by track_number, shows chronologically
+  - iTunes podcast compatibility with proper XML structure
+  - Feed image fallback logic: Show → Station → Default hierarchy
+- **MySQL 8.0 Compatibility**: Fixed database migration syntax issues
+- **Function Conflicts**: Resolved duplicate function definitions between files
+
+### 🚀 iTunes & Podcast App Integration
+- **Complete XML Structure**: Proper RSS 2.0 with iTunes namespace
+- **Podcast Metadata**: Author, summary, explicit rating, category information
+- **Episode Data**: Duration, description, publication date, unique GUIDs
+- **Audio Enclosures**: Proper MIME types and file size information
+- **Feed Artwork**: Image fallback system with consistent sizing
+
+### 🛠️ Deployment & Infrastructure
+- **Enhanced Deployment Script**: Intelligent code change detection
+  - Quick mode now detects PHP/Python/JS/CSS changes and rebuilds containers
+  - Documentation-only changes use simple container restart  
+  - Robust error handling and deployment verification
+  - Better change analysis with file type detection
+
+### 📊 Database Migration
+- Successfully applied comprehensive database migration
+- All new tables created and populated with default data
+- Universal feed entries automatically created
+- Station feeds pre-configured for existing stations
+- Enhanced shows table with RSS metadata fields
+
 ## [2.12.1] - 2025-07-30 - Frontend Refactoring
 
 ### 🧹 Frontend Code Cleanup

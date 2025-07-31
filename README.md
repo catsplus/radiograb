@@ -9,8 +9,8 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.8.0 (July 30, 2025)
-**Latest Features**: 🎯 **STATION SCHEDULE DISCOVERY** - Complete smart show management system in Add Show interface. When station is pre-selected, automatically discover and display the station's programming schedule with "Find Shows" button. Shows with multiple airings display all air times separately with individual Add buttons. Clicking Add pre-fills all form fields (name, schedule, duration, description, host, genre) and converts schedule data to natural language format. Enhanced workflow: Stations → Shows → Add Show → Find Shows → Browse schedule → Add specific airings. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v3.9.0 (July 31, 2025)
+**Latest Features**: 🎯 **ENHANCED RSS FEED SYSTEM** - Comprehensive RSS/podcast feed architecture with multiple feed types: Station Feeds (all shows per station), Custom Feeds (user-selected shows with custom metadata), Playlist Feeds (manual track ordering), and Universal Feeds (All Shows/All Playlists aggregated). Complete web interface with tabbed navigation, iTunes podcast compatibility, image fallback logic (Show → Station → Default), and automatic feed updates. Enhanced deployment script with intelligent code change detection. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
@@ -34,7 +34,13 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **TTL Recording Management**: Configurable expiry periods (days/weeks/months/indefinite) with automatic cleanup
 - **Schedule Management**: Web interface for adding/editing show schedules with automatic scheduler integration
 - **Smart Discovery**: Extract streaming URLs and schedules from station websites with User-Agent support
-- **Podcast Generation**: Create RSS feeds for individual shows or all recordings with playlist support
+- **Enhanced RSS Feed System**: Comprehensive podcast feed architecture with multiple feed types
+  - **Station Feeds**: Automatically generate RSS feeds for each station including all shows
+  - **Custom Feeds**: User-defined feeds by selecting specific shows with custom metadata
+  - **Playlist Feeds**: Separate RSS feeds for user-created playlists with manual ordering
+  - **Universal Feeds**: "All Shows" and "All Playlists" aggregated feeds
+  - **Feed Image Fallback**: Show image → Station image → System default hierarchy
+  - **iTunes Compatibility**: Full podcast metadata support with proper XML structure
 - **Test Recording**: 30-second test recordings with automated cleanup (4 hour retention)
 - **On-Demand Recording**: Manual 1-hour recordings with quality validation
 
@@ -209,8 +215,13 @@ RadioGrab uses a 5-container Docker architecture:
 
 ### Accessing Recordings
 - **Web Interface**: Listen and download via the Recordings page
-- **RSS Feeds**: Subscribe to podcast feeds for individual shows (includes playlists)
-- **Master Feed**: Combined feed of all recordings and playlists
+- **Enhanced RSS Feeds**: Multiple feed types with comprehensive management
+  - **Universal Feeds**: "All Shows" and "All Playlists" for complete collections
+  - **Station Feeds**: All shows from a specific station in one feed
+  - **Individual Show Feeds**: Dedicated feeds for specific shows or playlists
+  - **Custom Feeds**: User-created feeds combining selected shows with custom metadata
+- **Feed Management Interface**: Create and manage custom feeds with tabbed navigation
+- **iTunes Integration**: Full podcast app compatibility with proper metadata and artwork
 - **Direct Files**: Access recordings via `/recordings/` URL
 
 ## 📡 Recording Compatibility

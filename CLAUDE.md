@@ -314,6 +314,7 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git stash && git pull origin m
 ## 🆕 RECENT UPDATES (July 2025)
 
 ### ✅ Major Features Completed
+- **Enhanced RSS Feed System**: Comprehensive RSS/podcast architecture with multiple feed types (July 31, 2025)
 - **Playlist Upload System**: Multi-format audio uploads with MP3 conversion and metadata tagging
 - **Multiple Show Airings**: "Mon 7PM and Thu 3PM" parsing with priority system
 - **ON-AIR Indicators**: Real-time recording status with animated badges
@@ -327,6 +328,147 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git stash && git pull origin m
 ### ✅ System Improvements
 - **Calendar Discovery Filtering**: Navigation elements (e.g., "Shows A-Z") filtered out, requires valid time schedules
 - **User-Controlled Show Activation**: New shows inactive by default - users manually choose which to activate
+- **Enhanced Deployment Script**: Intelligent code change detection for reliable deployments
+
+## 🎯 Enhanced RSS Feed System (COMPLETED July 31, 2025)
+
+### 📡 **Comprehensive Feed Architecture**
+RadioGrab now provides a complete RSS/podcast feed system with multiple feed types:
+
+#### **Universal Feeds**
+- **All Shows Feed**: Complete collection of all radio show recordings (excludes playlists)
+- **All Playlists Feed**: Complete collection of all user-created playlist tracks
+- **URL Format**: `/api/enhanced-feeds.php?type=universal&slug=all-shows|all-playlists`
+
+#### **Station Feeds**  
+- **Automatic Generation**: RSS feeds for each station including all of its shows
+- **Custom Metadata**: Station-specific titles, descriptions, and images
+- **URL Format**: `/api/enhanced-feeds.php?type=station&id=STATION_ID`
+
+#### **Custom Feeds**
+- **User-Created**: Select specific shows to combine into custom feeds
+- **Custom Metadata**: User-defined titles, descriptions, and cover images
+- **URL Format**: `/api/enhanced-feeds.php?type=custom&slug=CUSTOM_SLUG`
+- **Management Interface**: Complete web UI for creating and managing custom feeds
+
+#### **Playlist Feeds**
+- **Manual Ordering**: User-created playlists with drag & drop track ordering
+- **Track Sequencing**: Ordered by track_number ASC, then recorded_at ASC
+- **URL Format**: `/api/enhanced-feeds.php?type=playlist&id=SHOW_ID`
+
+#### **Individual Show Feeds**
+- **Enhanced Metadata**: Improved show-specific RSS feeds with feed metadata fields
+- **Show Type Support**: Both regular shows and playlists
+- **URL Format**: `/api/enhanced-feeds.php?type=show&id=SHOW_ID`
+
+### 🎨 **Web Interface Features**
+
+#### **Tabbed Navigation Interface** (`/feeds.php`)
+- **Universal Feeds Tab**: Access to "All Shows" and "All Playlists" feeds
+- **Station Feeds Tab**: Grid view of all station feeds with statistics
+- **Show Feeds Tab**: Individual show feeds with regeneration capability
+- **Playlist Feeds Tab**: User-created playlist feeds with management links
+- **Custom Feeds Tab**: Link to custom feed management interface
+
+#### **Custom Feed Management** (`/custom-feeds.php`)
+- **Feed Creation Modal**: Select shows, set metadata, and generate feeds
+- **Show Selection**: Grouped by station with checkbox selection
+- **Custom Metadata**: Feed title, description, and cover image URL
+- **Feed Management**: View, copy URLs, and delete custom feeds
+- **URL Sharing**: One-click copy to clipboard functionality
+
+### 🔧 **Technical Implementation**
+
+#### **Database Schema**
+```sql
+-- Custom feeds with metadata and slug-based URLs
+custom_feeds: id, name, description, slug, custom_title, custom_description, 
+              custom_image_url, feed_type, is_public, created_at, updated_at
+
+-- Many-to-many relationship between custom feeds and shows
+custom_feed_shows: id, custom_feed_id, show_id, sort_order, created_at
+
+-- Pre-configured station feed settings
+station_feeds: id, station_id, custom_title, custom_description, 
+               custom_image_url, is_active, created_at, updated_at
+
+-- Feed generation tracking and monitoring
+feed_generation_log: id, feed_type, feed_id, feed_identifier, status, 
+                     error_message, generation_time_ms, items_count, 
+                     file_size_bytes, generated_at
+
+-- Enhanced shows table with RSS metadata
+shows: ..., feed_title, feed_description, feed_image_url, 
+       feed_category, feed_explicit, feed_author
+```
+
+#### **API Architecture**
+- **Unified Endpoint**: `/api/enhanced-feeds.php` handles all feed types
+- **Type-Based Routing**: Query parameter `type` determines feed logic
+- **Content Ordering**: 
+  - Playlists: `track_number ASC, recorded_at ASC` (manual ordering)
+  - Shows: `recorded_at DESC` (chronological ordering)
+- **Error Handling**: Comprehensive HTTP status codes and XML error responses
+
+#### **Feed Image Fallback Logic**
+```php
+function getFeedImage($custom_image, $show_image, $station_image) {
+    if ($custom_image) return $custom_image;      // Custom feed image
+    if ($show_image) return $show_image;          // Show-specific image
+    if ($station_image) return $station_image;    // Station logo
+    return '/assets/images/default-podcast-artwork.png'; // System default
+}
+```
+
+#### **iTunes Podcast Compatibility**
+- **Complete XML Structure**: Proper RSS 2.0 with iTunes namespace
+- **Podcast Metadata**: Author, summary, explicit rating, category
+- **Episode Data**: Duration, description, publication date, GUID
+- **Audio Enclosures**: Proper MIME types and file size information
+
+### 🚀 **Usage Examples**
+
+#### **API Endpoints**
+```bash
+# Universal feeds
+curl "https://radiograb.svaha.com/api/enhanced-feeds.php?type=universal&slug=all-shows"
+curl "https://radiograb.svaha.com/api/enhanced-feeds.php?type=universal&slug=all-playlists"
+
+# Station feeds (all shows from station)
+curl "https://radiograb.svaha.com/api/enhanced-feeds.php?type=station&id=1"
+
+# Individual show/playlist feeds
+curl "https://radiograb.svaha.com/api/enhanced-feeds.php?type=show&id=5"
+curl "https://radiograb.svaha.com/api/enhanced-feeds.php?type=playlist&id=10"
+
+# Custom feeds (user-created combinations)
+curl "https://radiograb.svaha.com/api/enhanced-feeds.php?type=custom&slug=my-favorites"
+```
+
+#### **Web Interface Access**
+- **Feed Management**: Visit `/feeds.php` for comprehensive feed overview
+- **Custom Feeds**: Visit `/custom-feeds.php` to create and manage custom feeds
+- **Feed URLs**: All feeds provide copy-to-clipboard functionality
+- **QR Codes**: Generate QR codes for easy mobile podcast app subscription
+
+### 📊 **Database Migration Applied**
+```bash
+# Migration successfully applied on production
+ssh radiograb@167.71.84.143 "docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 radiograb < /opt/radiograb/database/migrations/add_enhanced_feed_system.sql"
+
+# Verification - all tables created successfully:
+# ✅ custom_feeds
+# ✅ custom_feed_shows  
+# ✅ station_feeds
+# ✅ feed_generation_log
+# ✅ shows table enhanced with RSS metadata fields
+```
+
+### 🔄 **Automatic Feed Updates**
+- **RSS Service Integration**: Existing RSS updater service (`radiograb-rss-updater-1`) automatically incorporates new feed types
+- **Recording Integration**: New recordings automatically appear in relevant feeds
+- **Feed Refresh**: 15-minute update cycle ensures feeds stay current
+- **Cache Management**: Intelligent caching prevents unnecessary regeneration
 - **Enhanced JavaScript Parsing**: Comprehensive show name validation with 40+ invalid pattern detection
 - **Timezone Fixes**: All containers use America/New_York
 - **Security Enhancements**: Proper MP3 downloads with CSRF protection
