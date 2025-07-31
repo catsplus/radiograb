@@ -89,8 +89,8 @@ function handleToggleActive() {
     }
     
     try {
-        // Update the show status in the database
-        $db->update('shows', ['active' => $active ? 1 : 0], 'id = ?', [$show_id]);
+        // Update the show status in the database using direct query
+        $db->query("UPDATE shows SET active = ? WHERE id = ?", [$active ? 1 : 0, $show_id]);
         
         // Get show name for response
         $show = $db->fetchOne("SELECT name FROM shows WHERE id = ?", [$show_id]);
