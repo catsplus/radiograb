@@ -54,6 +54,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $max_file_size = (int)($_POST['max_file_size'] ?? 100);
     $active = isset($_POST['active']) ? 1 : 0;
     
+    // Enhanced metadata fields
+    $long_description = trim($_POST['long_description'] ?? '');
+    $image_url = trim($_POST['image_url'] ?? '');
+    $website_url = trim($_POST['website_url'] ?? '');
+    $description_source = 'manual';  // Default source
+    $image_source = 'manual';        // Default source
+    
     $errors = [];
     
     // Validation
@@ -108,6 +115,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'station_id' => $station_id,
                         'name' => $name,
                         'description' => $description ?: null,
+                        'long_description' => $long_description ?: null,
+                        'image_url' => $image_url ?: null,
+                        'website_url' => $website_url ?: null,
+                        'description_source' => $description_source,
+                        'image_source' => $image_source,
                         'show_type' => $show_type,
                         'host' => $host ?: null,
                         'genre' => $genre ?: null,
@@ -306,6 +318,21 @@ require_once '../includes/header.php';
                                 <div class="form-text" id="name-help-playlist" style="display: none;">Name of the playlist/collection</div>
                             </div>
 
+                            <!-- Metadata Extraction Section -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">Show Metadata</h6>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="extract-metadata-btn">
+                                        <i class="fas fa-magic"></i> Auto-Extract Metadata
+                                    </button>
+                                </div>
+                                <div class="form-text mb-3">
+                                    <i class="fas fa-info-circle"></i> We can automatically extract show description, host, and image from the station's website
+                                </div>
+                                
+                                <div id="metadata-extraction-status" class="alert" style="display: none;"></div>
+                            </div>
+
                             <div class="mb-3">
                                 <label for="description" class="form-label">Description</label>
                                 <textarea class="form-control" 
@@ -313,6 +340,7 @@ require_once '../includes/header.php';
                                           name="description" 
                                           rows="3"
                                           placeholder="Brief description..."><?= h($_POST['description'] ?? '') ?></textarea>
+                                <div class="form-text">Show description - will be auto-filled if extracted from website</div>
                             </div>
 
                             <div class="row">
@@ -325,6 +353,7 @@ require_once '../includes/header.php';
                                                name="host" 
                                                value="<?= h($_POST['host'] ?? '') ?>"
                                                placeholder="John Doe">
+                                        <div class="form-text">Show host - will be auto-filled if found</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -336,8 +365,47 @@ require_once '../includes/header.php';
                                                name="genre" 
                                                value="<?= h($_POST['genre'] ?? '') ?>"
                                                placeholder="Talk, Music, News, etc.">
+                                        <div class="form-text">Show category - will be auto-classified if possible</div>
                                     </div>
                                 </div>
+                            </div>
+
+                            <!-- Enhanced Metadata Fields -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="image_url" class="form-label">Show Image URL</label>
+                                        <input type="url" 
+                                               class="form-control" 
+                                               id="image_url" 
+                                               name="image_url" 
+                                               value="<?= h($_POST['image_url'] ?? '') ?>"
+                                               placeholder="https://example.com/show-image.jpg">
+                                        <div class="form-text">Show-specific image (fallback to station logo if empty)</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="website_url" class="form-label">Show Website URL</label>
+                                        <input type="url" 
+                                               class="form-control" 
+                                               id="website_url" 
+                                               name="website_url" 
+                                               value="<?= h($_POST['website_url'] ?? '') ?>"
+                                               placeholder="https://station.com/shows/morning-show">
+                                        <div class="form-text">Link to show's dedicated page</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="long_description" class="form-label">Long Description</label>
+                                <textarea class="form-control" 
+                                          id="long_description" 
+                                          name="long_description" 
+                                          rows="4"
+                                          placeholder="Detailed show description..."><?= h($_POST['long_description'] ?? '') ?></textarea>
+                                <div class="form-text">Extended description for detailed information</div>
                             </div>
 
                             <!-- Scheduled Show Fields -->

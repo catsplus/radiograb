@@ -48,6 +48,12 @@ class RadioGrab {
         document.querySelectorAll('.delete-recording').forEach(btn => {
             btn.addEventListener('click', this.showDeleteRecordingModal.bind(this));
         });
+        
+        // Extract metadata button
+        const extractMetadataBtn = document.getElementById('extract-metadata-btn');
+        if (extractMetadataBtn) {
+            extractMetadataBtn.addEventListener('click', this.extractShowMetadata.bind(this));
+        }
     }
     
     initAudioPlayers() {
@@ -573,3 +579,141 @@ document.addEventListener('keydown', (e) => {
             break;
     }
 });
+
+// Show metadata extraction functionality
+RadioGrab.prototype.extractShowMetadata = function(e) {
+    e.preventDefault();
+    
+    const showNameInput = document.getElementById('name');
+    const stationSelect = document.getElementById('station_id');
+    const statusDiv = document.getElementById('metadata-extraction-status');
+    const extractBtn = document.getElementById('extract-metadata-btn');
+    
+    if (!showNameInput || !stationSelect || !statusDiv) {
+        console.error('Required form elements not found');
+        return;
+    }
+    
+    const showName = showNameInput.value.trim();
+    const stationId = stationSelect.value;
+    
+    if (!showName) {
+        this.showMetadataStatus('error', 'Please enter a show name first');
+        return;
+    }
+    
+    if (!stationId) {
+        this.showMetadataStatus('error', 'Please select a station first');
+        return;
+    }
+    
+    // Show loading state
+    extractBtn.disabled = true;
+    extractBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Extracting...';
+    this.showMetadataStatus('info', 'Analyzing station website and extracting show metadata...');
+    
+    // Get CSRF token
+    this.getCSRFToken().then(csrfToken => {
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('csrf_token', csrfToken);
+        formData.append('show_name', showName);
+        formData.append('station_id', stationId);
+        
+        // Call the metadata extraction API
+        return fetch('/api/extract-show-metadata.php', {
+            method: 'POST',
+            body: formData
+        });
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.metadata) {
+            this.populateMetadataFields(data.metadata);
+            this.showMetadataStatus('success', 
+                `Metadata extracted successfully! (Confidence: ${Math.round(data.confidence * 100)}%, Source: ${data.source})`);
+        } else {
+            this.showMetadataStatus('error', data.error || 'Failed to extract metadata');
+            if (data.debug_output) {
+                console.log('Debug output:', data.debug_output);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Metadata extraction error:', error);
+        this.showMetadataStatus('error', 'Network error occurred while extracting metadata');
+    })
+    .finally(() => {
+        // Reset button state
+        extractBtn.disabled = false;
+        extractBtn.innerHTML = '<i class="fas fa-magic"></i> Auto-Extract Metadata';
+    });
+};
+
+RadioGrab.prototype.showMetadataStatus = function(type, message) {
+    const statusDiv = document.getElementById('metadata-extraction-status');
+    if (!statusDiv) return;
+    
+    // Clear previous classes
+    statusDiv.className = 'alert';
+    
+    // Add appropriate class based on type
+    switch (type) {
+        case 'success':
+            statusDiv.classList.add('alert-success');
+            break;
+        case 'error':
+            statusDiv.classList.add('alert-danger');
+            break;
+        case 'info':
+            statusDiv.classList.add('alert-info');
+            break;
+        default:
+            statusDiv.classList.add('alert-secondary');
+    }
+    
+    statusDiv.innerHTML = message;
+    statusDiv.style.display = 'block';
+    
+    // Auto-hide success messages after 5 seconds
+    if (type === 'success') {
+        setTimeout(() => {
+            statusDiv.style.display = 'none';
+        }, 5000);
+    }
+};
+
+RadioGrab.prototype.populateMetadataFields = function(metadata) {
+    // Only populate fields that are empty to avoid overwriting user input
+    const fields = {
+        'description': metadata.description,
+        'long_description': metadata.long_description,
+        'host': metadata.host,
+        'genre': metadata.genre,
+        'image_url': metadata.image_url,
+        'website_url': metadata.website_url
+    };
+    
+    for (const [fieldId, value] of Object.entries(fields)) {
+        const field = document.getElementById(fieldId);
+        if (field && value && !field.value.trim()) {
+            field.value = value;
+            
+            // Add visual feedback to show field was auto-filled
+            field.classList.add('border-success');
+            setTimeout(() => {
+                field.classList.remove('border-success');
+            }, 2000);
+        }
+    }
+    
+    // If we got a better title, suggest it but don't automatically replace
+    if (metadata.title && metadata.title !== document.getElementById('name').value) {
+        const currentTitle = document.getElementById('name').value;
+        const suggestedTitle = metadata.title;
+        
+        if (confirm(`Suggested show title: "${suggestedTitle}"\nCurrent title: "${currentTitle}"\n\nWould you like to use the suggested title?`)) {
+            document.getElementById('name').value = suggestedTitle;
+        }
+    }
+};
