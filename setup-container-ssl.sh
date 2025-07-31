@@ -105,7 +105,7 @@ server {
     index index.php index.html;
     
     # Max upload size for recordings
-    client_max_body_size 100M;
+    client_max_body_size 200M;
     
     # Gzip compression
     gzip on;
