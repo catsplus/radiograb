@@ -85,4 +85,12 @@ class Database {
 
 // Global database instance
 $db = new Database();
+
+// Also create a global PDO connection for legacy compatibility
+try {
+    $pdo = $db->connect();
+} catch (Exception $e) {
+    error_log("Failed to create global PDO connection: " . $e->getMessage());
+    $pdo = null;
+}
 ?>
