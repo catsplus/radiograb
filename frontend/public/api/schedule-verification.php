@@ -91,7 +91,10 @@ try {
                            END as verification_status,
                            TIMESTAMPDIFF(DAY, last_tested, NOW()) as days_since_check
                     FROM stations 
-                    WHERE status = 'active'
+                    WHERE status = 'active' 
+                    AND name NOT LIKE '%Uploads%' 
+                    AND name NOT LIKE '%On-Demand%'
+                    AND name NOT LIKE '%User%'
                     ORDER BY verification_status DESC, last_tested ASC
                 ");
                 

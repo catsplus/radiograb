@@ -72,6 +72,23 @@ if (isset($error)): ?>
             </div>
         </div>
 
+        <!-- Stations Needing Attention Alert -->
+        <div id="stationsNeedingAttention" style="display: none;" class="mb-4">
+            <div class="alert alert-warning">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Stations Needing Attention</strong>
+                        <span id="stationAlertSummary"></span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-warning" onclick="refreshStationVerification()">
+                        <i class="fas fa-sync"></i> Refresh Status
+                    </button>
+                </div>
+                <div id="stationAlertDetails" class="mt-3" style="display: none;"></div>
+            </div>
+        </div>
+
         <!-- Stations List -->
         <?php if (empty($stations)): ?>
             <div class="card">
@@ -994,7 +1011,144 @@ $additional_js = '
         // Initialize test recording checks when page loads
         document.addEventListener("DOMContentLoaded", function() {
             checkForTestRecordings();
+            loadStationVerificationStatus();
         });
+        
+        // Load station verification status
+        async function loadStationVerificationStatus() {
+            try {
+                const response = await fetch('/api/schedule-verification.php?action=get_verification_status');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayStationVerificationStatus(result.stations, result.summary);
+                }
+            } catch (error) {
+                console.error('Failed to load station verification status:', error);
+            }
+        }
+        
+        // Display station verification status
+        function displayStationVerificationStatus(stations, summary) {
+            const needAttention = stations.filter(station => 
+                station.verification_status === 'never' || 
+                station.verification_status === 'overdue' || 
+                station.verification_status === 'due_soon'
+            );
+            
+            if (needAttention.length === 0) {
+                document.getElementById('stationsNeedingAttention').style.display = 'none';
+                return;
+            }
+            
+            // Show the alert
+            document.getElementById('stationsNeedingAttention').style.display = 'block';
+            
+            // Update summary text
+            const summaryElement = document.getElementById('stationAlertSummary');
+            let summaryText = '';
+            if (summary.never > 0) summaryText += ` ${summary.never} Never Checked`;
+            if (summary.overdue > 0) summaryText += ` ${summary.overdue} Overdue`;
+            if (summary.due_soon > 0) summaryText += ` ${summary.due_soon} Due Soon`;
+            summaryElement.textContent = summaryText;
+            
+            // Build details HTML
+            let detailsHtml = '<div class="row">';
+            needAttention.forEach(station => {
+                const statusIcon = station.verification_status === 'never' ? 'fas fa-question-circle text-muted' :
+                                 station.verification_status === 'overdue' ? 'fas fa-exclamation-triangle text-danger' :
+                                 'fas fa-clock text-warning';
+                
+                const statusText = station.verification_status === 'never' ? 'Never Checked' :
+                                 station.verification_status === 'overdue' ? `Overdue (${station.days_since_check} days ago)` :
+                                 `Due Soon (${station.days_since_check} days ago)`;
+                
+                detailsHtml += `
+                    <div class="col-md-6 col-lg-4 mb-2">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="${statusIcon}"></i>
+                                <span class="fw-bold">${station.name}</span>
+                                <br>
+                                <small class="text-muted">${statusText}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary check-station-now"
+                                    data-station-id="${station.id}"
+                                    data-station-name="${station.name}"
+                                    title="Check this station now">
+                                <i class="fas fa-sync"></i> Check now
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            detailsHtml += '</div>';
+            
+            document.getElementById('stationAlertDetails').innerHTML = detailsHtml;
+            document.getElementById('stationAlertDetails').style.display = 'block';
+            
+            // Add event listeners to "Check now" buttons
+            document.querySelectorAll('.check-station-now').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const stationId = this.dataset.stationId;
+                    const stationName = this.dataset.stationName;
+                    
+                    if (!confirm(`Check station "${stationName}" now?`)) {
+                        return;
+                    }
+                    
+                    // Disable button and show loading
+                    this.disabled = true;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+                    
+                    try {
+                        const response = await fetch(`/api/schedule-verification.php?action=verify_station&station_id=${stationId}`, {
+                            method: 'GET',
+                            credentials: 'same-origin'
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            alert(`Station check completed for ${stationName}!\n\nResult: ${result.output || 'Verification completed successfully'}`);
+                            // Refresh the verification status
+                            setTimeout(() => {
+                                loadStationVerificationStatus();
+                                window.location.reload(); // Also refresh the page to show updated station info
+                            }, 1000);
+                        } else {
+                            alert(`Station check failed: ${result.error}`);
+                        }
+                        
+                    } catch (error) {
+                        console.error('Station check error:', error);
+                        alert('Network error occurred during station check');
+                    } finally {
+                        // Re-enable button
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fas fa-sync"></i> Check now';
+                    }
+                });
+            });
+        }
+        
+        // Refresh station verification status
+        async function refreshStationVerification() {
+            const refreshBtn = document.querySelector('button[onclick="refreshStationVerification()"]');
+            if (refreshBtn) {
+                refreshBtn.disabled = true;
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+            }
+            
+            try {
+                await loadStationVerificationStatus();
+            } finally {
+                if (refreshBtn) {
+                    refreshBtn.disabled = false;
+                    refreshBtn.innerHTML = '<i class="fas fa-sync"></i> Refresh Status';
+                }
+            }
+        }
         
     </script>';
 
