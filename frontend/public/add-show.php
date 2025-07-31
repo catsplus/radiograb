@@ -1,6 +1,31 @@
 <?php
 /**
  * RadioGrab - Add Show
+ *
+ * This file provides the web interface for adding a new radio show to the system.
+ * It allows users to define show details, select a station, choose between scheduled
+ * or playlist show types, and specify scheduling information or upload settings.
+ *
+ * Key Variables:
+ * - `$station_id`: The ID of the station to which the show belongs.
+ * - `$name`: The name of the show.
+ * - `$description`: The show's description.
+ * - `$show_type`: The type of show (scheduled or playlist).
+ * - `$schedule_text`: The natural language schedule for scheduled shows.
+ * - `$duration_minutes`: The duration of the recording for scheduled shows.
+ * - `$host`: The show's host.
+ * - `$genre`: The show's genre.
+ * - `$max_file_size`: The maximum file size for playlist uploads.
+ * - `$active`: A boolean indicating if the show is active.
+ * - `$errors`: An array to store any validation or database errors.
+ *
+ * Inter-script Communication:
+ * - This script executes shell commands to call `backend/services/parse_schedule.py`
+ *   to convert natural language schedules to cron expressions.
+ * - It executes shell commands to call `backend/services/schedule_manager.py` to add
+ *   the show to the recording scheduler.
+ * - It uses `includes/database.php` for database connection and `includes/functions.php` for helper functions.
+ * - JavaScript functions interact with `/api/discover-station-schedule.php` for dynamic schedule discovery.
  */
 
 session_start();

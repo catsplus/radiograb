@@ -1,4 +1,17 @@
-#!/usr/bin/env python3
+"""
+Debug script to test APScheduler cron trigger calculations.
+
+This script is a standalone utility used for verifying that cron expressions
+correctly calculate future run times based on different patterns and timezones.
+It helps in debugging scheduling logic without running the full recording service.
+
+Key Variables:
+- `cron_pattern`: A cron expression string to test.
+- `now`: The current datetime used as a reference point for calculations.
+
+Inter-script Communication:
+- This script is a standalone utility and does not interact with other backend services.
+"""
 """
 Debug scheduler to test cron trigger calculations
 """

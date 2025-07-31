@@ -371,6 +371,7 @@ $additional_js = '
                 });
                 
                 initializeDragDrop();
+                setupDeleteHandlers();
                 content.style.display = "block";
             } else {
                 content.innerHTML = `<div class=\"alert alert-danger\">${data.error}</div>`;
@@ -403,7 +404,9 @@ $additional_js = '
             <td>${timeAgo(track.recorded_at)}</td>
             <td>
                 <button class=\"btn btn-sm btn-outline-danger delete-track\" 
-                        data-recording-id=\"${track.id}\" title=\"Delete\">
+                        data-recording-id=\"${track.id}\" 
+                        data-track-title=\"${escapeHtml(track.title)}\" 
+                        title=\"Delete\">
                     <i class=\"fas fa-trash\"></i>
                 </button>
             </td>
@@ -433,6 +436,274 @@ $additional_js = '
         if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
         if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
         return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    }
+    
+    // Description toggle functions
+    function toggleDescription(playlistId) {
+        const shortDiv = document.getElementById(`desc-short-${playlistId}`);
+        const fullDiv = document.getElementById(`desc-full-${playlistId}`);
+        const toggleBtn = document.getElementById(`desc-toggle-${playlistId}`);
+        
+        if (fullDiv.style.display === "none") {
+            shortDiv.style.display = "none";
+            fullDiv.style.display = "block";
+            toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show less';
+        } else {
+            shortDiv.style.display = "block";
+            fullDiv.style.display = "none";
+            toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show more';
+        }
+    }
+    
+    // Tags editing functions  
+    function editTags(playlistId) {
+        document.getElementById(`tags-display-${playlistId}`).style.display = "none";
+        document.getElementById(`tags-edit-${playlistId}`).style.display = "block";
+        document.getElementById(`edit-tags-btn-${playlistId}`).style.display = "none";
+        document.getElementById(`tags-input-${playlistId}`).focus();
+    }
+    
+    function cancelEditTags(playlistId) {
+        document.getElementById(`tags-display-${playlistId}`).style.display = "block";
+        document.getElementById(`tags-edit-${playlistId}`).style.display = "none";
+        document.getElementById(`edit-tags-btn-${playlistId}`).style.display = "inline-block";
+    }
+    
+    function saveTags(playlistId) {
+        const input = document.getElementById(`tags-input-${playlistId}`);
+        const tags = input.value.trim();
+        
+        fetch("/api/show-management.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                action: "update_tags",
+                show_id: playlistId,
+                tags: tags,
+                csrf_token: "<?= generateCSRFToken() ?>"
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tagsDisplay = document.getElementById(`tags-display-${playlistId}`);
+                if (tags) {
+                    const tagList = tags.split(",").map(tag => 
+                        `<span class="badge bg-light text-dark me-1">${tag.trim()}</span>`
+                    ).join("");
+                    tagsDisplay.innerHTML = tagList;
+                } else {
+                    tagsDisplay.innerHTML = '<small class="text-muted">No tags</small>';
+                }
+                
+                cancelEditTags(playlistId);
+            } else {
+                alert("Failed to update tags: " + (data.error || "Unknown error"));
+            }
+        })
+        .catch(error => {
+            alert("Network error: " + error.message);
+        });
+    }
+    
+    // Enhanced drag and drop functionality
+    function initializeDragDrop() {
+        const tbody = document.getElementById("playlist-tracks");
+        if (!tbody) return;
+        
+        let draggedElement = null;
+        
+        tbody.querySelectorAll("tr").forEach(row => {
+            row.draggable = true;
+            
+            const dragHandle = row.querySelector(".drag-handle");
+            if (dragHandle) {
+                dragHandle.style.cursor = "move";
+            }
+            
+            row.addEventListener("dragstart", function(e) {
+                draggedElement = this;
+                this.style.opacity = "0.5";
+                this.classList.add("ui-sortable-helper");
+                e.dataTransfer.effectAllowed = "move";
+            });
+            
+            row.addEventListener("dragend", function(e) {
+                this.style.opacity = "";
+                this.classList.remove("ui-sortable-helper");
+                draggedElement = null;
+            });
+            
+            row.addEventListener("dragover", function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                
+                // Visual feedback
+                this.style.borderTop = "2px solid #28a745";
+            });
+            
+            row.addEventListener("dragleave", function(e) {
+                this.style.borderTop = "";
+            });
+            
+            row.addEventListener("drop", function(e) {
+                e.preventDefault();
+                this.style.borderTop = "";
+                
+                if (draggedElement && draggedElement !== this) {
+                    const rect = this.getBoundingClientRect();
+                    const middle = rect.top + rect.height / 2;
+                    
+                    if (e.clientY < middle) {
+                        this.parentNode.insertBefore(draggedElement, this);
+                    } else {
+                        this.parentNode.insertBefore(draggedElement, this.nextSibling);
+                    }
+                    
+                    updateTrackNumbers();
+                }
+            });
+        });
+    }
+    
+    function updateTrackNumbers() {
+        const rows = document.querySelectorAll("#playlist-tracks tr");
+        rows.forEach((row, index) => {
+            const input = row.querySelector(".track-number");
+            if (input) {
+                input.value = index + 1;
+            }
+        });
+    }
+    
+    function setupDeleteHandlers() {
+        document.querySelectorAll(".delete-track").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const recordingId = this.dataset.recordingId;
+                const trackTitle = this.dataset.trackTitle || "this track";
+                
+                if (confirm(`Are you sure you want to delete "${trackTitle}"? This action cannot be undone.`)) {
+                    deleteTrack(recordingId, this);
+                }
+            });
+        });
+    }
+    
+    function deleteTrack(recordingId, buttonElement) {
+        const row = buttonElement.closest("tr");
+        const originalContent = buttonElement.innerHTML;
+        
+        // Show loading state
+        buttonElement.disabled = true;
+        buttonElement.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i>";
+        
+        fetch("/api/upload.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+                action: "delete_upload",
+                recording_id: recordingId,
+                csrf_token: "<?= generateCSRFToken() ?>"
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove row with animation
+                row.style.transition = "opacity 0.3s ease";
+                row.style.opacity = "0";
+                setTimeout(() => {
+                    row.remove();
+                    updateTrackNumbers();
+                }, 300);
+            } else {
+                buttonElement.disabled = false;
+                buttonElement.innerHTML = originalContent;
+                alert("Failed to delete track: " + (data.error || "Unknown error"));
+            }
+        })
+        .catch(error => {
+            buttonElement.disabled = false;
+            buttonElement.innerHTML = originalContent;
+            alert("Network error: " + error.message);
+        });
+    }
+    
+    // Save playlist order function - setup event listener
+    document.addEventListener("DOMContentLoaded", function() {
+        const modal = document.getElementById("playlistModal");
+        if (modal) {
+            modal.addEventListener("shown.bs.modal", function() {
+                const saveButton = document.getElementById("savePlaylistOrder");
+                if (saveButton && !saveButton.hasAttribute("data-listener-added")) {
+                    saveButton.setAttribute("data-listener-added", "true");
+                    saveButton.addEventListener("click", function() {
+                        const rows = document.querySelectorAll("#playlist-tracks tr");
+                        const updates = [];
+                        
+                        rows.forEach((row, index) => {
+                            const recordingId = row.dataset.recordingId;
+                            if (recordingId) {
+                                updates.push({
+                                    id: recordingId,
+                                    track_number: index + 1
+                                });
+                            }
+                        });
+                        
+                        if (updates.length > 0) {
+                            savePlaylistOrderToServer(updates);
+                        }
+                    });
+                }
+            });
+        }
+    });
+    
+    function savePlaylistOrderToServer(updates) {
+        const saveButton = document.getElementById("savePlaylistOrder");
+        const originalContent = saveButton.innerHTML;
+        
+        saveButton.disabled = true;
+        saveButton.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i> Saving...";
+        
+        fetch("/api/playlist-tracks.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                action: "update_order",
+                updates: updates,
+                csrf_token: "<?= generateCSRFToken() ?>"
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                saveButton.innerHTML = "<i class=\"fas fa-check\"></i> Saved!";
+                saveButton.className = "btn btn-success";
+                
+                setTimeout(() => {
+                    saveButton.disabled = false;
+                    saveButton.innerHTML = originalContent;
+                    saveButton.className = "btn btn-primary";
+                }, 2000);
+            } else {
+                saveButton.disabled = false;
+                saveButton.innerHTML = originalContent;
+                alert("Failed to save order: " + (data.error || "Unknown error"));
+            }
+        })
+        .catch(error => {
+            saveButton.disabled = false;
+            saveButton.innerHTML = originalContent;
+            alert("Network error: " + error.message);
+        });
     }
 </script>';
 

@@ -1,7 +1,21 @@
 <?php
 /**
  * RadioGrab - Show Metadata Admin Interface
- * Review and manage auto-detected show metadata
+ *
+ * This file provides an administrative interface for reviewing and managing
+ * automatically detected show metadata. It displays metadata coverage statistics
+ * and allows for bulk metadata detection operations for all shows or specific stations.
+ *
+ * Key Variables:
+ * - `$metadata_stats`: An array containing statistics about show metadata coverage.
+ * - `$shows`: An array of show data with their metadata details.
+ * - `$stations`: An array of active stations for filtering bulk operations.
+ *
+ * Inter-script Communication:
+ * - This script executes shell commands to call `backend/services/show_metadata_cli.py`
+ *   for bulk metadata detection.
+ * - It uses `includes/database.php` for database connection and `includes/functions.php` for helper functions.
+ * - JavaScript functions interact with `/api/show-management.php` to refresh individual show metadata.
  */
 
 session_start();

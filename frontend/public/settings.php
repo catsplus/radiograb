@@ -1,7 +1,23 @@
 <?php
 /**
  * RadioGrab - Settings
- * System configuration including domain and SSL management
+ *
+ * This file provides the administrative interface for configuring system-wide settings,
+ * including domain name, SSL certificates (Let's Encrypt or self-signed), and service control.
+ * It includes functions for interacting with Nginx and Docker to apply configuration changes
+ * and restart services.
+ *
+ * Key Variables:
+ * - `$admin_password`: The password required for administrative authentication.
+ * - `$domain`: The domain name for the RadioGrab instance.
+ * - `$ssl_type`: The type of SSL certificate to set up (letsencrypt or selfsigned).
+ * - `$current_config`: An array holding the current Nginx and SSL configuration.
+ *
+ * Inter-script Communication:
+ * - This script executes shell commands to interact with Docker (e.g., `docker exec`, `docker cp`).
+ * - It calls external functions like `updateNginxConfig`, `setupLetsEncryptSSL`,
+ *   `setupSelfSignedSSL`, `checkDomainPubliclyAccessible`, and `restartWebServices`.
+ * - It uses `includes/database.php` for database connection and `includes/functions.php` for helper functions.
  */
 
 session_start();

@@ -1,7 +1,21 @@
 <?php
 /**
  * RadioGrab - TTL Management Interface
- * Manage recording expiration settings
+ *
+ * This file provides a web interface for managing the Time-to-Live (TTL) settings
+ * for recorded shows. It displays recording expiration information, allows for
+ * manual cleanup of expired recordings, and provides options to edit or extend
+ * the TTL for individual recordings.
+ *
+ * Key Variables:
+ * - `$recordings`: An array of recording data with TTL information.
+ * - `$expired_count`: The number of recordings that have already expired.
+ * - `$expiring_soon_count`: The number of recordings expiring within the next 7 days.
+ *
+ * Inter-script Communication:
+ * - This script interacts with the database to fetch recording, show, and station data.
+ * - It uses `includes/database.php` for database connection and `includes/functions.php` for helper functions.
+ * - JavaScript functions interact with `/api/ttl-management.php` for TTL updates and cleanup.
  */
 
 session_start();

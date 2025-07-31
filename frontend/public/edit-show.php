@@ -1,6 +1,24 @@
 <?php
 /**
  * RadioGrab - Edit Show
+ *
+ * This file provides the web interface for editing an existing radio show's
+ * details, including its name, description, schedule, duration, and retention
+ * policy. It interacts with the backend to update the show's information and
+ * reschedule its recordings.
+ *
+ * Key Variables:
+ * - `$show_id`: The ID of the show being edited.
+ * - `$show`: An array containing the current data of the show.
+ * - `$stations`: An array of active stations for the dropdown selection.
+ * - `$errors`: An array to store any validation or database errors.
+ *
+ * Inter-script Communication:
+ * - This script executes shell commands to call `backend/services/parse_schedule.py`
+ *   to convert natural language schedules to cron expressions.
+ * - It executes shell commands to call `backend/services/ttl_manager.py` to update
+ *   recording TTLs and `backend/services/schedule_manager.py` to update the scheduler.
+ * - It uses `includes/database.php` for database connection and `includes/functions.php` for helper functions.
  */
 
 session_start();

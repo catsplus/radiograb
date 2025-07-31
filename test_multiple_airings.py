@@ -1,6 +1,20 @@
 #!/usr/bin/env python3
 """
-Test script for multiple airings detection and parsing
+"""
+Tests the `MultipleAiringsParser` service.
+
+This script contains various test cases to verify the correct parsing of natural
+language schedule descriptions into multiple airing entries, including handling
+of keywords like "original", "repeat", and "encore".
+
+Key Variables:
+- `test_cases`: A list of tuples, each containing a schedule text, a boolean
+  indicating if multiple airings are expected, and the expected number of airings.
+
+Inter-script Communication:
+- This script directly imports and tests `backend.services.multiple_airings_parser.MultipleAiringsParser`.
+"""
+
 """
 import sys
 import os

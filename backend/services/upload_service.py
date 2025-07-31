@@ -118,19 +118,38 @@ class AudioUploadService:
                 call_letters = show.station.call_letters or f"PL{show.station_id:02d}"
                 timestamp = datetime.now().strftime('%Y-%m-%d-%H%M%S')
                 unique_id = str(uuid.uuid4())[:8]
-                filename = f"{call_letters}_upload_{timestamp}_{unique_id}{file_extension}"
+                
+                # Create filename based on metadata if available
+                if metadata.get('artist') and metadata.get('title'):
+                    # Use Artist-Title format for files with metadata
+                    artist = self._sanitize_filename(metadata['artist'])
+                    title = self._sanitize_filename(metadata['title'])
+                    filename = f"{artist}-{title}{file_extension}"
+                else:
+                    # Use timestamp format for files without metadata (but only one call_letters)
+                    filename = f"{call_letters}_upload_{timestamp}_{unique_id}{file_extension}"
                 
                 # Create station-specific subdirectory
                 station_dir = self.recordings_dir / call_letters
                 station_dir.mkdir(parents=True, exist_ok=True)
                 
+                # Handle filename conflicts
+                final_filename = filename
+                counter = 1
+                while (station_dir / final_filename).exists():
+                    name_part = Path(filename).stem
+                    ext_part = Path(filename).suffix
+                    final_filename = f"{name_part}_{counter}{ext_part}"
+                    counter += 1
+                
                 # Move file to station-specific directory  
-                final_path = station_dir / filename
+                final_path = station_dir / final_filename
+                filename = final_filename
                 self._move_file(file_path, final_path)
                 
                 # Convert to MP3 if needed
                 if file_extension != '.mp3':
-                    mp3_filename = filename.replace(file_extension, '.mp3')
+                    mp3_filename = final_filename.replace(file_extension, '.mp3')
                     mp3_path = station_dir / mp3_filename
                     
                     if self._convert_to_mp3(final_path, mp3_path):
@@ -138,6 +157,7 @@ class AudioUploadService:
                         final_path.unlink()
                         final_path = mp3_path
                         filename = mp3_filename
+                        final_filename = mp3_filename
                 
                 # Get final file info
                 file_size = final_path.stat().st_size
@@ -349,6 +369,16 @@ class AudioUploadService:
         except Exception as e:
             logger.error(f"Error converting {input_path.name}: {e}")
             return False
+    
+    def _sanitize_filename(self, text: str) -> str:
+        """Sanitize text for use in filename"""
+        import re
+        # Remove or replace invalid filename characters
+        sanitized = re.sub(r'[<>:"/\\|?*]', '', text)
+        # Replace spaces with underscores
+        sanitized = re.sub(r'\s+', '_', sanitized)
+        # Limit length to prevent overly long filenames
+        return sanitized[:50].strip('_')
     
     def delete_upload(self, recording_id: int) -> bool:
         """Delete an uploaded recording"""

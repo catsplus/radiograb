@@ -1,8 +1,18 @@
-#!/usr/bin/env python3
 """
-Test script for stream testing integration
-Tests the complete workflow: discovery → stream testing → database storage
+Tests the complete stream testing integration workflow.
+
+This script performs an end-to-end test of the station discovery and stream
+testing process. It simulates adding a new station, discovering its stream URLs,
+testing their compatibility, and generating a comprehensive report.
+
+Key Variables:
+- `website_url`: The URL of the station to test.
+
+Inter-script Communication:
+- This script directly imports and tests `backend.services.station_discovery.StationDiscovery`.
+- It directly imports and tests `backend.services.stream_tester.StreamTester`.
 """
+
 
 import sys
 import os

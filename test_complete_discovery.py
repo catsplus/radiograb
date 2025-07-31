@@ -1,4 +1,19 @@
-#!/usr/bin/env python3
+"""
+Tests the complete station discovery and stream validation workflow.
+
+This script integrates `EnhancedStationDiscovery` and `StreamValidator` to
+simulate the process of finding and verifying streaming URLs for a given station.
+It provides a comprehensive test of the discovery pipeline.
+
+Key Variables:
+- `station_url`: The URL of the station to test.
+- `streams`: A list of discovered stream URLs.
+- `valid_streams`: A list of validated and scored stream URLs.
+
+Inter-script Communication:
+- This script directly imports and tests `backend.services.enhanced_discovery.EnhancedStationDiscovery`.
+- It directly imports and tests `backend.utils.stream_validator.StreamValidator`.
+"""
 """
 Complete test of station discovery and validation
 """

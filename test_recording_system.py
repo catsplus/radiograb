@@ -1,7 +1,21 @@
 #!/usr/bin/env python3
 """
-Test the complete recording system
+Tests the complete recording system, including schedule parsing and audio recording.
+
+This script performs integration tests for key components of the RadioGrab recording
+system. It verifies the functionality of the `ScheduleParser` and `AudioRecorder`,
+and demonstrates a basic recording workflow.
+
+Key Variables:
+- `test_schedules`: A list of natural language schedule descriptions for testing.
+- `test_stream`: A sample stream URL used for recording tests.
+
+Inter-script Communication:
+- This script directly imports and tests `backend.services.schedule_parser.ScheduleParser`.
+- It directly imports and tests `backend.services.recording_service.AudioRecorder`.
+- It directly imports and tests `backend.services.show_manager.ShowManager`.
 """
+
 import sys
 sys.path.append('.')
 

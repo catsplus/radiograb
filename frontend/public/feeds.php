@@ -1,6 +1,20 @@
 <?php
 /**
  * RadioGrab - RSS Feeds Management
+ *
+ * This file provides the web interface for managing RSS podcast feeds for recorded
+ * shows. It allows users to view individual show feeds, a master feed combining
+ * all shows, and regenerate feeds. It also provides QR codes for easy subscription.
+ *
+ * Key Variables:
+ * - `$shows`: An array of show data with RSS feed information.
+ * - `$error`: A string to store any database errors.
+ *
+ * Inter-script Communication:
+ * - This script executes shell commands to call `backend/services/rss_service.py`
+ *   and `backend/services/rss_manager.py` for feed generation.
+ * - It uses `includes/database.php` for database connection and `includes/functions.php` for helper functions.
+ * - JavaScript handles copying feed URLs and generating QR codes.
  */
 
 session_start();

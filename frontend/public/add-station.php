@@ -1,6 +1,25 @@
 <?php
 /**
  * RadioGrab - Add Station
+ *
+ * This file provides the web interface for adding a new radio station to the system.
+ * It includes a form for entering station details and integrates with a backend
+ * discovery service to automatically find streaming information, logos, and calendar URLs.
+ *
+ * Key Variables:
+ * - `$name`: The name of the station.
+ * - `$website_url`: The URL of the station's website.
+ * - `$stream_url`: The discovered or manually entered stream URL.
+ * - `$logo_url`: The discovered or manually entered logo URL.
+ * - `$calendar_url`: The discovered or manually entered calendar URL.
+ * - `$call_letters`: The discovered or manually entered call letters.
+ * - `$errors`: An array to store any validation or database errors.
+ *
+ * Inter-script Communication:
+ * - This script executes shell commands to call `backend/services/station_discovery.py`
+ *   for auto-discovery of station information.
+ * - It uses `includes/database.php` for database connection and `includes/functions.php` for helper functions.
+ * - JavaScript functions interact with `/api/discover-station.php` for real-time discovery.
  */
 
 session_start();

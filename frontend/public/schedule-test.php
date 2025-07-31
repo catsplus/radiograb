@@ -1,7 +1,21 @@
 <?php
 /**
- * RadioGrab Schedule Test Interface
- * Test and monitor automatic recording scheduler
+ * RadioGrab - Schedule Test Interface
+ *
+ * This file provides a web interface for testing and monitoring the automatic
+ * recording scheduler. It allows users to refresh all schedules, get the current
+ * status of scheduled jobs, and manually test individual show recordings.
+ *
+ * Key Variables:
+ * - `$shows`: An array of show data retrieved from the database.
+ * - `$error`: A string to store any database errors.
+ *
+ * Inter-script Communication:
+ * - This script executes shell commands to call `backend/services/schedule_manager.py`
+ *   for refreshing schedules and getting status.
+ * - It uses `includes/database.php` for database connection and `includes/functions.php` for helper functions.
+ * - JavaScript functions in `assets/js/radiograb.js` interact with `/api/schedule-manager.php`
+ *   and `/api/test-recording.php` for dynamic updates and testing.
  */
 
 session_start();

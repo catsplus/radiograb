@@ -1,4 +1,18 @@
-#!/usr/bin/env python3
+"""
+Tests core recording services without database dependencies.
+
+This script provides unit-like tests for fundamental components such as the
+`ScheduleParser` and `AudioRecorder`. It verifies their individual functionalities
+and demonstrates their usage in isolation.
+
+Key Variables:
+- `test_schedules`: A list of natural language schedule descriptions for testing.
+- `test_filenames`: A list of filenames for testing sanitization.
+
+Inter-script Communication:
+- This script directly imports and tests `backend.services.schedule_parser.ScheduleParser`.
+- It directly imports and tests `backend.services.recording_service.AudioRecorder`.
+"""
 """
 Test core recording services without database dependencies
 """

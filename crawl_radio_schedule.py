@@ -1,4 +1,19 @@
-import requests
+"""
+Crawls radio station websites to find and parse programming schedules.
+
+This script is a standalone utility for extracting schedule information from
+HTML pages. It attempts to identify schedule URLs and then parses the HTML
+content using predefined patterns for common schedule formats.
+
+Key Variables:
+- `base_url`: The base URL of the radio station's website.
+- `schedule_url`: The URL of the identified schedule page.
+
+Inter-script Communication:
+- This script is a standalone utility and does not directly interact with other
+  backend services or the database.
+"""
+
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import re

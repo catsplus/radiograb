@@ -1,7 +1,19 @@
-#!/usr/bin/env python3
 """
-Simple test for JavaScript calendar parser
+Tests the JavaScript-aware calendar parser.
+
+This script contains various test cases to verify the correct parsing of station
+schedules from dynamic web pages that rely on JavaScript rendering. It uses a
+headless Chrome browser via Selenium WebDriver to simulate a real user's browser.
+
+Key Variables:
+- `test_urls`: A list of URLs for testing the JavaScript calendar parser.
+- `invalid_names`: A list of strings that should be filtered out as invalid show names.
+- `valid_names`: A list of strings that should be considered valid show names.
+
+Inter-script Communication:
+- This script directly imports and tests `backend.services.js_calendar_parser.JavaScriptCalendarParser`.
 """
+
 
 import sys
 import logging

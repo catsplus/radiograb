@@ -1,4 +1,18 @@
-#!/usr/bin/env python3
+"""
+Tests the RadioGrab station discovery and stream validation services.
+
+This script provides various tests for `StationDiscovery` and `StreamValidator`,
+including testing with known stream URLs, detailed discovery output, and manual
+pattern matching within HTML content.
+
+Key Variables:
+- `test_streams`: A list of known streaming URLs for validation tests.
+- `test_html`: A sample HTML string for manual pattern matching tests.
+
+Inter-script Communication:
+- This script directly imports and tests `backend.services.station_discovery.StationDiscovery`.
+- It directly imports and tests `backend.utils.stream_validator.StreamValidator`.
+"""
 """
 Test script for RadioGrab station discovery
 """
