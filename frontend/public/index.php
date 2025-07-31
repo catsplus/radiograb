@@ -9,7 +9,7 @@ require_once '../includes/database.php';
 require_once '../includes/functions.php';
 
 // Set page variables for shared template
-$page_title = 'Dashboard';
+$page_title = 'RadioGrab Dashboard';
 $active_nav = 'dashboard';
 
 // Get dashboard statistics

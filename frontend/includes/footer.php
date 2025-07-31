@@ -13,9 +13,8 @@
             <div class="row">
                 <div class="col text-center text-muted">
                                         <small>
-                        <?= h(get_setting('footer_text', '&copy; 2025 RadioGrab. All rights reserved.')) ?> | 
-                        Version: <?= getVersionNumber() ?>
-                    </small>
+                            &copy; 2025 <a href="https://svaha.com" target="_blank" rel="noopener noreferrer">Svaha LLC</a>. All rights reserved. | <a href="https://github.com/mattbaya/radiograb" target="_blank" rel="noopener noreferrer">RadioGrab (MIT License)</a> | Version: <a href="https://github.com/mattbaya/radiograb/releases/tag/<?= getVersionNumber() ?>" target="_blank" rel="noopener noreferrer"><?= getVersionNumber() ?></a><br>Questions? Let us know: <a href="mailto:service@svaha.com">service@svaha.com</a>
+                        </small>
                 </div>
             </div>
         </div>
