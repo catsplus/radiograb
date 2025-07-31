@@ -1,7 +1,25 @@
 <?php
 /**
  * RadioGrab - Add Playlist
- * Create new user playlist for audio uploads
+ *
+ * This file provides the web interface for creating a new playlist-type show.
+ * Playlists are used to organize user-uploaded audio files. The script handles
+ * form submission, validates input, and creates a new show entry in the database
+ * with appropriate settings for uploads.
+ *
+ * Key Variables:
+ * - `$name`: The name of the playlist.
+ * - `$description`: The playlist's description.
+ * - `$host`: The curator or creator of the playlist.
+ * - `$genre`: The genre or category of the playlist.
+ * - `$max_file_size_mb`: The maximum allowed file size for uploads to this playlist.
+ * - `$active`: A boolean indicating if the playlist is active.
+ * - `$success_message`: A message displayed on successful playlist creation.
+ * - `$error_message`: A message displayed if an error occurs during creation.
+ *
+ * Inter-script Communication:
+ * - This script interacts with the database to create new station and show entries.
+ * - It uses `includes/database.php` for database connection and `includes/functions.php` for helper functions.
  */
 
 session_start();
@@ -20,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = trim($_POST['description'] ?? '');
         $host = trim($_POST['host'] ?? '');
         $genre = trim($_POST['genre'] ?? '');
-        $max_file_size_mb = (int)($_POST['max_file_size_mb'] ?? 100);
+        $max_file_size_mb = 200; // Fixed 200MB limit for all playlists
         $active = isset($_POST['active']) && $_POST['active'] === '1';
         
         // Validation
@@ -30,9 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Playlist name is required';
         }
         
-        if ($max_file_size_mb < 1 || $max_file_size_mb > 500) {
-            $errors[] = 'Max file size must be between 1 and 500 MB';
-        }
+        // No validation for max_file_size_mb since it's fixed at 200MB
         
         if (empty($errors)) {
             try {
@@ -207,52 +223,17 @@ require_once '../includes/header.php';
                                 </div>
                             </div>
 
-                            <!-- Upload Settings -->
-                            <div class="card border-info mb-3">
-                                <div class="card-header bg-info text-white">
-                                    <h6 class="mb-0"><i class="fas fa-upload"></i> Upload Settings</h6>
-                                </div>
-                                <div class="card-body">
-                                    <!-- Max File Size -->
-                                    <div class="mb-3">
-                                        <label for="max_file_size_mb" class="form-label">
-                                            <i class="fas fa-weight-hanging text-info"></i> Maximum File Size (MB)
-                                        </label>
-                                        <select class="form-select" id="max_file_size_mb" name="max_file_size_mb">
-                                            <option value="50" <?= ($_POST['max_file_size_mb'] ?? 100) == 50 ? 'selected' : '' ?>>50 MB</option>
-                                            <option value="100" <?= ($_POST['max_file_size_mb'] ?? 100) == 100 ? 'selected' : '' ?>>100 MB (Recommended)</option>
-                                            <option value="200" <?= ($_POST['max_file_size_mb'] ?? 100) == 200 ? 'selected' : '' ?>>200 MB</option>
-                                            <option value="300" <?= ($_POST['max_file_size_mb'] ?? 100) == 300 ? 'selected' : '' ?>>300 MB</option>
-                                            <option value="500" <?= ($_POST['max_file_size_mb'] ?? 100) == 500 ? 'selected' : '' ?>>500 MB (Maximum)</option>
-                                        </select>
-                                        <div class="form-text">
-                                            <i class="fas fa-info-circle"></i> 
-                                            Larger files allow longer songs but take more storage space. 
-                                            100MB is sufficient for most audio files.
-                                        </div>
-                                    </div>
-
-                                    <!-- Supported Formats Info -->
-                                    <div class="alert alert-light">
-                                        <h6><i class="fas fa-file-audio text-success"></i> Supported Audio Formats</h6>
-                                        <p class="mb-2">Your playlist supports these audio formats:</p>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <ul class="list-unstyled mb-0">
-                                                    <li><i class="fas fa-check text-success"></i> MP3 (recommended)</li>
-                                                    <li><i class="fas fa-check text-success"></i> WAV (high quality)</li>
-                                                    <li><i class="fas fa-check text-success"></i> M4A (iTunes format)</li>
-                                                </ul>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <ul class="list-unstyled mb-0">
-                                                    <li><i class="fas fa-check text-success"></i> AAC (advanced codec)</li>
-                                                    <li><i class="fas fa-check text-success"></i> OGG (open source)</li>
-                                                    <li><i class="fas fa-check text-success"></i> FLAC (lossless)</li>
-                                                </ul>
-                                            </div>
-                                        </div>
+                            <!-- Upload Information -->
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-upload text-primary"></i> Upload Information</h6>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <p class="mb-2"><strong>File Size Limit:</strong> 200MB per file</p>
+                                        <p class="mb-2"><strong>Supported Formats:</strong> MP3, WAV, M4A, AAC, OGG, FLAC</p>
                                         <small class="text-muted">All formats are automatically converted to MP3 for compatibility</small>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <i class="fas fa-file-audio fa-3x text-success opacity-25"></i>
                                     </div>
                                 </div>
                             </div>

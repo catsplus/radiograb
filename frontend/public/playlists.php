@@ -666,7 +666,7 @@ if (isset($error)): ?>
                                     <div class="mt-2">
                                         <small class="text-muted">
                                             <i class="fas fa-upload"></i> 
-                                            Max upload: <?= $playlist['max_file_size_mb'] ?>MB | 
+                                            Max upload: 200MB | 
                                             Uploads: <?= $playlist['allow_uploads'] ? 'Enabled' : 'Disabled' ?>
                                         </small>
                                     </div>
@@ -726,7 +726,7 @@ if (isset($error)): ?>
                                                 class="btn btn-success btn-sm flex-fill upload-file-btn"
                                                 data-show-id="<?= $playlist['id'] ?>"
                                                 data-show-name="<?= h($playlist['name']) ?>"
-                                                data-max-size="<?= $playlist['max_file_size_mb'] ?? 100 ?>">
+                                                data-max-size="200">
                                             <i class="fas fa-upload"></i> Upload Audio
                                         </button>
                                         <button type="button" 
@@ -739,7 +739,7 @@ if (isset($error)): ?>
                                     </div>
                                     <small class="text-muted">
                                         <i class="fas fa-info-circle"></i> 
-                                        Max size: <?= $playlist['max_file_size_mb'] ?? 100 ?>MB | 
+                                        Max size: 200MB | 
                                         Supports: MP3, WAV, M4A, AAC, OGG, FLAC
                                     </small>
                                 </div>
