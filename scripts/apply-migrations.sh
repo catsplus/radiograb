@@ -26,10 +26,12 @@ fi
 # Apply migrations in order
 for MIGRATION_FILE in $(ls "$MIGRATIONS_DIR"/*.sql | sort); do
     echo "Applying migration: $(basename "$MIGRATION_FILE")"
-    if docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 radiograb < "$MIGRATION_FILE"; then
+    # Run migration and capture both stdout and stderr
+    if docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 radiograb < "$MIGRATION_FILE" 2>&1; then
         echo "   ✅ Migration applied successfully"
     else
-        echo "   ⚠️  Migration failed or already applied"
+        echo "   ❌ Migration failed: $?"
+        # Don't exit on failure - some migrations might already be applied
     fi
 done
 
