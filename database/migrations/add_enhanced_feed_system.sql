@@ -55,12 +55,13 @@ CREATE TABLE station_feeds (
 
 -- Enhanced shows table for RSS metadata
 -- Add RSS-specific fields to existing shows table
-ALTER TABLE shows ADD COLUMN IF NOT EXISTS feed_title VARCHAR(255) NULL;
-ALTER TABLE shows ADD COLUMN IF NOT EXISTS feed_description TEXT NULL;
-ALTER TABLE shows ADD COLUMN IF NOT EXISTS feed_image_url VARCHAR(500) NULL;
-ALTER TABLE shows ADD COLUMN IF NOT EXISTS feed_category VARCHAR(100) NULL DEFAULT 'Arts';
-ALTER TABLE shows ADD COLUMN IF NOT EXISTS feed_explicit ENUM('yes', 'no', 'clean') NULL DEFAULT 'no';
-ALTER TABLE shows ADD COLUMN IF NOT EXISTS feed_author VARCHAR(255) NULL;
+-- Use separate statements to avoid IF NOT EXISTS issues in MySQL 8.0
+ALTER TABLE shows ADD COLUMN feed_title VARCHAR(255) NULL;
+ALTER TABLE shows ADD COLUMN feed_description TEXT NULL;
+ALTER TABLE shows ADD COLUMN feed_image_url VARCHAR(500) NULL;
+ALTER TABLE shows ADD COLUMN feed_category VARCHAR(100) NULL DEFAULT 'Arts';
+ALTER TABLE shows ADD COLUMN feed_explicit ENUM('yes', 'no', 'clean') NULL DEFAULT 'no';
+ALTER TABLE shows ADD COLUMN feed_author VARCHAR(255) NULL;
 
 -- Feed generation tracking
 CREATE TABLE feed_generation_log (
