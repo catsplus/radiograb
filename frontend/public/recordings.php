@@ -466,6 +466,31 @@ require_once '../includes/header.php';
     </div>
 
     <?php
-$additional_js = '<script src="/assets/js/radiograb.js"></script>';
+$additional_js = '<script src="/assets/js/radiograb.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Additional binding for delete recording buttons to ensure they work
+    document.querySelectorAll(".delete-recording").forEach(btn => {
+        btn.addEventListener("click", function(e) {
+            e.preventDefault();
+            const recordingId = this.dataset.recordingId;
+            const recordingTitle = this.dataset.recordingTitle;
+            
+            if (!recordingId) {
+                console.error("Missing recording ID");
+                return;
+            }
+            
+            // Update modal content
+            document.getElementById("deleteRecordingId").value = recordingId;
+            document.getElementById("recordingTitle").textContent = recordingTitle || "this recording";
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById("deleteModal"));
+            modal.show();
+        });
+    });
+});
+</script>';
 require_once '../includes/footer.php';
 ?>

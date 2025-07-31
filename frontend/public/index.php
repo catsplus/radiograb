@@ -17,8 +17,18 @@ try {
     $stats = [
         'stations' => $db->fetchOne("SELECT COUNT(*) as count FROM stations WHERE status = 'active'")['count'],
         'shows' => $db->fetchOne("SELECT COUNT(*) as count FROM shows WHERE active = 1")['count'],
-        'recordings' => $db->fetchOne("SELECT COUNT(*) as count FROM recordings")['count'],
-        'total_size' => $db->fetchOne("SELECT COALESCE(SUM(file_size_bytes), 0) as size FROM recordings")['size']
+        'recordings' => $db->fetchOne("
+            SELECT COUNT(*) as count 
+            FROM recordings r 
+            JOIN shows s ON r.show_id = s.id 
+            WHERE s.show_type != 'playlist' AND r.source_type != 'uploaded'
+        ")['count'],
+        'total_size' => $db->fetchOne("
+            SELECT COALESCE(SUM(r.file_size_bytes), 0) as size 
+            FROM recordings r 
+            JOIN shows s ON r.show_id = s.id 
+            WHERE s.show_type != 'playlist' AND r.source_type != 'uploaded'
+        ")['size']
     ];
     
     // Recent recordings (exclude playlist uploads)
