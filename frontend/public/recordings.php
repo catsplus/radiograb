@@ -1,6 +1,25 @@
 <?php
 /**
  * RadioGrab - Recordings Management and Player
+ *
+ * This file provides the web interface for browsing, playing, and managing recorded
+ * radio shows. It includes functionalities for filtering, sorting, downloading,
+ * and deleting recordings.
+ *
+ * Key Variables:
+ * - `$show_id`: Filter recordings by a specific show ID.
+ * - `$station_id`: Filter recordings by a specific station ID.
+ * - `$search`: Search term for recording titles, show names, or station names.
+ * - `$sort`: The column to sort recordings by (e.g., `recorded_at`, `title`).
+ * - `$order`: The sort order (`asc` or `desc`).
+ * - `$recordings`: An array of recording data retrieved from the database.
+ * - `$total_count`: The total number of recordings matching the filters.
+ * - `$total_pages`: The total number of pages for pagination.
+ *
+ * Inter-script Communication:
+ * - This script interacts with the database to fetch recording, show, and station data.
+ * - It uses `includes/database.php` for database connection and `includes/functions.php` for helper functions.
+ * - JavaScript functions in `assets/js/radiograb.js` handle audio playback and deletion confirmation.
  */
 
 session_start();
@@ -290,7 +309,7 @@ require_once '../includes/header.php';
                                     <!-- Audio Player -->
                                     <div class="col-md-6">
                                         <?php if (recordingFileExists($recording['filename'])): ?>
-                                            <div class="player-controls">
+                                            <div class="audio-player">
                                                 <audio class="d-none" preload="metadata">
                                                     <source src="<?= getRecordingUrl($recording['filename']) ?>" type="audio/mpeg">
                                                     Your browser does not support the audio element.
