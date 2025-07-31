@@ -41,7 +41,7 @@ body {
 
 /* Statistics cards */
 .bg-primary {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    background: var(--brand-color) !important;
 }
 
 .bg-success {
@@ -77,7 +77,7 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    background: var(--brand-color);
     border: none;
 }
 

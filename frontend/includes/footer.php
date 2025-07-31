@@ -12,8 +12,8 @@
         <div class="container">
             <div class="row">
                 <div class="col text-center text-muted">
-                    <small>
-                        RadioGrab - Radio Recorder | 
+                                        <small>
+                        <?= h(get_setting('footer_text', '&copy; 2025 RadioGrab. All rights reserved.')) ?> | 
                         Version: <?= getVersionNumber() ?>
                     </small>
                 </div>

@@ -307,4 +307,19 @@ function getVersionNumber() {
     
     return 'v2.13.0'; // Final fallback
 }
+
+/**
+ * Check if user is logged in
+ */
+function is_logged_in() {
+    return isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true;
+}
+
+/**
+ * Get CSRF token input field
+ */
+function get_csrf_input() {
+    $token = generateCSRFToken();
+    return '<input type="hidden" name="csrf_token" value="' . h($token) . '">';
+}
 ?>

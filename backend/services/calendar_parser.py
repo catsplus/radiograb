@@ -743,11 +743,18 @@ class CalendarParser:
         return None
     
     def _parse_ical_schedule(self, content: bytes) -> List[ShowSchedule]:
-        """Parse iCal/ICS calendar format"""
+        """Parse iCal/ICS calendar format with proper timezone and duration handling"""
         shows = []
         
         try:
             cal = icalendar.Calendar.from_ical(content)
+            
+            # Import timezone handling
+            import pytz
+            from datetime import datetime, timedelta
+            
+            # Use US/Eastern as default timezone for radio stations
+            eastern = pytz.timezone('US/Eastern')
             
             for component in cal.walk():
                 if component.name == "VEVENT":
@@ -757,8 +764,52 @@ class CalendarParser:
                         dtend = component.get('dtend')
                         
                         if name and dtstart:
-                            start_time = dtstart.dt.time() if hasattr(dtstart.dt, 'time') else None
-                            end_time = dtend.dt.time() if dtend and hasattr(dtend.dt, 'time') else None
+                            # Handle timezone conversion properly
+                            start_dt = dtstart.dt
+                            if hasattr(start_dt, 'time'):  # It's a datetime object
+                                # Convert to Eastern timezone
+                                if start_dt.tzinfo is None:
+                                    # If no timezone, assume it's already in Eastern
+                                    start_dt = eastern.localize(start_dt)
+                                else:
+                                    # Convert to Eastern timezone
+                                    start_dt = start_dt.astimezone(eastern)
+                                
+                                start_time = start_dt.time()
+                            else:
+                                # It's a date object, can't extract time
+                                continue
+                            
+                            # Handle end time and duration with timezone conversion
+                            end_time = None
+                            duration_minutes = None
+                            
+                            if dtend:
+                                end_dt = dtend.dt
+                                if hasattr(end_dt, 'time'):  # It's a datetime object
+                                    # Convert to Eastern timezone
+                                    if end_dt.tzinfo is None:
+                                        end_dt = eastern.localize(end_dt)
+                                    else:
+                                        end_dt = end_dt.astimezone(eastern)
+                                    
+                                    end_time = end_dt.time()
+                                    
+                                    # Calculate duration in minutes
+                                    duration = end_dt - start_dt
+                                    duration_minutes = int(duration.total_seconds() / 60)
+                            
+                            # Check for DURATION property as alternative to DTEND
+                            if not end_time and component.get('duration'):
+                                duration_prop = component.get('duration')
+                                if duration_prop:
+                                    duration_td = duration_prop.dt
+                                    duration_minutes = int(duration_td.total_seconds() / 60)
+                                    
+                                    # Calculate end time from start time + duration
+                                    start_datetime = datetime.combine(datetime.today(), start_time)
+                                    end_datetime = start_datetime + timedelta(minutes=duration_minutes)
+                                    end_time = end_datetime.time()
                             
                             # Determine days from recurrence rules or single event
                             days = self._extract_days_from_ical_event(component)
@@ -769,9 +820,11 @@ class CalendarParser:
                                     start_time=start_time,
                                     end_time=end_time,
                                     days=days,
-                                    description=str(component.get('description', ''))
+                                    description=str(component.get('description', '')),
+                                    duration_minutes=duration_minutes
                                 )
                                 shows.append(show)
+                                logger.debug(f"iCal: Added {name} at {start_time} for {duration_minutes}min on {days}")
                     
                     except Exception as e:
                         logger.debug(f"Error parsing iCal event: {e}")

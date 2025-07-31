@@ -74,8 +74,8 @@ if (isset($error)): ?>
         <!-- Page Header -->
         <div class="row mb-4">
             <div class="col">
-                <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
-                <p class="text-muted">Welcome to RadioGrab, your personal radio recording system</p>
+                <h1><i class="fas fa-tachometer-alt"></i> <?= h(get_setting('site_title', 'RadioGrab')) ?></h1>
+                <p class="text-muted"><?= h(get_setting('site_tagline', 'Your Personal Radio Recorder')) ?></p>
             </div>
             <div class="col-auto">
                 <a href="/add-station.php" class="btn btn-primary">

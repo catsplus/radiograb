@@ -2,10 +2,11 @@
 /**
  * RadioGrab - Shared Header Template
  */
+require_once 'branding.php'; // Load branding functions
 
 // If title is not set, use default
 if (!isset($page_title)) {
-    $page_title = 'RadioGrab';
+    $page_title = get_setting('site_title', 'RadioGrab');
 }
 
 // If active_nav is not set, try to determine from current page
@@ -40,10 +41,18 @@ if (!isset($active_nav)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= h($page_title) ?> - RadioGrab</title>
+    <title><?= h($page_title) ?> - <?= h(get_setting('site_title', 'RadioGrab')) ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/assets/css/radiograb.css" rel="stylesheet">
+    <style>
+        :root {
+            --brand-color: <?= h(get_setting('brand_color', '#343a40')); ?>;
+        }
+        .bg-primary {
+            background-color: var(--brand-color) !important;
+        }
+    </style>
     <?php if (isset($additional_css)): ?>
         <?= $additional_css ?>
     <?php endif; ?>
@@ -53,7 +62,8 @@ if (!isset($active_nav)) {
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-radio"></i> RadioGrab
+                <img src="<?= h(get_setting('site_logo', '/assets/images/radiograb-logo.png')) ?>" alt="<?= h(get_setting('site_title', 'RadioGrab')) ?> Logo" style="max-height: 30px; margin-right: 10px;">
+                <?= h(get_setting('site_title', 'RadioGrab')) ?>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
