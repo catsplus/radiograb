@@ -96,50 +96,13 @@ function getFeedUrl($show_id) {
     return "/api/feeds.php?show_id=$show_id";
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RSS Feeds - RadioGrab</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="/assets/css/radiograb.css" rel="stylesheet">
-</head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-radio"></i> RadioGrab
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/stations.php">Stations</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/shows.php">Shows</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/playlists.php">Playlists</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/recordings.php">Recordings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/feeds.php">RSS Feeds</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+<?php
+// Set page variables for shared template
+$page_title = 'RSS Feeds';
+$active_nav = 'feeds';
+
+require_once '../includes/header.php';
+?>
 
     <!-- Flash Messages -->
     <?php foreach (getFlashMessages() as $flash): ?>
@@ -369,118 +332,7 @@ function getFeedUrl($show_id) {
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="/assets/js/radiograb.js"></script>
-    <script>
-        // Copy feed URL functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.copy-feed-url').forEach(button => {
-                button.addEventListener('click', function() {
-                    const feedUrl = this.dataset.feedUrl;
-                    
-                    // Try modern clipboard API first
-                    if (navigator.clipboard && window.isSecureContext) {
-                        navigator.clipboard.writeText(feedUrl).then(function() {
-                            showCopySuccess(button);
-                        }).catch(function(err) {
-                            console.warn('Clipboard API failed, falling back to legacy method:', err);
-                            fallbackCopyTextToClipboard(feedUrl, button);
-                        });
-                    } else {
-                        // Fallback for HTTP or older browsers
-                        fallbackCopyTextToClipboard(feedUrl, button);
-                    }
-                });
-            });
-            
-            function showCopySuccess(button) {
-                const originalIcon = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-check"></i>';
-                button.classList.add('btn-success');
-                button.classList.remove('btn-outline-secondary');
-                setTimeout(() => {
-                    button.innerHTML = originalIcon;
-                    button.classList.remove('btn-success');
-                    button.classList.add('btn-outline-secondary');
-                }, 2000);
-            }
-            
-            function fallbackCopyTextToClipboard(text, button) {
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                textArea.style.position = "fixed";
-                textArea.style.top = "-1000px";
-                textArea.style.left = "-1000px";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                
-                try {
-                    const successful = document.execCommand('copy');
-                    if (successful) {
-                        showCopySuccess(button);
-                    } else {
-                        console.error('Fallback copy failed');
-                        showCopyError(button);
-                    }
-                } catch (err) {
-                    console.error('Fallback copy error:', err);
-                    showCopyError(button);
-                }
-                
-                document.body.removeChild(textArea);
-            }
-            
-            function showCopyError(button) {
-                const originalIcon = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-times"></i>';
-                button.classList.add('btn-danger');
-                button.classList.remove('btn-outline-secondary');
-                setTimeout(() => {
-                    button.innerHTML = originalIcon;
-                    button.classList.remove('btn-danger');
-                    button.classList.add('btn-outline-secondary');
-                }, 2000);
-            }
-
-            // QR code modal
-            const qrModal = document.getElementById('qrModal');
-            qrModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const feedUrl = button.getAttribute('data-feed-url');
-                const showName = button.getAttribute('data-show-name');
-                
-                document.getElementById('qrShowName').textContent = showName;
-                
-                // Clear previous QR code
-                const qrContainer = document.getElementById('qrcode');
-                qrContainer.innerHTML = '';
-                
-                // Generate new QR code
-                QRCode.toCanvas(qrContainer, feedUrl, {
-                    width: 256,
-                    margin: 2
-                }, function(error) {
-                    if (error) console.error(error);
-                });
-            });
-        });
-    </script>
-
-    <!-- Footer -->
-    <footer class="bg-light mt-5 py-3">
-        <div class="container">
-            <div class="row">
-                <div class="col text-center text-muted">
-                    <small>
-                        RadioGrab - Radio Recorder | 
-                        Version: <?= getVersionNumber() ?>
-                    </small>
-                </div>
-            </div>
-        </div>
-    </footer>
-</body>
-</html>
+    <?php
+$additional_js = '<script src="/assets/js/radiograb.js"></script>';
+require_once '../includes/footer.php';
+?>

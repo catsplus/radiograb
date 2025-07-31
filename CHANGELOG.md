@@ -1,5 +1,22 @@
 # RadioGrab Changelog
 
+## [2.12.1] - 2025-07-30 - Frontend Refactoring
+
+### 🧹 Frontend Code Cleanup
+- **Shared Header/Footer**: Refactored multiple pages to use centralized `header.php` and `footer.php` includes. This improves maintainability and ensures a consistent look and feel across the application.
+- **Affected Pages**: 
+  - `add-playlist.php`
+  - `add-show.php`
+  - `add-station.php`
+  - `admin-metadata.php`
+  - `edit-show.php`
+  - `feeds.php`
+  - `manage-ttl.php`
+  - `recordings.php`
+  - `schedule-test.php`
+  - `settings.php`
+- **Code Consistency**: Removed redundant HTML boilerplate from individual files, making the codebase cleaner and easier to manage.
+
 ## [2.12.0] - 2025-07-29 - Logo & Social Media System
 
 ### 🎨 Visual Enhancement System

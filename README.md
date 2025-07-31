@@ -39,6 +39,7 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **On-Demand Recording**: Manual 1-hour recordings with quality validation
 
 ### 🔧 **Technical Features**
+- **Frontend Refactoring**: Centralized header and footer includes for improved maintainability and a consistent UI across all pages.
 - **MP3 Metadata Service**: Automated metadata writing with FFmpeg integration for comprehensive audio tagging
 - **Upload Service Architecture**: Audio file validation, format conversion, and playlist integration
 - **Database Schema Extensions**: New fields for playlist support, track ordering, and metadata management
