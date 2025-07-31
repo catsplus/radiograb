@@ -7,6 +7,137 @@ session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
 
+/**
+ * Convert schedule pattern to human-readable format
+ */
+function formatSchedulePattern($pattern) {
+    if (empty($pattern)) {
+        return '';
+    }
+    
+    // Handle the "HH:MM:SS on day, day, day" format
+    if (preg_match('/^(\d{2}):(\d{2}):(\d{2}) on (.+)$/', $pattern, $matches)) {
+        $hour = (int)$matches[1];
+        $minute = (int)$matches[2];
+        $days_str = $matches[4];
+        
+        // Convert to 12-hour format
+        $time_12hr = formatTime12Hour($hour, $minute);
+        
+        // Parse days
+        $days = array_map('trim', explode(',', $days_str));
+        $formatted_days = formatDaysList($days);
+        
+        return "{$formatted_days} at {$time_12hr}";
+    }
+    
+    // Handle cron format: "minute hour day month day_of_week"
+    if (preg_match('/^(\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*|[\d,\-]+)$/', $pattern, $matches)) {
+        $minute = $matches[1];
+        $hour = $matches[2];
+        $day_of_week = $matches[5];
+        
+        if ($minute === '*' || $hour === '*') {
+            return 'Complex schedule';
+        }
+        
+        $time_12hr = formatTime12Hour((int)$hour, (int)$minute);
+        
+        // Convert day of week from cron format
+        $days_text = formatCronDays($day_of_week);
+        
+        return "{$days_text} at {$time_12hr}";
+    }
+    
+    // If pattern doesn't match expected formats, return as is
+    return $pattern;
+}
+
+/**
+ * Convert hour/minute to 12-hour format
+ */
+function formatTime12Hour($hour, $minute) {
+    if ($hour == 0) {
+        return sprintf("12:%02d AM", $minute);
+    } elseif ($hour < 12) {
+        return sprintf("%d:%02d AM", $hour, $minute);
+    } elseif ($hour == 12) {
+        return sprintf("12:%02d PM", $minute);
+    } else {
+        return sprintf("%d:%02d PM", $hour - 12, $minute);
+    }
+}
+
+/**
+ * Format a list of day names
+ */
+function formatDaysList($days) {
+    $day_map = [
+        'monday' => 'Mondays', 'tuesday' => 'Tuesdays', 'wednesday' => 'Wednesdays',
+        'thursday' => 'Thursdays', 'friday' => 'Fridays', 'saturday' => 'Saturdays', 'sunday' => 'Sundays'
+    ];
+    
+    $formatted = [];
+    foreach ($days as $day) {
+        $day_lower = strtolower($day);
+        $formatted[] = $day_map[$day_lower] ?? ucfirst($day);
+    }
+    
+    if (count($formatted) == 1) {
+        return $formatted[0];
+    } elseif (count($formatted) == 2) {
+        return $formatted[0] . ' and ' . $formatted[1];
+    } else {
+        return implode(', ', array_slice($formatted, 0, -1)) . ', and ' . end($formatted);
+    }
+}
+
+/**
+ * Format cron day of week values to human readable
+ */
+function formatCronDays($day_of_week) {
+    if ($day_of_week === '*') {
+        return 'Every day';
+    }
+    
+    $day_map = [
+        '0' => 'Sundays', '1' => 'Mondays', '2' => 'Tuesdays', '3' => 'Wednesdays',
+        '4' => 'Thursdays', '5' => 'Fridays', '6' => 'Saturdays'
+    ];
+    
+    // Handle ranges like "1-5"
+    if (preg_match('/^(\d+)-(\d+)$/', $day_of_week, $matches)) {
+        $start = (int)$matches[1];
+        $end = (int)$matches[2];
+        
+        if ($start == 1 && $end == 5) {
+            return 'Weekdays';
+        } elseif ($start == 0 && $end == 6) {
+            return 'Every day';
+        }
+    }
+    
+    // Handle comma-separated values like "0,6"
+    if (strpos($day_of_week, ',') !== false) {
+        $days = explode(',', $day_of_week);
+        $day_names = [];
+        foreach ($days as $day) {
+            $day_names[] = $day_map[trim($day)] ?? 'Unknown';
+        }
+        
+        if (count($day_names) == 1) {
+            return $day_names[0];
+        } elseif (count($day_names) == 2) {
+            return $day_names[0] . ' and ' . $day_names[1];
+        } else {
+            return implode(', ', array_slice($day_names, 0, -1)) . ', and ' . end($day_names);
+        }
+    }
+    
+    // Single day
+    return $day_map[$day_of_week] ?? 'Unknown';
+}
+
 // Handle show actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -429,11 +560,20 @@ require_once '../includes/header.php';
                                         </div>
                                     </div>
                                     
-                                    <?php if ($show['schedule_description']): ?>
+                                    <?php 
+                                    // Display schedule description or generate from pattern
+                                    $schedule_display = '';
+                                    if ($show['schedule_description']) {
+                                        $schedule_display = $show['schedule_description'];
+                                    } elseif ($show['schedule_pattern']) {
+                                        $schedule_display = formatSchedulePattern($show['schedule_pattern']);
+                                    }
+                                    
+                                    if ($schedule_display): ?>
                                         <div class="mt-2">
                                             <small class="text-muted">
                                                 <i class="fas fa-calendar"></i> 
-                                                <?= h($show['schedule_description']) ?>
+                                                <?= h($schedule_display) ?>
                                             </small>
                                         </div>
                                     <?php endif; ?>
