@@ -1,3 +1,20 @@
+"""
+Provides a generic, pattern-based API for parsing radio station calendars.
+
+This script is designed to be called from the command line and returns a JSON
+object containing the parsed schedule. It uses a variety of strategies to find
+and parse schedule information, including JavaScript-aware parsing, WordPress API
+endpoints, and direct HTML table parsing.
+
+Key Variables:
+- `station_url`: The URL of the station's website to be parsed.
+
+Inter-script Communication:
+- This script is called by the frontend API to discover station schedules.
+- It uses `js_calendar_parser.py` for JavaScript-aware parsing.
+- It does not directly interact with the database, but provides data to other
+  scripts that do.
+"""
 #!/usr/bin/env python3
 """
 Generic Calendar Parser API for RadioGrab

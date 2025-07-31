@@ -1,6 +1,21 @@
 """
-Database configuration for RadioGrab
+Configures the database connection and provides session management.
+
+This script sets up the SQLAlchemy engine and sessionmaker, defining the connection
+to the MySQL database using environment variables. It also provides a base class
+for ORM models and a utility function to get a database session.
+
+Key Variables:
+- `DB_HOST`: The database host.
+- `DB_PORT`: The database port.
+- `DB_USER`: The database username.
+- `DB_PASSWORD`: The database password.
+- `DB_NAME`: The database name.
+
+Inter-script Communication:
+- This script is imported by all other Python scripts that need to interact with the database.
 """
+
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base

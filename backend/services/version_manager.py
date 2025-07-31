@@ -1,3 +1,18 @@
+"""
+Manages the application's version information stored in the database.
+
+This service is responsible for retrieving, setting, and auto-incrementing the version
+number. The version is stored in the `system_info` table in the database.
+
+Key Variables:
+- `version`: The version string (e.g., 'v2.12.0').
+- `description`: A description of the changes in the version.
+
+Inter-script Communication:
+- This script is not directly called by other services but is used as a command-line tool
+  to manage the application version during development and deployment.
+- It interacts with the database through `backend/config/database.py`.
+"""
 #!/usr/bin/env python3
 """
 RadioGrab Version Management Service

@@ -1,7 +1,22 @@
 #!/usr/bin/env python3
 """
-Housekeeping Service for RadioGrab
-Performs regular maintenance tasks like cleaning up empty recordings
+"""
+Performs regular cleanup of old recordings and temporary files.
+
+This service is designed to be run as a cron job to keep the system tidy.
+It removes expired recordings based on their TTL (Time To Live) settings and
+deletes old files from the temporary directory.
+
+Key Variables:
+- `retention_days`: The number of days to keep recordings.
+- `temp_file_age_hours`: The age in hours after which temporary files are deleted.
+
+Inter-script Communication:
+- This script is typically run as a cron job.
+- It interacts with the `Recording` model from `backend/models/station.py`.
+- It uses the database session from `backend/config/database.py`.
+"""
+
 """
 
 import os

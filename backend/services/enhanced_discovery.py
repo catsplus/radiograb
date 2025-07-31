@@ -1,7 +1,18 @@
 """
-Enhanced Station Discovery Service
-Improved discovery that looks deeper for streaming URLs
+Discovers streaming URLs for radio stations with enhanced, deeper searching.
+
+This service uses multiple strategies to find streaming URLs, including scanning
+the main page, dedicated listen pages, JavaScript variables, and common streaming
+endpoints. It is designed to be more robust than the basic discovery methods.
+
+Key Variables:
+- `website_url`: The URL of the station's website.
+
+Inter-script Communication:
+- This script is used by the frontend API and other services to find stream URLs.
+- It does not directly interact with the database.
 """
+
 import requests
 from bs4 import BeautifulSoup
 import re

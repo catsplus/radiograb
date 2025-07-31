@@ -1,4 +1,21 @@
-#!/usr/bin/env python3
+"""
+Manages Time-to-Live (TTL) for recordings, including automatic expiration and cleanup.
+
+This service calculates expiry dates for recordings based on show retention policies
+or individual recording overrides. It can identify and clean up expired recordings,
+and also provides functionality to extend recording TTLs.
+
+Key Variables:
+- `recording_id`: The ID of the recording to manage.
+- `show_id`: The ID of the show to manage.
+- `ttl_value`: The numeric value for the TTL (e.g., 30).
+- `ttl_type`: The unit for the TTL (e.g., 'days', 'weeks', 'months', 'indefinite').
+
+Inter-script Communication:
+- This script is typically run as a cron job for cleanup.
+- It interacts with the `Recording` and `Show` models from `backend/models/station.py`.
+- It uses `file_manager.py` to delete physical recording files.
+"""
 """
 TTL (Time-to-Live) Manager for RadioGrab
 Handles automatic expiration and cleanup of recordings

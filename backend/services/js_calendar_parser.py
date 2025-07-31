@@ -1,3 +1,20 @@
+"""
+Parses radio station calendars that require JavaScript to render.
+
+This service extends the base `CalendarParser` to handle dynamic web pages.
+It uses Selenium WebDriver to control a headless Chrome browser, allowing it to
+execute JavaScript and parse the fully rendered HTML.
+
+Key Variables:
+- `station_url`: The URL of the station's schedule page.
+- `station_id`: The database ID of the station.
+- `driver`: The Selenium WebDriver instance.
+
+Inter-script Communication:
+- This script is called by `schedule_verification_service.py` to parse station schedules.
+- It inherits from `calendar_parser.py` and uses its helper methods.
+- It interacts with the `Station` model from `backend/models/station.py`.
+"""
 #!/usr/bin/env python3
 """
 JavaScript-Aware Calendar Parser Service

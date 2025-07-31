@@ -1,3 +1,21 @@
+"""
+Extracts show schedules from radio station websites.
+
+This service provides the core functionality for parsing station schedules from
+various formats, including HTML tables, JSON, iCal, and XML. It uses a variety
+of strategies to discover schedule URLs and extract show information.
+
+Key Variables:
+- `station_url`: The URL of the station's website.
+- `station_id`: The database ID of the station.
+
+Inter-script Communication:
+- This script is the base class for `js_calendar_parser.py`.
+- It is used by various services, including `schedule_verification_service.py`,
+  to retrieve schedule information.
+- It interacts with the `Station` model from `backend/models/station.py` to
+  cache successful parsing methods.
+"""
 #!/usr/bin/env python3
 """
 Calendar Parser Service

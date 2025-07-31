@@ -1,7 +1,22 @@
 #!/usr/bin/env python3
 """
-MP3 Metadata Service
-Handles writing MP3 metadata for recorded and uploaded audio files
+"""
+Reads and writes MP3 metadata (ID3 tags) to audio files.
+
+This service uses the `mutagen` library to handle ID3 tags. It can write
+metadata such as title, artist, album, and genre to MP3 files, and can also
+be used to read existing metadata from files.
+
+Key Variables:
+- `file_path`: The path to the MP3 file.
+- `metadata`: A dictionary containing the metadata to be written.
+
+Inter-script Communication:
+- This script is used by `recording_service.py` and `upload_service.py` to
+  add metadata to audio files.
+- It interacts with the `Recording` and `Show` models from `backend/models/station.py`.
+"""
+
 """
 
 import os

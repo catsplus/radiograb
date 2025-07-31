@@ -1,7 +1,20 @@
 """
-Show Schedules Manager
-Manages multiple schedule patterns for shows (original + repeat airings)
+Manages multiple schedule patterns for shows, including original and repeat airings.
+
+This service allows for the storage and retrieval of multiple schedule entries
+for a single show, enabling more complex scheduling scenarios. It can parse
+natural language descriptions of multiple airings and store them in the database.
+
+Key Variables:
+- `show_id`: The database ID of the show.
+- `schedule_text`: The natural language text describing the schedule.
+
+Inter-script Communication:
+- This script is used by `show_manager.py` to handle complex schedules.
+- It uses `multiple_airings_parser.py` to parse multiple airings from text.
+- It interacts with the `Show` and `ShowSchedule` models from `backend/models/station.py`.
 """
+
 import logging
 from typing import List, Dict, Optional, Any
 from datetime import datetime

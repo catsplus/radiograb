@@ -1,4 +1,22 @@
-#!/usr/bin/env python3
+"""
+Imports parsed calendar data into the database as shows.
+
+This service takes the schedule data extracted by the `CalendarParser` and
+creates or updates show entries in the database. It can automatically create
+new shows, update existing ones, and handle selective imports.
+
+Key Variables:
+- `station_id`: The database ID of the station for which to import the schedule.
+- `auto_create_shows`: A boolean indicating whether to automatically create new shows.
+- `update_existing`: A boolean indicating whether to update existing shows.
+- `selected_shows`: An optional list of shows to import selectively.
+
+Inter-script Communication:
+- This script is called by the frontend API to import schedules.
+- It uses `calendar_parser.py` to parse station schedules.
+- It uses `schedule_parser.py` to generate cron expressions and descriptions.
+- It interacts with the `Station` and `Show` models from `backend/models/station.py`.
+"""
 """
 Schedule Importer Service
 Imports parsed calendar data into the database as shows

@@ -1,4 +1,20 @@
-#!/usr/bin/env python3
+"""
+Handles short-duration test recordings and on-demand recordings.
+
+This service provides the core functionality for performing recordings using
+various tools (`streamripper`, `ffmpeg`, `wget`). It includes logic for tool
+selection, User-Agent handling, and post-processing (e.g., AAC to MP3 conversion).
+
+Key Variables:
+- `stream_url`: The URL of the stream to record.
+- `output_file`: The path to the output file for the recording.
+- `duration`: The duration of the recording in seconds.
+- `station_id`: The ID of the station associated with the recording.
+
+Inter-script Communication:
+- This script is used by `recording_service.py` and `station_auto_test.py`.
+- It interacts with the `Station` model from `backend/models/station.py` to save User-Agents.
+"""
 """
 RadioGrab Test Recording Service
 Handles short-duration test recordings and on-demand recordings

@@ -1,7 +1,21 @@
 #!/usr/bin/env python3
 """
-Simple script to parse schedule text and return JSON
-Called from PHP with schedule text as argument
+"""
+Parses natural language schedule descriptions into cron expressions.
+
+This script is a command-line tool that takes a human-readable schedule
+description (e.g., "every weekday at 8:00 AM") and converts it into a cron
+expression that can be used by the APScheduler.
+
+Key Variables:
+- `schedule_text`: The natural language schedule description.
+
+Inter-script Communication:
+- This script is called by the frontend API when adding or editing a show.
+- It uses `multiple_airings_parser.py` to handle complex schedules.
+- It does not directly interact with the database.
+"""
+
 """
 
 import sys

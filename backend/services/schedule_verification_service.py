@@ -1,3 +1,20 @@
+"""
+Verifies and updates radio station schedules on a weekly basis.
+
+This service automatically checks station websites for schedule changes.
+It compares the currently stored schedule with the newly parsed one and updates
+the database accordingly. It can add new shows, update existing ones, and deactivate
+shows that are no longer on the schedule.
+
+Key Variables:
+- `station_id`: The database ID of the station to verify.
+- `force`: A boolean to force verification even if recently checked.
+
+Inter-script Communication:
+- This script is typically run as a cron job.
+- It uses `js_calendar_parser.py` to parse station schedules.
+- It interacts with the `Station` and `Show` models from `backend/models/station.py`.
+"""
 #!/usr/bin/env python3
 """
 RadioGrab Weekly Schedule Verification Service

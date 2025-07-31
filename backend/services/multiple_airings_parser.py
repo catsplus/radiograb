@@ -1,6 +1,19 @@
 """
-Multiple Airings Schedule Parser
-Detects and parses multiple show airings (original + repeat) from schedule text
+"""
+Parses show schedules that have multiple airings in a single description.
+
+This service can understand natural language descriptions of complex schedules,
+such as "Mondays at 7 PM and Thursdays at 3 PM". It can recognize keywords like
+"original", "repeat", and "encore" to prioritize different airings.
+
+Key Variables:
+- `schedule_text`: The natural language text describing the schedule.
+
+Inter-script Communication:
+- This script is used by `schedule_parser.py` to handle complex schedules.
+- It does not directly interact with the database.
+"""
+
 """
 import re
 from typing import Dict, List, Optional, Tuple

@@ -1,4 +1,16 @@
-#!/usr/bin/env python3
+"""
+Automatically cleans up test recordings older than a specified age.
+
+This service is designed to be run periodically to remove temporary test recording
+files, preventing them from accumulating and consuming disk space.
+
+Key Variables:
+- `max_age`: The maximum age in hours for test recordings before they are deleted.
+
+Inter-script Communication:
+- This script is typically run as a cron job.
+- It uses `show_management.py` to perform the cleanup operation.
+"""
 """
 RadioGrab Test Recording Cleanup Service
 Automatically cleans up test recordings older than 4 hours

@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 """
-File Manager for RadioGrab
+"""
+Provides basic file management utilities, such as creating directories.
+
+This script is a simple helper for ensuring that necessary directories exist before
+other services attempt to write files to them.
+
+Key Variables:
+- `path`: The directory path to be created.
+
+Inter-script Communication:
+- This script is used by various services that need to write files to disk,
+  such as `recording_service.py` and `logo_storage_service.py`.
+"""
+
 Handles file operations for recordings
 """
 

@@ -1,7 +1,25 @@
 """
-Show Manager Service
-High-level service for managing radio shows and their recording schedules
+Provides high-level management for radio shows and their recording schedules.
+
+This service acts as an orchestrator for show-related operations, including
+adding, updating, deleting, and retrieving show information. It integrates
+various sub-services like schedule parsing, recording scheduling, and metadata
+detection.
+
+Key Variables:
+- `station_id`: The ID of the station associated with the show.
+- `name`: The name of the show.
+- `schedule_text`: The natural language schedule description.
+- `show_id`: The ID of the show to manage.
+
+Inter-script Communication:
+- This script is called by the frontend API to manage shows.
+- It uses `schedule_parser.py` to parse schedules.
+- It uses `recording_service.py` for recording and scheduling.
+- It uses `show_metadata_detection.py` to enrich show metadata.
+- It interacts with the `Station`, `Show`, and `Recording` models from `backend/models/station.py`.
 """
+
 from sqlalchemy.orm import Session
 from backend.config.database import SessionLocal
 from backend.models.station import Station, Show, Recording

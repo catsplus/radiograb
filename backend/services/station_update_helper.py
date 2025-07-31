@@ -1,8 +1,21 @@
 #!/usr/bin/env python3
 """
-RadioGrab Station Update Helper
-Functions to update station status when recordings succeed
+Provides utility functions for updating station information in the database.
+
+This helper script is used by other services to update specific fields of a
+station's record, such as stream URL, logo information, or calendar URL.
+
+Key Variables:
+- `station_id`: The ID of the station to update.
+- `stream_info`: A dictionary containing new stream details.
+- `logo_info`: A dictionary containing new logo details.
+- `calendar_url`: The new calendar URL.
+
+Inter-script Communication:
+- This script is used by `stream_discovery.py` and `station_auto_test.py`.
+- It interacts with the `Station` model from `backend/models/station.py`.
 """
+
 
 import sys
 import os

@@ -1,7 +1,22 @@
 """
-Station Discovery Service
-Crawls radio station websites to find streaming URLs and calendar information
+Discovers and validates radio stream URLs and other station information from various sources.
+
+This service crawls radio station websites, searches the Radio Browser API, and
+uses various heuristics to find streaming URLs, calendar URLs, logos, and other
+station details. It also tests the discovered streams for compatibility.
+
+Key Variables:
+- `website_url`: The URL of the station's website to discover.
+
+Inter-script Communication:
+- This script is used by `station_manager.py` to add and update stations.
+- It uses `stream_tester.py` to test stream compatibility.
+- It uses `social_media_detector.py` to extract social media links.
+- It uses `facebook_logo_extractor.py` to extract logos from Facebook pages.
+- It uses `logo_storage_service.py` to store logos locally.
+- It interacts with the `Station` model from `backend/models/station.py`.
 """
+
 import requests
 from bs4 import BeautifulSoup
 import re

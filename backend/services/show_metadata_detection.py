@@ -1,4 +1,19 @@
-#!/usr/bin/env python3
+"""
+Automatically extracts and enriches show metadata from multiple sources.
+
+This service attempts to find show descriptions, images, hosts, and genres by
+parsing calendar feeds and crawling station websites. It uses a fallback hierarchy
+to ensure that some metadata is always available.
+
+Key Variables:
+- `show_id`: The database ID of the show to enrich.
+- `station_id`: The database ID of the station associated with the show.
+
+Inter-script Communication:
+- This script is used by `show_manager.py` and `show_metadata_cli.py`.
+- It uses `calendar_parser.py` to extract metadata from calendar feeds.
+- It interacts with the `Station` and `Show` models from `backend/models/station.py`.
+"""
 """
 Show Metadata Auto-Detection Service
 Automatically extracts and enriches show metadata from multiple sources:

@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
 """
-RadioGrab Station Health Monitor
-Daily automated testing of all radio stations to ensure streams are working
+Monitors the health and accessibility of radio stations.
+
+This service periodically checks if station websites and stream URLs are online
+and updates their status in the database. It helps identify broken streams or
+unreachable websites.
+
+Key Variables:
+- `station_id`: The ID of the station to check.
+
+Inter-script Communication:
+- This script is typically run as a cron job.
+- It interacts with the `Station` model from `backend/models/station.py`.
 """
+
 
 import sys
 import os

@@ -1,7 +1,19 @@
 """
-Social Media Link Detection Service
-Extracts social media links from radio station websites
+Extracts social media links from radio station websites.
+
+This service crawls a given webpage and identifies links to various social media
+platforms based on predefined patterns. It returns a dictionary of detected social
+media links with their associated metadata (icon, name, color).
+
+Key Variables:
+- `soup`: A BeautifulSoup object representing the parsed HTML of the webpage.
+- `base_url`: The base URL of the webpage for resolving relative links.
+
+Inter-script Communication:
+- This script is used by `station_discovery.py` to find social media links.
+- It does not directly interact with the database.
 """
+
 import re
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse

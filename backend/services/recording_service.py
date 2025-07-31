@@ -1,3 +1,22 @@
+"""
+Handles the automatic recording of radio shows based on schedules.
+
+This service uses APScheduler to create and manage recording jobs.
+It retrieves show and station information from the database, generates filenames,
+and uses a multi-tool strategy (streamripper, ffmpeg, wget) to perform the recordings.
+It also handles post-processing, quality validation, and database updates.
+
+Key Variables:
+- `show_id`: The database ID of the show to be recorded.
+- `duration_seconds`: The length of the recording in seconds.
+- `manual`: A boolean indicating if the recording was triggered manually.
+
+Inter-script Communication:
+- This script is run as a daemon to manage the recording schedule.
+- It uses `test_recording_service.py` for the core recording logic.
+- It interacts with the `Station`, `Show`, and `Recording` models from `backend/models/station.py`.
+- It uses `mp3_metadata_service.py` to write metadata to recorded files.
+"""
 #!/usr/bin/env python3
 """
 RadioGrab Enhanced Recording Service v2.0

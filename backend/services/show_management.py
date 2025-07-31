@@ -1,8 +1,24 @@
 #!/usr/bin/env python3
 """
-RadioGrab Show Management Service
-Enhanced show management with next recordings, cleanup, and schedule analysis
+Provides enhanced show management functionalities.
+
+This service offers features such as retrieving upcoming recordings, cleaning up
+test recordings, toggling show active status, and updating show tags. It integrates
+with the recording scheduler to manage show schedules.
+
+Key Variables:
+- `limit`: The maximum number of upcoming recordings to retrieve.
+- `max_age_hours`: The age in hours after which test recordings are cleaned up.
+- `show_id`: The database ID of the show to manage.
+- `active`: A boolean indicating whether to activate or deactivate a show.
+- `tags`: Comma-separated tags for a show.
+
+Inter-script Communication:
+- This script is called by the frontend API to manage shows.
+- It uses `recording_service.py` to interact with the `RecordingScheduler`.
+- It interacts with the `Show`, `Station`, and `Recording` models from `backend/models/station.py`.
 """
+
 
 import sys
 import os

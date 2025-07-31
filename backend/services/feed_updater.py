@@ -1,3 +1,19 @@
+"""
+Updates RSS feeds when recordings are added or shows are modified.
+
+This service is triggered by other services to ensure that the RSS feeds are
+always up-to-date. It can be called when a new recording is added, a show is
+updated, or a recording is deleted.
+
+Key Variables:
+- `recording_id`: The ID of the newly added recording.
+- `show_id`: The ID of the show that was updated or had a recording deleted.
+
+Inter-script Communication:
+- This script is called by `recording_service.py` and other services.
+- It uses `rss_manager.py` to perform the actual feed updates.
+- It interacts with the `Recording` and `Show` models from `backend/models/station.py`.
+"""
 #!/usr/bin/env python3
 """
 Feed Updater Service

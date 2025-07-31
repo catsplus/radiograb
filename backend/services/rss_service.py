@@ -1,8 +1,24 @@
 #!/usr/bin/env python3
 """
-RSS Feed Generation Service
-Generates iTunes-compatible podcast RSS feeds for each show's recordings
+Generates iTunes-compatible podcast RSS feeds for each show's recordings.
+
+This service creates individual show feeds and a master feed combining all recordings.
+It fetches show, station, and recording data from the database and formats it into
+valid RSS XML, including iTunes-specific tags for podcast compatibility.
+
+Key Variables:
+- `base_url`: The base URL for the RSS feeds (e.g., `http://localhost` or `https://your-domain.com`).
+- `show_id`: The ID of the show for which to generate/update the feed.
+- `recordings`: A list of `Recording` objects associated with a show.
+- `show`: A `Show` object containing show details.
+- `station`: A `Station` object containing station details.
+
+Inter-script Communication:
+- This script is used by `rss_manager.py` to generate and update feeds.
+- It interacts with `backend.config.database.SessionLocal` to get database sessions.
+- It interacts with `backend.models.station.Station`, `Show`, and `Recording` models to fetch data.
 """
+
 
 import os
 import logging

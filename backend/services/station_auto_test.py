@@ -1,4 +1,20 @@
-#!/usr/bin/env python3
+"""
+Periodically tests all stations to verify stream availability.
+
+This service is designed to be run as a cron job to ensure that all configured
+radio station streams are still accessible and working. It performs a short
+test recording and updates the station's status in the database.
+
+Key Variables:
+- `max_age_hours`: The maximum age in hours since the last test before a station is re-tested.
+- `test_duration`: The duration of the test recording in seconds.
+
+Inter-script Communication:
+- This script is typically run as a cron job.
+- It uses `test_recording_service.py` to perform the actual test recordings.
+- It uses `stream_discovery.py` to rediscover streams for failed stations.
+- It interacts with the `Station` model from `backend/models/station.py`.
+"""
 """
 RadioGrab Automated Station Testing Service
 Periodically tests all stations to verify stream availability

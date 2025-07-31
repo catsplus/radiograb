@@ -1,7 +1,19 @@
 """
-Facebook Logo Extraction Service
-Extracts profile pictures/logos from Facebook pages
+Extracts profile pictures and logos from Facebook pages.
+
+This service is used to find a station's logo when one is not readily available
+on their website. It uses a variety of methods to find the logo, including
+checking meta tags, image tags, JSON-LD data, and inline styles.
+
+Key Variables:
+- `facebook_url`: The URL of the station's Facebook page.
+
+Inter-script Communication:
+- This script is used by the `station_manager.py` and other services to find
+  station logos.
+- It does not directly interact with the database.
 """
+
 import requests
 from bs4 import BeautifulSoup
 import re

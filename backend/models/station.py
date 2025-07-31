@@ -1,6 +1,21 @@
 """
-Database models for RadioGrab
+Defines the SQLAlchemy ORM models for the RadioGrab application.
+
+This script contains the database schema for `Station`, `Show`, `Recording`, and
+`CronJob` entities. These models represent the core data structures of the application
+and are used by various services to interact with the database.
+
+Key Models:
+- `Station`: Represents a radio station with its details and stream information.
+- `Show`: Represents a radio show with its schedule, metadata, and associated station.
+- `Recording`: Represents a recorded audio file, linked to a specific show.
+- `CronJob`: Represents a scheduled cron job for recordings.
+
+Inter-script Communication:
+- This script is imported by all other Python scripts that need to interact with the database models.
+- It relies on `backend.config.database.Base` for ORM functionality.
 """
+
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func

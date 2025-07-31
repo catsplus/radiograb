@@ -1,7 +1,22 @@
 #!/usr/bin/env python3
 """
-RSS Feed Manager
-Handles RSS feed generation, updates, and management
+"""
+Manages the generation and updating of RSS feeds for shows and recordings.
+
+This service is responsible for creating individual show feeds and a master feed
+that combines all recordings. It ensures that the feeds are up-to-date with the
+latest recordings and show information.
+
+Key Variables:
+- `base_url`: The base URL for the RSS feeds.
+- `show_id`: The ID of the show for which to update the feed.
+
+Inter-script Communication:
+- This script is called by `feed_updater.py` to update feeds.
+- It uses `rss_service.py` to generate individual RSS feeds.
+- It interacts with the `Recording` and `Show` models from `backend/models/station.py`.
+"""
+
 """
 
 import os

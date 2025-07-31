@@ -1,4 +1,18 @@
-#!/usr/bin/env python3
+"""
+Provides fixes and enhancements for common stream testing issues.
+
+This service includes strategies for handling HTTP 403 errors by rotating User-Agents,
+discovering alternative stream URLs, and verifying recording tool paths.
+
+Key Variables:
+- `stream_url`: The URL of the stream to test.
+- `duration`: The duration of the test recording in seconds.
+- `station_id`: The ID of the station for User-Agent persistence.
+
+Inter-script Communication:
+- This script is used by `station_auto_test.py`.
+- It interacts with the `Station` model from `backend/models/station.py` to save User-Agents.
+"""
 """
 Stream Testing Fixes and Enhancements
 Collection of fixes for common stream testing issues and improved discovery methods

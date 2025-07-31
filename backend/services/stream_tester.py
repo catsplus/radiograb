@@ -1,4 +1,19 @@
-#!/usr/bin/env python3
+"""
+Tests stream URLs for compatibility with various recording tools.
+
+This service performs comprehensive or quick tests of a given stream URL using
+`streamripper`, `ffmpeg`, and `wget`. It analyzes the results to recommend the
+best tool for recording and provides detailed insights into stream quality.
+
+Key Variables:
+- `stream_url`: The URL of the stream to test.
+- `station_name`: The name of the station associated with the stream.
+- `test_duration`: The duration of the test recording in seconds.
+
+Inter-script Communication:
+- This script is used by `station_discovery.py` and `station_auto_test.py`.
+- It does not directly interact with the database.
+"""
 """
 Stream Testing Service for RadioGrab
 Automatically tests stream URLs when adding new stations

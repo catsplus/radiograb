@@ -1,7 +1,18 @@
 """
-Schedule Parser Service
-Converts plain English scheduling requests to cron expressions
+Converts plain English scheduling requests into cron expressions.
+
+This service takes human-readable schedule descriptions (e.g., "every Tuesday at 7 PM")
+and translates them into cron expressions that can be used by the APScheduler.
+It also generates human-readable descriptions from cron expressions.
+
+Key Variables:
+- `schedule_text`: The natural language schedule description.
+
+Inter-script Communication:
+- This script is used by `schedule_importer.py` and `show_manager.py` to parse schedules.
+- It does not directly interact with the database.
 """
+
 import re
 from datetime import datetime, time
 from typing import Dict, List, Optional, Tuple

@@ -1,6 +1,21 @@
 """
-Logo Storage Service
-Downloads and stores station logos locally for improved performance and reliability
+"""
+Manages the local storage of station logos.
+
+This service downloads station logos from their websites or Facebook pages,
+resizes and optimizes them, and stores them locally. This ensures consistent
+performance and avoids hotlinking to external images.
+
+Key Variables:
+- `station_id`: The database ID of the station.
+- `logo_url`: The URL of the logo to be downloaded.
+
+Inter-script Communication:
+- This script is used by `station_manager.py` and other services to manage logos.
+- It uses `facebook_logo_extractor.py` to find logos on Facebook.
+- It interacts with the `Station` model from `backend/models/station.py`.
+"""
+
 """
 import os
 import requests

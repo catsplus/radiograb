@@ -1,8 +1,20 @@
 #!/usr/bin/env python3
 """
-RadioGrab Schedule Manager
-Utility functions for managing show schedules and integrating with the recording service
+Manages the integration between the web interface and the recording scheduler.
+
+This service provides utility functions for adding, updating, and removing show
+schedules from the `RecordingScheduler`. It also allows for refreshing all
+schedules and retrieving the current scheduling status.
+
+Key Variables:
+- `show_id`: The database ID of the show to manage.
+
+Inter-script Communication:
+- This script is called by the frontend API to manage show schedules.
+- It uses `recording_service.py` to interact with the `RecordingScheduler`.
+- It interacts with the `Show` model from `backend/models/station.py`.
 """
+
 
 import sys
 import os

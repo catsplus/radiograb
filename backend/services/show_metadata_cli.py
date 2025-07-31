@@ -1,4 +1,20 @@
-#!/usr/bin/env python3
+"""
+Provides a command-line interface for managing show metadata detection and enrichment.
+
+This script allows users to list stations and shows, detect metadata for individual
+shows or in batches for a station, and view overall metadata status reports.
+
+Key Variables:
+- `station_id`: The ID of the station to process.
+- `show_id`: The ID of the show to process.
+- `force_update`: A boolean to force updating existing metadata.
+
+Inter-script Communication:
+- This script is a standalone CLI tool.
+- It uses `show_manager.py` to perform metadata enrichment.
+- It uses `show_metadata_detection.py` for metadata detection.
+- It interacts with the `Station` and `Show` models from `backend/models/station.py`.
+"""
 """
 Show Metadata Management CLI
 Command-line interface for managing show metadata detection and enrichment

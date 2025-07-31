@@ -13,7 +13,23 @@ from typing import Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 class StationManager:
-    """Manages radio stations and their discovery process"""
+    """
+Manages radio stations, including adding, updating, and deleting them.
+
+This service integrates with discovery services to enrich station data and
+ensures that station information is consistent and up-to-date in the database.
+
+Key Variables:
+- `name`: The name of the station.
+- `website_url`: The URL of the station's website.
+- `station_id`: The ID of the station to manage.
+
+Inter-script Communication:
+- This script is called by the frontend API to manage stations.
+- It uses `station_discovery.py` to discover station information.
+- It uses `logo_storage_service.py` to handle logo downloads and storage.
+- It interacts with the `Station`, `Show`, and `Recording` models from `backend/models/station.py`.
+"""
     
     def __init__(self):
         self.discovery = StationDiscovery()

@@ -1,3 +1,23 @@
+"""
+Handles user audio file uploads for playlists and shows.
+
+This service provides functionality for uploading, validating, and processing audio files.
+It supports various audio formats, converts them to MP3, extracts metadata, and saves
+the recording details to the database.
+
+Key Variables:
+- `file_path`: The local path to the uploaded audio file.
+- `show_id`: The database ID of the show or playlist to which the file is being uploaded.
+- `title`: An optional title for the recording.
+- `description`: An optional description for the recording.
+- `original_filename`: The original name of the uploaded file.
+
+Inter-script Communication:
+- This script is called by the frontend API endpoint `frontend/public/api/upload.php` to handle file uploads.
+- It interacts with the `MP3MetadataService` (`mp3_metadata_service.py`) to write metadata to the processed audio files.
+- It uses the `Recording` and `Show` models from `backend/models/station.py`.
+- It relies on the database session from `backend/config/database.py`.
+"""
 #!/usr/bin/env python3
 """
 Upload Service
