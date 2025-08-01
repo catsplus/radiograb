@@ -517,4 +517,103 @@ ADD COLUMN social_media_updated_at TIMESTAMP NULL;
 - **Security Headers**: Proper content-type and CORS headers
 - **Cache Optimization**: 7-day caching for static logo assets
 
+## DJ Audio Recording System
+
+### WebRTC-Based Voice Recording
+RadioGrab includes a complete browser-based voice recording system for DJ intros, outros, and station IDs:
+
+### Core Components
+- **WebRTC MediaRecorder API**: Native browser audio recording with high-quality output
+- **Professional Recording Interface**: Real-time controls with start/stop functionality and visual timer
+- **Audio Preview System**: Built-in playback before saving with metadata editing capabilities
+- **5-Minute Recording Limit**: Automatic stop with warning to prevent excessive file sizes
+- **Mobile Compatibility**: Full functionality on iOS Safari, Android Chrome, and all major mobile browsers
+
+### Technical Architecture
+```javascript
+// AudioRecorder class structure
+class AudioRecorder {
+    constructor() {
+        this.mediaRecorder = null;
+        this.audioStream = null;
+        this.audioChunks = [];
+        this.isRecording = false;
+        this.recordingStartTime = null;
+        this.playlistId = null;
+        this.maxRecordingTime = 300; // 5 minutes max
+    }
+}
+```
+
+### Recording Flow
+1. **User Initiation**: User clicks "Record Voice Clip" button from playlist interface
+2. **Browser Permission**: System requests microphone access via `navigator.mediaDevices.getUserMedia()`
+3. **Recording Setup**: Creates MediaRecorder instance with appropriate audio constraints
+4. **Real-Time Feedback**: Visual timer updates every second, progress tracking
+5. **Recording Completion**: User stops manually or system auto-stops at 5-minute limit
+6. **Audio Preview**: Built-in audio element plays recorded clip for review
+7. **Metadata Entry**: User adds title and description before saving
+8. **File Upload**: Recorded WebM audio uploaded via standard upload API with `source_type=voice_clip`
+
+### File System Integration
+- **Upload API Enhancement**: Added WebM audio format support in `/frontend/public/api/upload.php`
+- **Python Service Updates**: Modified `upload_service.py` to handle voice clip source type
+- **Database Extensions**: Extended recordings table with `source_type` differentiation
+- **File Processing**: Automatic conversion from WebM to MP3 format for consistency
+
+### Visual Differentiation
+Voice clips are visually distinguished in the interface:
+- **Green Badges**: Voice clips display with green "Voice Clip" badges
+- **Microphone Icons**: Font Awesome microphone icons for instant recognition
+- **Border Styling**: Green borders and backgrounds for voice clip tracks
+- **Source Type Display**: Clear indication of recording source in track listings
+
+### Recording Tips Integration
+The recording modal includes best practices panel:
+- **Microphone Setup**: Guidance on optimal microphone positioning
+- **Environment Tips**: Quiet room recommendations, background noise awareness
+- **Browser Compatibility**: iOS Safari, Android Chrome, desktop browser support
+- **Recording Quality**: 16kHz sample rate, mono channel recommendations
+- **Content Suggestions**: Examples for station IDs, show intros, transitions
+
+### Database Schema Extensions
+```sql
+-- Recording source type differentiation
+ALTER TABLE recordings 
+ADD COLUMN source_type VARCHAR(20) DEFAULT 'recorded' 
+  COMMENT 'Source: recorded, uploaded, voice_clip';
+
+-- Voice clip metadata tracking
+UPDATE recordings 
+SET source_type = 'voice_clip' 
+WHERE filename LIKE '%.webm' OR description LIKE '%voice%';
+```
+
+### API Endpoints
+- **Record Voice Clip**: Integration with existing upload API via `action=upload_file&source_type=voice_clip`
+- **Playlist Integration**: Voice clips automatically added to playlist with sequential track numbering
+- **Track Management**: Full drag-and-drop support, reordering works with voice clips
+- **Metadata Editing**: Standard title/description editing available for voice clips
+
+### Playlist Integration Features
+- **Seamless Ordering**: Voice clips work with existing drag-and-drop track reordering
+- **Mixed Content Support**: Playlists can contain regular uploads and voice clips together
+- **Track Numbering**: Voice clips get sequential track numbers like uploaded files
+- **RSS Feed Support**: Voice clips appear in RSS feeds with proper metadata
+- **Audio Player**: Standard web audio player works with voice clips after MP3 conversion
+
+### Mobile Compatibility
+- **iOS Safari**: Full WebRTC support with microphone access
+- **Android Chrome**: Complete functionality with optimized touch controls  
+- **Mobile UI**: Responsive design with touch-friendly recording controls
+- **Screen Rotation**: Interface adapts to landscape/portrait modes
+- **Battery Optimization**: Efficient recording with minimal battery impact
+
+### Error Handling
+- **Microphone Access Denied**: Clear error messages with troubleshooting guidance
+- **Browser Compatibility**: Graceful degradation with helpful error messages
+- **Recording Failures**: Comprehensive error handling with user-friendly explanations
+- **Upload Errors**: Network error handling with retry functionality
+- **File Size Limits**: Clear warnings when approaching recording time limits
+
 This documentation is automatically updated as system knowledge is discovered during development and maintenance.

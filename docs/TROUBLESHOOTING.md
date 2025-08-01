@@ -188,6 +188,117 @@ docker exec radiograb-web-1 ls -la /opt/radiograb/backend/services/
 docker exec radiograb-recorder-1 find /var/radiograb/recordings/ -name "*.mp3" | head -10
 ```
 
+## DJ Audio Recording Issues
+
+### "Microphone access denied" or "Permission denied"
+
+**Problem**: Browser cannot access microphone for voice recording
+**Causes**:
+1. User denied microphone permission
+2. Site not using HTTPS (required for WebRTC)
+3. Browser doesn't support WebRTC MediaRecorder API
+
+**Solutions**:
+```javascript
+// Check browser support
+if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    console.error('WebRTC not supported in this browser');
+}
+
+// Request microphone permission explicitly
+navigator.mediaDevices.getUserMedia({audio: true})
+    .then(stream => console.log('Microphone access granted'))
+    .catch(err => console.error('Microphone access denied:', err));
+```
+
+**Browser-specific fixes**:
+- **Chrome**: Click lock icon in address bar → Allow microphone
+- **Firefox**: Click shield icon → Allow microphone access
+- **Safari**: Preferences → Websites → Microphone → Allow for your domain
+- **Mobile Safari**: Settings → Safari → Camera & Microphone Access
+
+### "Recording failed" or "MediaRecorder error"
+
+**Problem**: Recording starts but fails during capture
+**Common Causes**:
+1. Browser doesn't support WebM audio format
+2. Memory constraints on mobile devices
+3. Background tab loses audio stream focus
+
+**Debugging Steps**:
+```bash
+# Check upload API logs
+docker exec radiograb-web-1 tail -20 /var/log/php8.1-fpm.log
+
+# Check for WebM files in temp directory
+docker exec radiograb-web-1 ls -la /var/radiograb/temp/ | grep webm
+
+# Verify upload service can handle WebM
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python /opt/radiograb/backend/services/upload_service.py --help
+```
+
+**Solutions**:
+- Ensure HTTPS is properly configured (required for WebRTC)
+- Test recording in different browsers
+- Check browser console for JavaScript errors
+- Verify microphone is not being used by other applications
+
+### "Upload failed: Unsupported audio format"
+
+**Problem**: Voice clip uploads fail with format errors
+**Cause**: WebM audio format not recognized by upload API
+
+**Solution**: Verify WebM support is enabled in upload.php:
+```php
+$allowed_types = [
+    'audio/mpeg', 'audio/mp3',
+    'audio/wav', 'audio/wave',
+    'audio/mp4', 'audio/m4a',
+    'audio/aac',
+    'audio/ogg',
+    'audio/flac',
+    'audio/webm'  // This line must be present
+];
+```
+
+### Voice clips not appearing in playlist
+
+**Problem**: Recording completes but doesn't show in playlist
+**Debugging**:
+```bash
+# Check if recording was saved to database
+docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 radiograb -e "SELECT id, title, source_type, filename FROM recordings WHERE source_type = 'voice_clip' ORDER BY recorded_at DESC LIMIT 5;"
+
+# Check playlist-tracks API response
+curl -s "https://radiograb.svaha.com/api/playlist-tracks.php?show_id=YOUR_PLAYLIST_ID" | jq .
+```
+
+**Common fixes**:
+- Verify `source_type = 'voice_clip'` is being set in upload API
+- Check playlist ID is correct in recording modal
+- Ensure playlist-tracks.php includes voice_clip in source type filter
+
+### Mobile recording issues
+
+**Problem**: Voice recording doesn't work on mobile devices
+**Mobile-specific considerations**:
+- iOS Safari requires user gesture to start recording
+- Android Chrome may have different microphone permissions
+- Mobile browsers may have stricter WebRTC limitations
+
+**Mobile debugging**:
+```javascript
+// Test mobile WebRTC support
+console.log('Mobile detection:', /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+console.log('MediaRecorder support:', typeof MediaRecorder !== 'undefined');
+console.log('getUserMedia support:', !!navigator.mediaDevices?.getUserMedia);
+```
+
+**Solutions**:
+- Ensure recording button requires user interaction (no auto-start)
+- Test on actual mobile devices, not desktop browser mobile simulation
+- Provide clear instructions for mobile microphone permissions
+
 ## Prevention Tips
 
 1. **Always use virtual environment paths** when adding new Python script calls
@@ -197,3 +308,6 @@ docker exec radiograb-recorder-1 find /var/radiograb/recordings/ -name "*.mp3" |
 5. **Document new dependencies** in CONTAINER_SETUP.md when adding packages
 6. **Verify database schema matches models** when adding new fields
 7. **Test changes on live server** after deployment
+8. **Test voice recording on multiple browsers and devices** before deploying
+9. **Verify HTTPS is working** (required for WebRTC microphone access)
+10. **Check WebM audio format support** in upload APIs when adding voice features

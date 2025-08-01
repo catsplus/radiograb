@@ -6,45 +6,53 @@ RadioGrab transforms any radio station into a personal podcast library. It's a "
 
 ## ✨ Key Innovations
 
-### 1. **Complete Playlist Upload System**
-- User audio file uploads with multi-format support (MP3, WAV, M4A, AAC, OGG, FLAC)
+### 1. **DJ Audio Snippet Recording System**
+- **Browser-based voice recording** using WebRTC MediaRecorder API for DJ intros, outros, and station IDs
+- **Professional recording interface** with real-time controls, visual timer, and 5-minute maximum
+- **Audio preview system** with built-in playback before saving and metadata editing
+- **Mobile compatibility** across iOS Safari, Android Chrome, and all major mobile browsers
+- **Voice clip differentiation** with green badges, microphone icons, and visual styling
+- **Seamless playlist integration** with drag-and-drop support and source type tracking
+
+### 2. **Complete Playlist Upload System**
+- User audio file uploads with multi-format support (MP3, WAV, M4A, AAC, OGG, FLAC, WebM)
 - Drag & drop track ordering with automatic sequential numbering
 - Real-time playlist management with track reordering interface
 - Automatic format conversion to MP3 with quality validation
 - Upload progress tracking and comprehensive error handling
 
-### 2. **Comprehensive MP3 Metadata Implementation**
+### 3. **Comprehensive MP3 Metadata Implementation**
 - Automatic metadata writing for all recordings using FFmpeg integration
 - Standardized tagging: artist=show name, album=station name, recording date, description
 - Upload metadata enhancement preserves existing tags while adding show/station information
 - Genre tagging support with metadata source tracking
 - Backend service architecture for consistent metadata management
 
-### 3. **JavaScript-Aware Schedule Parsing**
+### 4. **JavaScript-Aware Schedule Parsing**
 - Handles dynamic web calendars (WordPress plugins, FullCalendar, etc.)
 - Selenium WebDriver for JavaScript rendering
 - Google Sheets iframe parsing for embedded schedules
 - Eliminates "No shows found" issues with modern station websites
 
-### 4. **Intelligent Recording Tool Management**
+### 5. **Intelligent Recording Tool Management**
 - Tests and stores optimal recording method per station (streamripper/wget/ffmpeg)
 - Eliminates repeated compatibility discovery
 - Database storage of stream testing results
 - Automatic fallback to alternative tools when needed
 
-### 5. **Comprehensive Test & On-Demand System**
+### 6. **Comprehensive Test & On-Demand System**
 - **Test Recording**: 30-second stream validation with one-click button
 - **On-Demand Recording**: 1-hour manual recordings from station cards
 - Automatic show creation for on-demand recordings
 - Test files isolated in temporary directory
 
-### 6. **Automatic Housekeeping Service**
+### 7. **Automatic Housekeeping Service**
 - Runs every 6 hours to clean empty recording files
 - Prevents accumulation of 33,000+ zero-byte files
 - Removes orphaned database records
 - Logs cleanup statistics and performance metrics
 
-### 7. **Advanced Timezone Management**
+### 8. **Advanced Timezone Management**
 - Per-station timezone storage and handling
 - Container-wide EST/EDT timezone configuration
 - Prevents recordings at wrong times due to timezone confusion
