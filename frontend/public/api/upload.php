@@ -62,6 +62,7 @@ function handleFileUpload() {
     $show_id = intval($_POST['show_id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
+    $source_type = trim($_POST['source_type'] ?? 'uploaded');
     
     if (!$show_id) {
         echo json_encode(['success' => false, 'error' => 'Show ID required']);
@@ -85,7 +86,8 @@ function handleFileUpload() {
         'audio/mp4', 'audio/m4a',
         'audio/aac',
         'audio/ogg',
-        'audio/flac'
+        'audio/flac',
+        'audio/webm'  // For voice clips recorded in browser
     ];
     
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -117,9 +119,10 @@ function handleFileUpload() {
     $escaped_title = escapeshellarg($title);
     $escaped_description = escapeshellarg($description);
     $escaped_original = escapeshellarg($original_filename);
+    $escaped_source_type = escapeshellarg($source_type);
     
     $command = "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python {$python_script} " .
-               "--upload {$escaped_file} --show-id {$show_id}";
+               "--upload {$escaped_file} --show-id {$show_id} --source-type {$escaped_source_type}";
     
     if ($title) {
         $command .= " --title {$escaped_title}";

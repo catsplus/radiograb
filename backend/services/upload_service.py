@@ -111,7 +111,7 @@ class AudioUploadService:
                 
                 # Use the existing upload_file method to process the downloaded file
                 original_filename = self._extract_filename_from_url(url)
-                result = self.upload_file(str(temp_file), show_id, title, description, original_filename)
+                result = self.upload_file(str(temp_file), show_id, title, description, original_filename, 'uploaded')
                 
                 # Clean up temp file
                 try:
@@ -129,7 +129,7 @@ class AudioUploadService:
             return UploadResult(success=False, error=str(e))
     
     def upload_file(self, file_path: str, show_id: int, title: str = None, 
-                   description: str = None, original_filename: str = None) -> UploadResult:
+                   description: str = None, original_filename: str = None, source_type: str = 'uploaded') -> UploadResult:
         """
         Upload an audio file to a show/playlist
         
@@ -245,7 +245,7 @@ class AudioUploadService:
                     duration_seconds=int(duration),
                     file_size_bytes=file_size,
                     recorded_at=datetime.now(),
-                    source_type='uploaded',
+                    source_type=source_type or 'uploaded',
                     original_filename=original_filename,
                     track_number=track_number
                 )
@@ -669,6 +669,7 @@ if __name__ == '__main__':
     parser.add_argument('--show-id', type=int, help='Show ID to upload to')
     parser.add_argument('--title', help='Recording title')
     parser.add_argument('--description', help='Recording description')
+    parser.add_argument('--source-type', default='uploaded', help='Source type (uploaded, voice_clip, etc.)')
     parser.add_argument('--create-playlist', help='Create new playlist show')
     parser.add_argument('--station-id', type=int, help='Station ID for new playlist')
     
@@ -684,7 +685,8 @@ if __name__ == '__main__':
             args.show_id, 
             args.title, 
             args.description,
-            Path(args.upload).name
+            Path(args.upload).name,
+            args.source_type
         )
         
         if result.success:

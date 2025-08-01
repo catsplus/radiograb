@@ -46,13 +46,13 @@ function handleGetTracks() {
             return;
         }
         
-        // Get uploaded tracks ordered by track_number
+        // Get uploaded tracks and voice clips ordered by track_number
         $tracks = $db->fetchAll("
             SELECT r.id, r.title, r.description, r.filename, r.duration_seconds, 
                    r.recorded_at, r.track_number, r.original_filename,
-                   r.file_size_bytes
+                   r.file_size_bytes, r.source_type
             FROM recordings r
-            WHERE r.show_id = ? AND r.source_type = 'uploaded'
+            WHERE r.show_id = ? AND r.source_type IN ('uploaded', 'voice_clip')
             ORDER BY COALESCE(r.track_number, 999999), r.recorded_at
         ", [$show_id]);
         
@@ -66,7 +66,8 @@ function handleGetTracks() {
                 'duration_seconds' => intval($track['duration_seconds'] ?? 0),
                 'recorded_at' => $track['recorded_at'],
                 'track_number' => intval($track['track_number'] ?? 1),
-                'file_size_bytes' => intval($track['file_size_bytes'] ?? 0)
+                'file_size_bytes' => intval($track['file_size_bytes'] ?? 0),
+                'source_type' => $track['source_type'] ?? 'uploaded'
             ];
         }, $tracks);
         

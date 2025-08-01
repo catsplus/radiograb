@@ -115,7 +115,7 @@ $additional_css = '
 </style>';
 
 // Set playlist-specific JavaScript - Load external file to avoid PHP parsing issues
-$additional_js = '<script src="/assets/js/playlists.js"></script>';
+$additional_js = '<script src="/assets/js/playlists.js"></script><script src="/assets/js/audio-recorder.js"></script>';
 
 // Include shared header
 require_once '../includes/header.php';
@@ -407,6 +407,9 @@ if (isset($error)): ?>
                 </div>
             </div>
             <div class="modal-footer">
+                <button type="button" class="btn btn-success" onclick="showVoiceRecordingModal(window.currentPlaylistId)">
+                    <i class="fas fa-microphone"></i> Record Voice Clip
+                </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" id="savePlaylistOrder">
                     <i class="fas fa-save"></i> Save Order
@@ -435,6 +438,111 @@ if (isset($error)): ?>
                     <input type="hidden" id="deletePlaylistId" name="show_id">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Voice Recording Modal -->
+<div class="modal fade" id="voiceRecordingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-microphone"></i> Record DJ Voice Clip
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-circle text-danger"></i> Recording Controls</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <div id="recordingStatus" class="alert alert-secondary mb-3">
+                                    <i class="fas fa-microphone"></i> Ready to record
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="display-4 font-monospace" id="recordingTime">00:00</div>
+                                    <small class="text-muted">Recording time (max 5:00)</small>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-danger btn-lg" id="recordVoiceBtn" onclick="startVoiceRecording()">
+                                        <i class="fas fa-microphone"></i> Start Recording
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-lg" id="stopRecordingBtn" onclick="stopVoiceRecording()" style="display: none;">
+                                        <i class="fas fa-stop"></i> Stop Recording
+                                    </button>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Perfect for intros, outros, station IDs, and DJ drops
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div id="recordingPreview" style="display: none;">
+                            <!-- Recording preview will be inserted here -->
+                        </div>
+                        
+                        <div class="card" id="recordingTips">
+                            <div class="card-header">
+                                <h6><i class="fas fa-lightbulb"></i> Recording Tips</h6>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled small">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success"></i> 
+                                        Speak clearly and close to microphone
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success"></i> 
+                                        Keep background noise minimal
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success"></i> 
+                                        Record in a quiet environment
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success"></i> 
+                                        Keep clips under 2 minutes for best results
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success"></i> 
+                                        Test your microphone first
+                                    </li>
+                                </ul>
+                                
+                                <div class="alert alert-info small mt-3">
+                                    <i class="fas fa-browser"></i> 
+                                    <strong>Browser Compatibility:</strong> Works on Chrome, Firefox, Safari, and Edge. 
+                                    Mobile browsers supported.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="progress mt-3" id="voiceClipUploadProgress" style="display: none;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%">
+                        Uploading voice clip...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-info" onclick="window.open('https://support.google.com/chrome/answer/2693767', '_blank')">
+                    <i class="fas fa-question-circle"></i> Microphone Help
+                </button>
             </div>
         </div>
     </div>

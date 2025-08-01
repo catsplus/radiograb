@@ -502,6 +502,9 @@ function handleCreatePlaylist(e) {
  * Show playlist management modal
  */
 function showPlaylistModal(playlistId) {
+    // Store current playlist ID globally for other functions
+    window.currentPlaylistId = playlistId;
+    
     const modal = new bootstrap.Modal(document.getElementById('playlistModal'));
     modal.show();
     
@@ -546,22 +549,35 @@ function renderPlaylistTracks(tracks, playlistId) {
         return;
     }
     
-    const tracksList = tracks.map((track, index) => `
-        <div class="playlist-track p-3 border rounded mb-2" data-track-id="${track.id}" data-track-number="${track.track_number || index + 1}">
+    const tracksList = tracks.map((track, index) => {
+        const isVoiceClip = track.source_type === 'voice_clip';
+        const trackIcon = isVoiceClip ? 'fas fa-microphone text-success' : 'fas fa-music text-primary';
+        const trackBadge = isVoiceClip ? 'bg-success' : 'bg-secondary';
+        const trackType = isVoiceClip ? 'Voice Clip' : 'Audio Track';
+        
+        return `
+        <div class="playlist-track p-3 border rounded mb-2 ${isVoiceClip ? 'border-success' : ''}" data-track-id="${track.id}" data-track-number="${track.track_number || index + 1}">
             <div class="d-flex align-items-center">
                 <div class="me-3">
                     <i class="fas fa-grip-vertical text-muted"></i>
                 </div>
                 <div class="me-3">
-                    <span class="badge bg-secondary">${String(track.track_number || index + 1).padStart(2, '0')}</span>
+                    <span class="badge ${trackBadge}">${String(track.track_number || index + 1).padStart(2, '0')}</span>
+                </div>
+                <div class="me-3">
+                    <i class="${trackIcon}" title="${trackType}"></i>
                 </div>
                 <div class="flex-grow-1">
-                    <h6 class="mb-1">${escapeHtml(track.title)}</h6>
+                    <h6 class="mb-1">
+                        ${escapeHtml(track.title)}
+                        ${isVoiceClip ? '<small class="badge bg-success ms-2">Voice Clip</small>' : ''}
+                    </h6>
                     ${track.description ? `<small class="text-muted">${escapeHtml(track.description)}</small>` : ''}
                     <div class="small text-muted">
                         <i class="fas fa-clock"></i> ${formatDuration(track.duration_seconds)}
                         <span class="mx-2">•</span>
                         <i class="fas fa-hdd"></i> ${formatFileSize(track.file_size_bytes)}
+                        ${isVoiceClip ? '<span class="mx-2">•</span><i class="fas fa-microphone"></i> DJ Recording' : ''}
                     </div>
                 </div>
                 <div class="text-end">
@@ -571,7 +587,8 @@ function renderPlaylistTracks(tracks, playlistId) {
                 </div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
     
     contentDiv.innerHTML = `
         <div class="mb-3">
