@@ -212,7 +212,7 @@ if (isset($error)): ?>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a class="dropdown-item" href="edit-show.php?id=<?= $playlist['id'] ?>">
+                                        <a class="dropdown-item" href="edit-playlist.php?id=<?= $playlist['id'] ?>">
                                             <i class="fas fa-edit"></i> Edit Playlist
                                         </a>
                                     </li>
