@@ -9,12 +9,15 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.10.0 (August 1, 2025)
-**Latest Features**: 🎵 **COMPREHENSIVE PLAYLIST ENHANCEMENT SYSTEM** - Complete overhaul with drag-and-drop upload anywhere on page, URL/YouTube audio conversion, enhanced player with rewind/fast-forward, ID3v2 metadata embedding (Artist=Show, Album=Station), and professional track management. Also includes 🎛️ **ENHANCED SHOWS MANAGEMENT** with comprehensive filtering and 🎯 **ENHANCED RSS FEED SYSTEM** with multiple feed types. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v3.10.1 (August 1, 2025)
+**Latest Features**: 🔧 **PRODUCTION BUG FIXES & QA TESTING** - Fixed orphaned recording file cleanup with enhanced delete UI and dynamic modal warnings. Added comprehensive quality assurance testing with manual browser verification. Also includes 📅 **MANUAL SCHEDULE IMPORT SYSTEM** with AI-powered conversion workflow and ✏️ **STATION & SHOW EDIT FUNCTIONALITY** with complete CRUD interfaces. Previous features: 🎵 **COMPREHENSIVE PLAYLIST ENHANCEMENT SYSTEM** and 🎯 **ENHANCED RSS FEED SYSTEM**. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
+- **🔧 Production Bug Fixes & QA Testing**: Enhanced orphaned recording cleanup with dynamic delete UI, comprehensive manual browser testing, and production deployment verification
+- **📅 Manual Schedule Import System**: AI-powered schedule conversion workflow using ChatGPT/Claude/Grok with ICS file upload and parsing for fallback when automatic discovery fails
+- **✏️ Station & Show Edit Functionality**: Complete CRUD interfaces with live preview, comprehensive field editing (name, description, logo, stream URL, calendar URL, timezone), and backend integration
 - **🎛️ Enhanced Shows Management**: Comprehensive filtering and sorting system with multi-criteria filtering (search, station, status, genre, tags) and advanced sorting options (show name, station, genre, tags, next air date, recording count, latest recording)
 - **🎯 Station Schedule Discovery**: Automatically discover and display station programming schedules in Add Show interface
 - **📋 Smart Show Management**: Click "Find Shows" to browse station's published schedule with multiple airings support
