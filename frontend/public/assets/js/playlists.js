@@ -516,7 +516,7 @@ function loadPlaylistTracks(playlistId) {
     const contentDiv = document.getElementById('playlistContent');
     contentDiv.innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading tracks...</p>';
     
-    fetch(`/api/playlist-tracks.php?playlist_id=${playlistId}`)
+    fetch(`/api/playlist-tracks.php?show_id=${playlistId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
