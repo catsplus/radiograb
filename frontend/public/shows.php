@@ -323,7 +323,7 @@ $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'desc' : 'asc';
 $view = isset($_GET['view']) && $_GET['view'] === 'table' ? 'table' : 'cards';
 
 // Build query - only show scheduled shows (not playlists)
-$where_conditions = ["s.show_type = 'scheduled' OR s.show_type IS NULL"];
+$where_conditions = ["(s.show_type = 'scheduled' OR s.show_type IS NULL)"];
 $params = [];
 
 if ($station_id) {
@@ -369,13 +369,8 @@ if ($sort_column === 'next_air_date') {
 }
 
 try {
-    // Debug logging
-    error_log("Shows.php Debug - station_id: " . var_export($station_id, true));
-    error_log("Shows.php Debug - where_clause: " . $where_clause);
-    error_log("Shows.php Debug - params: " . var_export($params, true));
-    
     // Get shows with station and recording info
-    $query = "
+    $shows = $db->fetchAll("
         SELECT s.*, st.name as station_name, st.logo_url, st.call_letters, st.timezone as station_timezone,
                COUNT(r.id) as recording_count,
                MAX(r.recorded_at) as latest_recording,
@@ -388,11 +383,7 @@ try {
         $where_clause
         GROUP BY s.id 
         $order_clause
-    ";
-    
-    error_log("Shows.php Debug - Full Query: " . $query);
-    
-    $shows = $db->fetchAll($query, $params);
+    ", $params);
     
     // Get stations for filter
     $stations = $db->fetchAll("SELECT id, name FROM stations ORDER BY name");
