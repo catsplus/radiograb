@@ -54,6 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $max_file_size = (int)($_POST['max_file_size'] ?? 100);
     $active = isset($_POST['active']) ? 1 : 0;
     
+    // Streaming/Download Controls
+    $stream_only = isset($_POST['stream_only']) ? 1 : 0;
+    $content_type = $_POST['content_type'] ?? 'unknown';
+    $is_syndicated = isset($_POST['is_syndicated']) ? 1 : 0;
+    
     // Enhanced metadata fields
     $long_description = trim($_POST['long_description'] ?? '');
     $image_url = trim($_POST['image_url'] ?? '');
@@ -126,6 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'active' => $active,
                         'allow_uploads' => ($show_type === 'playlist') ? 1 : 0,
                         'retention_days' => ($show_type === 'playlist') ? 0 : 30,  // Never expire for playlists
+                        'stream_only' => $stream_only,
+                        'content_type' => $content_type,
+                        'is_syndicated' => $is_syndicated,
                         'auto_imported' => 0
                     ];
                     
@@ -515,6 +523,56 @@ require_once '../includes/header.php';
                                         <li>Supports MP3, WAV, M4A, AAC, OGG, FLAC formats</li>
                                         <li>Automatic MP3 conversion and metadata extraction</li>
                                     </ul>
+                                </div>
+                            </div>
+
+                            <!-- Streaming & Download Controls -->
+                            <div class="card mt-4">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="fas fa-shield-alt"></i> DMCA & Content Controls</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="content_type" class="form-label">Content Type</label>
+                                                <select class="form-select" id="content_type" name="content_type">
+                                                    <option value="unknown" <?= ($_POST['content_type'] ?? 'unknown') === 'unknown' ? 'selected' : '' ?>>Unknown</option>
+                                                    <option value="talk" <?= ($_POST['content_type'] ?? 'unknown') === 'talk' ? 'selected' : '' ?>>Talk/Spoken Word</option>
+                                                    <option value="music" <?= ($_POST['content_type'] ?? 'unknown') === 'music' ? 'selected' : '' ?>>Music</option>
+                                                    <option value="mixed" <?= ($_POST['content_type'] ?? 'unknown') === 'mixed' ? 'selected' : '' ?>>Mixed Content</option>
+                                                </select>
+                                                <div class="form-text">Helps determine appropriate download policies</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="is_syndicated" name="is_syndicated" 
+                                                           <?= isset($_POST['is_syndicated']) ? 'checked' : '' ?>>
+                                                    <label class="form-check-label" for="is_syndicated">
+                                                        <strong>Syndicated Show</strong>
+                                                    </label>
+                                                </div>
+                                                <div class="form-text">NPR, BBC, or other nationally distributed content</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-info">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="stream_only" name="stream_only" 
+                                                   <?= isset($_POST['stream_only']) ? 'checked' : '' ?>>
+                                            <label class="form-check-label" for="stream_only">
+                                                <strong><i class="fas fa-streaming"></i> Stream-Only Mode</strong>
+                                            </label>
+                                        </div>
+                                        <div class="form-text mt-2">
+                                            <i class="fas fa-info-circle"></i> 
+                                            When enabled, recordings can only be streamed through the web interface. Download links are hidden for DMCA compliance.
+                                            <br><strong>Recommended for:</strong> Music shows, syndicated content, or copyrighted material.
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

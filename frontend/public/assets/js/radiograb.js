@@ -9,6 +9,24 @@ class RadioGrab {
         this.init();
     }
     
+    // Simple obfuscation for file paths (DMCA compliance)
+    obfuscatePath(path) {
+        return btoa(path).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+    
+    deobfuscatePath(obfuscated) {
+        let cleaned = obfuscated.replace(/-/g, '+').replace(/_/g, '/');
+        // Add padding if needed
+        while (cleaned.length % 4) {
+            cleaned += '=';
+        }
+        try {
+            return atob(cleaned);
+        } catch (e) {
+            return null;
+        }
+    }
+    
     init() {
         this.bindEvents();
         this.initAudioPlayers();

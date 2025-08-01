@@ -102,7 +102,8 @@ try {
     $offset = ($page - 1) * $per_page;
     
     $recordings = $db->fetchAll("
-        SELECT r.*, s.name as show_name, st.name as station_name, st.logo_url
+        SELECT r.*, s.name as show_name, s.stream_only, s.content_type, s.is_syndicated,
+               st.name as station_name, st.logo_url
         FROM recordings r 
         JOIN shows s ON r.show_id = s.id 
         JOIN stations st ON s.station_id = st.id 
@@ -360,11 +361,22 @@ require_once '../includes/header.php';
                                     <div class="col-md-2">
                                         <div class="d-grid gap-2">
                                             <?php if (recordingFileExists($recording['filename'])): ?>
-                                                <a href="<?= getRecordingUrl($recording['filename']) ?>" 
-                                                   class="btn btn-outline-primary btn-sm" 
-                                                   download="<?= h($recording['filename']) ?>">
-                                                    <i class="fas fa-download"></i> Download
-                                                </a>
+                                                <?php if (!$recording['stream_only']): ?>
+                                                    <?php
+                                                    // Obfuscate the file path for DMCA compliance
+                                                    $obfuscated_token = base64_encode($recording['filename']);
+                                                    $obfuscated_token = str_replace(['+', '/', '='], ['-', '_', ''], $obfuscated_token);
+                                                    ?>
+                                                    <a href="/api/get-recording.php?token=<?= $obfuscated_token ?>" 
+                                                       class="btn btn-outline-primary btn-sm" 
+                                                       download="<?= h($recording['filename']) ?>">
+                                                        <i class="fas fa-download"></i> Download
+                                                    </a>
+                                                <?php else: ?>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Stream-only show - downloads disabled for DMCA compliance">
+                                                        <i class="fas fa-ban"></i> Stream Only
+                                                    </button>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                             
                                             <button type="button" 

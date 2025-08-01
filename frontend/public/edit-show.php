@@ -67,6 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $active = isset($_POST['active']) ? 1 : 0;
     $retention_days = (int)($_POST['retention_days'] ?? 30);
     $default_ttl_type = $_POST['default_ttl_type'] ?? 'days';
+    $stream_only = isset($_POST['stream_only']) ? 1 : 0;
+    $content_type = $_POST['content_type'] ?? 'unknown';
+    $is_syndicated = isset($_POST['is_syndicated']) ? 1 : 0;
     
     $errors = [];
     
@@ -100,6 +103,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $valid_ttl_types = ['days', 'weeks', 'months', 'indefinite'];
     if (!in_array($default_ttl_type, $valid_ttl_types)) {
         $errors[] = 'Invalid TTL type';
+    }
+    
+    $valid_content_types = ['music', 'talk', 'mixed', 'unknown'];
+    if (!in_array($content_type, $valid_content_types)) {
+        $errors[] = 'Invalid content type';
     }
     
     if ($image_url && !filter_var($image_url, FILTER_VALIDATE_URL)) {
@@ -138,6 +146,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'active' => $active,
                         'retention_days' => $retention_days,
                         'default_ttl_type' => $default_ttl_type,
+                        'stream_only' => $stream_only,
+                        'content_type' => $content_type,
+                        'is_syndicated' => $is_syndicated,
                         'updated_at' => date('Y-m-d H:i:s')
                     ], 'id = ?', [$show_id]);
                     
@@ -329,7 +340,57 @@ require_once '../includes/header.php';
                                 </div>
                             </div>
                             
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <!-- Streaming & Download Controls -->
+                            <div class="card mt-4">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="fas fa-shield-alt"></i> DMCA & Content Controls</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="content_type" class="form-label">Content Type</label>
+                                                <select class="form-select" id="content_type" name="content_type">
+                                                    <option value="unknown" <?= ($show['content_type'] ?? 'unknown') === 'unknown' ? 'selected' : '' ?>>Unknown</option>
+                                                    <option value="talk" <?= ($show['content_type'] ?? 'unknown') === 'talk' ? 'selected' : '' ?>>Talk/Spoken Word</option>
+                                                    <option value="music" <?= ($show['content_type'] ?? 'unknown') === 'music' ? 'selected' : '' ?>>Music</option>
+                                                    <option value="mixed" <?= ($show['content_type'] ?? 'unknown') === 'mixed' ? 'selected' : '' ?>>Mixed Content</option>
+                                                </select>
+                                                <div class="form-text">Helps determine appropriate download policies</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="is_syndicated" name="is_syndicated" 
+                                                           <?= ($show['is_syndicated'] ?? false) ? 'checked' : '' ?>>
+                                                    <label class="form-check-label" for="is_syndicated">
+                                                        <strong>Syndicated Show</strong>
+                                                    </label>
+                                                </div>
+                                                <div class="form-text">NPR, BBC, or other nationally distributed content</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-info">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="stream_only" name="stream_only" 
+                                                   <?= ($show['stream_only'] ?? false) ? 'checked' : '' ?>>
+                                            <label class="form-check-label" for="stream_only">
+                                                <strong><i class="fas fa-streaming"></i> Stream-Only Mode</strong>
+                                            </label>
+                                        </div>
+                                        <div class="form-text mt-2">
+                                            <i class="fas fa-info-circle"></i> 
+                                            When enabled, recordings can only be streamed through the web interface. Download links are hidden for DMCA compliance.
+                                            <br><strong>Recommended for:</strong> Music shows, syndicated content, or copyrighted material.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                                 <a href="/shows.php" class="btn btn-outline-secondary">
                                     <i class="fas fa-times"></i> Cancel
                                 </a>
