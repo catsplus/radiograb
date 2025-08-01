@@ -609,6 +609,225 @@ require_once '../includes/header.php';
         </div>
     </div>
 
+    <script>
+        // Enhanced Feeds Page Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Copy to clipboard functionality
+            document.querySelectorAll('.copy-feed-url').forEach(button => {
+                button.addEventListener('click', function() {
+                    const feedUrl = this.dataset.feedUrl;
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(feedUrl).then(() => {
+                            showToast('Feed URL copied to clipboard!', 'success');
+                        }).catch(() => {
+                            fallbackCopyTextToClipboard(feedUrl);
+                        });
+                    } else {
+                        fallbackCopyTextToClipboard(feedUrl);
+                    }
+                });
+            });
+            
+            // QR Code generation for buttons
+            document.querySelectorAll('button[data-feed-url]').forEach(button => {
+                if (button.innerHTML.includes('qrcode')) {
+                    button.addEventListener('click', function() {
+                        const feedUrl = this.dataset.feedUrl;
+                        generateQRCode(feedUrl, 'RSS Feed');
+                    });
+                }
+            });
+            
+            // Test feed functionality
+            document.querySelectorAll('.btn').forEach(button => {
+                if (button.textContent.includes('View Feed')) {
+                    const feedLink = button.getAttribute('href');
+                    if (feedLink && feedLink.includes('/api/enhanced-feeds.php')) {
+                        // Add test functionality
+                        button.addEventListener('contextmenu', function(e) {
+                            e.preventDefault();
+                            testFeedValidity(feedLink);
+                        });
+                        button.title = 'Left click to view, right click to test feed validity';
+                    }
+                }
+            });
+            
+            // Add feed statistics loading
+            loadFeedStatistics();
+        });
+        
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast('Feed URL copied to clipboard!', 'success');
+            } catch (err) {
+                showToast('Failed to copy URL', 'danger');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        function generateQRCode(feedUrl, feedName) {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(feedUrl)}`;
+            
+            const modal = document.getElementById('qrModal');
+            if (!modal) {
+                // Create QR modal if it doesn't exist
+                createQRModal();
+            }
+            
+            const modalTitle = modal.querySelector('.modal-title');
+            const qrContainer = modal.querySelector('#qrcode');
+            
+            modalTitle.textContent = `QR Code for ${feedName}`;
+            qrContainer.innerHTML = `
+                <img src="${qrUrl}" alt="QR Code for ${feedName}" class="img-fluid mb-3">
+                <div class="text-center">
+                    <small class="text-muted d-block mb-2">Scan with your podcast app to subscribe</small>
+                    <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('${feedUrl}')">
+                        <i class="fas fa-copy"></i> Copy Feed URL
+                    </button>
+                </div>
+            `;
+            
+            new bootstrap.Modal(modal).show();
+        }
+        
+        function createQRModal() {
+            const modalHTML = `
+                <div class="modal fade" id="qrModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">QR Code</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <div id="qrcode"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+        
+        function testFeedValidity(feedUrl) {
+            showToast('Testing feed validity...', 'info');
+            
+            fetch(feedUrl)
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                })
+                .then(xmlText => {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                    
+                    if (xmlDoc.querySelector('parsererror')) {
+                        throw new Error('Invalid XML format');
+                    }
+                    
+                    const channel = xmlDoc.querySelector('channel');
+                    if (!channel) {
+                        throw new Error('Not a valid RSS feed');
+                    }
+                    
+                    const items = xmlDoc.querySelectorAll('item');
+                    const title = channel.querySelector('title')?.textContent || 'Unknown';
+                    showToast(`✅ "${title}" feed is valid! Contains ${items.length} episodes.`, 'success');
+                })
+                .catch(error => {
+                    showToast(`❌ Feed test failed: ${error.message}`, 'danger');
+                });
+        }
+        
+        function loadFeedStatistics() {
+            // Add feed statistics to universal feeds
+            const universalCards = document.querySelectorAll('.card.border-primary, .card.border-success');
+            universalCards.forEach(card => {
+                const feedUrl = card.querySelector('input[readonly]')?.value;
+                if (feedUrl) {
+                    loadFeedItemCount(feedUrl, card);
+                }
+            });
+        }
+        
+        function loadFeedItemCount(feedUrl, card) {
+            fetch(feedUrl)
+                .then(response => response.text())
+                .then(xmlText => {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                    const items = xmlDoc.querySelectorAll('item');
+                    
+                    // Add count badge to card header
+                    const cardHeader = card.querySelector('.card-header h5');
+                    if (cardHeader && !cardHeader.querySelector('.badge')) {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-light text-dark ms-2';
+                        badge.textContent = `${items.length} items`;
+                        cardHeader.appendChild(badge);
+                    }
+                })
+                .catch(error => {
+                    console.log('Could not load feed statistics:', error);
+                });
+        }
+        
+        function showToast(message, type) {
+            const toastContainer = document.getElementById('toast-container') || createToastContainer();
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
+        }
+        
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            container.style.zIndex = '1080';
+            document.body.appendChild(container);
+            return container;
+        }
+        
+        function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Copied to clipboard!', 'success');
+                });
+            } else {
+                fallbackCopyTextToClipboard(text);
+            }
+        }
+    </script>
+
     <?php
 $additional_js = '<script src="/assets/js/radiograb.js"></script>';
 require_once '../includes/footer.php';

@@ -68,27 +68,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $errors = [];
     
-    // Validation
+    // Enhanced validation
     if (empty($name)) {
         $errors[] = 'Show name is required';
+    } elseif (strlen($name) < 2) {
+        $errors[] = 'Show name must be at least 2 characters long';
+    } elseif (strlen($name) > 255) {
+        $errors[] = 'Show name cannot exceed 255 characters';
     }
     
     if (!$station_id) {
         $errors[] = 'Station selection is required';
     } else {
-        // Verify station exists
-        $station = $db->fetchOne("SELECT id FROM stations WHERE id = ?", [$station_id]);
+        // Verify station exists and is active
+        $station = $db->fetchOne("SELECT id, name, status FROM stations WHERE id = ?", [$station_id]);
         if (!$station) {
             $errors[] = 'Selected station does not exist';
+        } elseif ($station['status'] !== 'active') {
+            $errors[] = 'Selected station is not active';
+        }
+        
+        // Check for duplicate show name at same station
+        $existing_show = $db->fetchOne("SELECT id FROM shows WHERE station_id = ? AND name = ?", [$station_id, $name]);
+        if ($existing_show) {
+            $errors[] = 'A show with this name already exists for this station';
         }
     }
     
     if ($show_type === 'scheduled' && empty($schedule_text)) {
         $errors[] = 'Schedule is required for scheduled shows';
+    } elseif ($show_type === 'scheduled' && !empty($schedule_text)) {
+        // Basic schedule validation
+        if (strlen($schedule_text) < 5) {
+            $errors[] = 'Schedule text seems too short. Please provide a clear schedule like "Monday 9:00 AM"';
+        }
+    }
+    
+    if ($show_type === 'playlist' && ($max_file_size < 1 || $max_file_size > 500)) {
+        $errors[] = 'Maximum file size for playlists must be between 1 and 500 MB';
     }
     
     if ($duration_minutes < 1 || $duration_minutes > 1440) {
-        $errors[] = 'Duration must be between 1 and 1440 minutes';
+        $errors[] = 'Duration must be between 1 and 1440 minutes (24 hours)';
+    }
+    
+    if (!empty($image_url) && !filter_var($image_url, FILTER_VALIDATE_URL)) {
+        $errors[] = 'Show image URL must be a valid URL';
+    }
+    
+    if (!empty($website_url) && !filter_var($website_url, FILTER_VALIDATE_URL)) {
+        $errors[] = 'Show website URL must be a valid URL';
+    }
+    
+    if (strlen($description) > 1000) {
+        $errors[] = 'Description cannot exceed 1000 characters';
+    }
+    
+    if (strlen($long_description) > 5000) {
+        $errors[] = 'Long description cannot exceed 5000 characters';
     }
     
     if (empty($errors)) {

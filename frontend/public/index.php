@@ -63,6 +63,76 @@ switch ($route['type']) {
 $page_title = 'RadioGrab Dashboard';
 $active_nav = 'dashboard';
 
+// Add custom CSS for dashboard
+$additional_css = '
+<style>
+.dashboard-stat-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: none;
+}
+
+.dashboard-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.dashboard-stat-card .card-body {
+    padding-bottom: 1rem;
+}
+
+.dashboard-stat-card .card-footer {
+    padding-top: 0.5rem;
+}
+
+.dashboard-stat-card h2 {
+    font-weight: 700;
+    font-size: 2.5rem;
+}
+
+.dashboard-stat-card .opacity-75 {
+    opacity: 0.8;
+}
+
+.recording-card {
+    transition: all 0.2s ease-in-out;
+}
+
+.recording-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.list-group-item {
+    border-left: 0;
+    border-right: 0;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.list-group-item:hover {
+    background-color: rgba(0,123,255,0.05);
+}
+
+#next-recordings-content .card {
+    transition: all 0.2s ease-in-out;
+}
+
+#next-recordings-content .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.pulse-animation {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+</style>
+';
+
 // Get dashboard statistics
 try {
     $stats = [
@@ -130,78 +200,110 @@ if (isset($error)): ?>
             </div>
         </div>
 
-        <!-- Statistics Cards -->
+        <!-- Enhanced Statistics Cards -->
         <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card text-white bg-primary">
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-primary h-100 dashboard-stat-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div>
                                 <h5 class="card-title">Stations</h5>
-                                <h2><?= $stats['stations'] ?></h2>
+                                <h2 class="mb-0"><?= $stats['stations'] ?></h2>
+                                <small class="opacity-75">Radio stations configured</small>
                             </div>
                             <div class="align-self-center">
-                                <i class="fas fa-broadcast-tower fa-2x"></i>
+                                <i class="fas fa-broadcast-tower fa-2x opacity-75"></i>
                             </div>
                         </div>
                     </div>
-                    <a href="/stations.php" class="btn btn-light btn-sm mt-2 w-100">
-                        <i class="fas fa-cog"></i> Manage Stations
-                    </a>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <div class="d-grid gap-2">
+                            <a href="/stations.php" class="btn btn-light btn-sm">
+                                <i class="fas fa-cog"></i> Manage Stations
+                            </a>
+                            <a href="/add-station.php" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-plus"></i> Add New
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-success">
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-success h-100 dashboard-stat-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div>
                                 <h5 class="card-title">Active Shows</h5>
-                                <h2><?= $stats['shows'] ?></h2>
+                                <h2 class="mb-0"><?= $stats['shows'] ?></h2>
+                                <small class="opacity-75">Recording schedules</small>
                             </div>
                             <div class="align-self-center">
-                                <i class="fas fa-microphone fa-2x"></i>
+                                <i class="fas fa-microphone fa-2x opacity-75"></i>
                             </div>
                         </div>
                     </div>
-                    <a href="/shows.php" class="btn btn-light btn-sm mt-2 w-100">
-                        <i class="fas fa-list"></i> View Shows
-                    </a>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <div class="d-grid gap-2">
+                            <a href="/shows.php" class="btn btn-light btn-sm">
+                                <i class="fas fa-list"></i> View Shows
+                            </a>
+                            <a href="/add-show.php" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-plus"></i> Add Show
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-info">
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-info h-100 dashboard-stat-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div>
                                 <h5 class="card-title">Recordings</h5>
-                                <h2><?= $stats['recordings'] ?></h2>
+                                <h2 class="mb-0"><?= $stats['recordings'] ?></h2>
+                                <small class="opacity-75">Audio files captured</small>
                             </div>
                             <div class="align-self-center">
-                                <i class="fas fa-file-audio fa-2x"></i>
+                                <i class="fas fa-file-audio fa-2x opacity-75"></i>
                             </div>
                         </div>
                     </div>
-                    <a href="/recordings.php" class="btn btn-light btn-sm mt-2 w-100">
-                        <i class="fas fa-play"></i> View Recordings
-                    </a>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <div class="d-grid gap-2">
+                            <a href="/recordings.php" class="btn btn-light btn-sm">
+                                <i class="fas fa-play"></i> Browse Library
+                            </a>
+                            <a href="/feeds.php" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-rss"></i> RSS Feeds
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-warning">
+            <div class="col-md-3 mb-3">
+                <div class="card text-white bg-warning h-100 dashboard-stat-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div>
                                 <h5 class="card-title">Playlists</h5>
-                                <h2><?= $stats['playlists'] ?></h2>
+                                <h2 class="mb-0"><?= $stats['playlists'] ?></h2>
+                                <small class="opacity-75">Custom collections</small>
                             </div>
                             <div class="align-self-center">
-                                <i class="fas fa-list fa-2x"></i>
+                                <i class="fas fa-list fa-2x opacity-75"></i>
                             </div>
                         </div>
                     </div>
-                    <a href="/playlists.php" class="btn btn-light btn-sm mt-2 w-100">
-                        <i class="fas fa-eye"></i> View Playlists
-                    </a>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <div class="d-grid gap-2">
+                            <a href="/playlists.php" class="btn btn-light btn-sm">
+                                <i class="fas fa-eye"></i> View Playlists
+                            </a>
+                            <a href="/add-playlist.php" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-plus"></i> Create New
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

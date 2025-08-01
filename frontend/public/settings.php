@@ -24,17 +24,44 @@ session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
 
-// Check if user is admin (basic auth for now)
+// Improved admin authentication
 if (!isset($_SESSION['admin_authenticated'])) {
-    // Simple authentication for settings access
+    // Enhanced authentication for settings access
     if (isset($_POST['admin_password'])) {
-        // Default password for demo - should be changed in production
-        if ($_POST['admin_password'] === 'radiograb_admin_2024') {
+        $entered_password = $_POST['admin_password'];
+        
+        // Check for environment variable password first, then fallback to default
+        $admin_password = $_SERVER['RADIOGRAB_ADMIN_PASSWORD'] ?? 'radiograb_admin_2024';
+        
+        if (hash_equals($admin_password, $entered_password)) {
             $_SESSION['admin_authenticated'] = true;
+            $_SESSION['admin_login_time'] = time();
+            setFlashMessage('success', 'Successfully authenticated as admin');
         } else {
             $auth_error = 'Invalid password';
+            // Log failed attempt
+            error_log("Failed admin login attempt from IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
         }
     }
+}
+
+// Check session timeout (30 minutes)
+if (isset($_SESSION['admin_authenticated']) && isset($_SESSION['admin_login_time'])) {
+    if (time() - $_SESSION['admin_login_time'] > 1800) { // 30 minutes
+        session_destroy();
+        setFlashMessage('warning', 'Session expired. Please log in again.');
+        header('Location: /settings.php');
+        exit;
+    }
+}
+
+// Handle logout
+if (isset($_GET['logout'])) {
+    session_destroy();
+    setFlashMessage('info', 'Successfully logged out');
+    header('Location: /settings.php');
+    exit;
+}
     
     if (!isset($_SESSION['admin_authenticated'])) {
         ?>
@@ -151,6 +178,17 @@ require_once '../includes/header.php';
             <div class="col">
                 <h1><i class="fas fa-cog"></i> System Settings</h1>
                 <p class="text-muted">Configure domain, SSL certificates, and system settings</p>
+            </div>
+            <div class="col-auto">
+                <div class="d-flex align-items-center gap-3">
+                    <small class="text-muted">
+                        <i class="fas fa-user-shield"></i> 
+                        Admin session (<?= date('H:i', $_SESSION['admin_login_time']) ?>)
+                    </small>
+                    <a href="?logout=1" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
             </div>
         </div>
 
