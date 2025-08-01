@@ -369,8 +369,13 @@ if ($sort_column === 'next_air_date') {
 }
 
 try {
+    // Debug logging
+    error_log("Shows.php Debug - station_id: " . var_export($station_id, true));
+    error_log("Shows.php Debug - where_clause: " . $where_clause);
+    error_log("Shows.php Debug - params: " . var_export($params, true));
+    
     // Get shows with station and recording info
-    $shows = $db->fetchAll("
+    $query = "
         SELECT s.*, st.name as station_name, st.logo_url, st.call_letters, st.timezone as station_timezone,
                COUNT(r.id) as recording_count,
                MAX(r.recorded_at) as latest_recording,
@@ -383,7 +388,11 @@ try {
         $where_clause
         GROUP BY s.id 
         $order_clause
-    ", $params);
+    ";
+    
+    error_log("Shows.php Debug - Full Query: " . $query);
+    
+    $shows = $db->fetchAll($query, $params);
     
     // Get stations for filter
     $stations = $db->fetchAll("SELECT id, name FROM stations ORDER BY name");
