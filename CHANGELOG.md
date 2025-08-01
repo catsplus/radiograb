@@ -1,5 +1,47 @@
 # RadioGrab Changelog
 
+## [3.12.1] - 2025-08-01 - Streaming vs Download Controls System
+
+### 🔒 DMCA Compliance & Content Controls
+- **Stream-Only Mode**: Toggle to restrict downloads for copyrighted content (music shows, syndicated programs)
+- **Content Type Classification**: Automatic categorization system (Music, Talk/Spoken Word, Mixed Content, Unknown)
+- **Syndicated Show Detection**: Auto-identification of NPR, BBC, nationally distributed content
+- **Admin Interface**: DMCA & Content Controls section in add-show.php and edit-show.php
+- **Visual Compliance**: Warning-styled interface with clear legal guidance and recommendations
+
+### 🔐 JavaScript Path Obfuscation
+- **Base64 Encoding**: Client-side path obfuscation with URL-safe character substitution
+- **Secure Download API**: Token-based file access through `/api/get-recording.php`
+- **Database Verification**: Ensures recording exists before serving file
+- **Access Logging**: Comprehensive monitoring for compliance tracking
+- **Security Boundaries**: Only serves files within recordings directory
+
+### 🎛️ Conditional Download Controls
+- **Smart UI**: Download buttons only appear for non-stream-only content
+- **Visual Indicators**: Stream-only shows display disabled "Stream Only" button with tooltips
+- **Database Integration**: Enhanced recordings.php query includes stream_only and content classification
+- **API Enforcement**: Stream-only recordings blocked at API level with proper error messages
+
+### 🎵 Auto-Categorization System
+- **Music Show Detection**: Keywords like "music", "jazz", "rock", "blues" → automatic stream-only
+- **Talk Show Identification**: "news", "talk", "interview", "morning" → downloads allowed
+- **Syndicated Content**: NPR, BBC, national programs → automatic stream-only restriction
+- **Smart Defaults**: Music and syndicated shows default to stream-only for legal safety
+
+### 🛡️ DMCA Compliance Features
+- **Stream-Only Enforcement**: Recordings cannot be downloaded through any interface
+- **Obfuscated File Paths**: Prevents direct URL discovery and sharing
+- **Content Type Awareness**: Intelligent identification of potentially copyrighted material
+- **Admin Control Granularity**: Fine-tuned content policies per show
+- **Access Monitoring**: Comprehensive logging for compliance auditing
+
+### 🔧 Technical Implementation
+- **Database Migration**: `add_streaming_download_controls.sql` with intelligent defaults
+- **Interface Integration**: DMCA controls embedded in show management workflows
+- **API Security**: Token-based download system with comprehensive validation
+- **JavaScript Enhancement**: Client-side path obfuscation utilities (radiograb.js)
+- **Error Handling**: Proper HTTP status codes and user-friendly error messages
+
 ## [3.12.0] - 2025-08-01 - DJ Audio Snippet Recording System
 
 ### 🎙️ Complete Browser-Based Audio Recording

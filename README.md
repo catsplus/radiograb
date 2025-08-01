@@ -9,12 +9,13 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.12.0 (August 1, 2025)
-**Latest Features**: 🎙️ **DJ AUDIO SNIPPET RECORDING** - Complete browser-based voice recording system with WebRTC for DJ intros, outros, and station IDs. Features professional recording interface, mobile compatibility, and seamless playlist integration. 📋 **SHOWS TABLE VIEW SYSTEM** - Table view with sortable columns and responsive design. 🎵 **PLAYLIST MANAGEMENT ENHANCEMENT** - Fixed playlist errors and dedicated editing interface. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v3.12.1 (August 1, 2025)
+**Latest Features**: 🔒 **STREAMING vs DOWNLOAD CONTROLS** - Comprehensive DMCA compliance system with stream-only mode, JavaScript path obfuscation, and intelligent content categorization. 🎙️ **DJ AUDIO SNIPPET RECORDING** - Complete browser-based voice recording system with WebRTC for DJ intros, outros, and station IDs. 📋 **SHOWS TABLE VIEW SYSTEM** - Table view with sortable columns and responsive design. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
+- **🔒 Streaming vs Download Controls**: Comprehensive DMCA compliance system with stream-only mode for copyrighted content, JavaScript path obfuscation, automatic content type detection (music/talk/mixed), syndicated show identification, and secure token-based download API with access logging
 - **🎙️ DJ Audio Snippet Recording**: Complete browser-based voice recording system using WebRTC MediaRecorder API with professional recording interface, 5-minute recording limit, audio preview, mobile compatibility, and seamless playlist integration for DJ intros, outros, station IDs, and custom drops
 - **📋 Shows Table View System**: Complete table view implementation for shows page with sortable columns (Show Name, Station, Recordings), responsive design, view toggle buttons (cards/table), and hyperlinks to individual show detail pages
 - **🎵 Playlist Management Enhancement**: Fixed "Failed to load tracks: Show ID Required" error and created dedicated edit-playlist.php page with playlist-specific interface removing schedule/duration/host fields

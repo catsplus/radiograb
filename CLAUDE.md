@@ -1385,6 +1385,154 @@ ssh radiograb@167.71.84.143 "docker exec radiograb-recorder-1 /opt/radiograb/ven
 - **Enhanced Error Handling**: Shows without valid times are skipped with debug logging
 - **Backward Compatibility**: Existing active shows remain unchanged
 
+## 🔒 Streaming vs Download Controls (COMPLETED August 1, 2025)
+
+### 🎯 **DMCA Compliance & Content Controls**
+RadioGrab now provides comprehensive streaming vs download controls for legal compliance with copyrighted content:
+
+#### **🗄️ Database Schema Extensions**
+```sql
+-- Stream-only controls for DMCA compliance
+ALTER TABLE shows 
+ADD COLUMN stream_only BOOLEAN DEFAULT FALSE COMMENT 'If true, recordings are stream-only (no downloads)',
+ADD COLUMN content_type ENUM('music', 'talk', 'mixed', 'unknown') DEFAULT 'unknown' COMMENT 'Auto-categorized content type',
+ADD COLUMN is_syndicated BOOLEAN DEFAULT FALSE COMMENT 'Syndicated shows default to stream-only';
+```
+
+#### **🎛️ Admin Interface Controls**
+**DMCA & Content Controls section** added to both `add-show.php` and `edit-show.php`:
+
+- **Content Type Classification**: Dropdown for Music, Talk/Spoken Word, Mixed Content, Unknown
+- **Syndicated Show Toggle**: Checkbox for NPR, BBC, nationally distributed content
+- **Stream-Only Mode Toggle**: Master control for download restrictions
+- **Warning-Styled Interface**: Clear visual emphasis on legal compliance importance
+- **Contextual Help**: Recommendations for music shows, syndicated content, copyrighted material
+
+#### **🔗 Conditional Download Link Display**
+Enhanced `recordings.php` with intelligent download control:
+
+```php
+// Query includes stream_only and content classification data
+SELECT r.*, s.stream_only, s.content_type, s.is_syndicated, s.name as show_name
+
+// Conditional download button display
+<?php if (!$recording['stream_only']): ?>
+    <a href="/api/get-recording.php?token=<?= $obfuscated_token ?>" class="btn btn-outline-primary">
+        <i class="fas fa-download"></i> Download
+    </a>
+<?php else: ?>
+    <button class="btn btn-outline-secondary" disabled title="Stream-only show - downloads disabled for DMCA compliance">
+        <i class="fas fa-ban"></i> Stream Only
+    </button>
+<?php endif; ?>
+```
+
+#### **🔐 JavaScript Path Obfuscation**
+**Security Features for DMCA Compliance**:
+
+```javascript
+// Path obfuscation for legal reasons
+class RadioGrab {
+    obfuscatePath(path) {
+        return btoa(path).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+    
+    deobfuscatePath(obfuscated) {
+        let cleaned = obfuscated.replace(/-/g, '+').replace(/_/g, '/');
+        while (cleaned.length % 4) cleaned += '=';
+        return atob(cleaned);
+    }
+}
+```
+
+**Secure Download API** (`/api/get-recording.php`):
+- **Token-Based Access**: Obfuscated file paths prevent direct URL access
+- **Database Verification**: Ensures recording exists before serving file
+- **Stream-Only Enforcement**: API blocks downloads for restricted content
+- **Access Logging**: Comprehensive logging for compliance monitoring
+- **Security Boundaries**: Only serves files within recordings directory
+
+#### **🎵 Auto-Categorization System**
+**Intelligent Content Classification**:
+
+```sql
+-- Music shows (likely copyrighted content)
+UPDATE shows SET content_type = 'music', stream_only = TRUE 
+WHERE name LIKE '%music%' OR name LIKE '%jazz%' OR name LIKE '%rock%' 
+   OR name LIKE '%blues%' OR name LIKE '%folk%' OR genre LIKE '%music%';
+
+-- Talk shows (generally safe for download)
+UPDATE shows SET content_type = 'talk', stream_only = FALSE 
+WHERE name LIKE '%news%' OR name LIKE '%talk%' OR name LIKE '%interview%' 
+   OR name LIKE '%morning%' OR genre LIKE '%talk%';
+
+-- Syndicated shows (automatic stream-only)
+UPDATE shows SET is_syndicated = TRUE, stream_only = TRUE 
+WHERE name LIKE '%NPR%' OR name LIKE '%All Things Considered%' 
+   OR name LIKE '%Fresh Air%' OR name LIKE '%BBC%';
+```
+
+#### **📋 DMCA Compliance Features**
+**Legal Protection Mechanisms**:
+
+1. **Stream-Only Enforcement**: Recordings cannot be downloaded through any interface
+2. **Obfuscated File Paths**: Prevents direct URL discovery and sharing
+3. **Content Type Awareness**: Automatic identification of potentially copyrighted material
+4. **Admin Control Granularity**: Fine-tuned content policies per show
+5. **Visual Compliance Indicators**: Clear labeling of restricted content
+6. **Access Monitoring**: Comprehensive logging for compliance auditing
+
+#### **🚀 Usage Examples**
+
+**Admin Configuration**:
+```bash
+# Set show to stream-only mode
+UPDATE shows SET stream_only = TRUE WHERE name = 'Morning Music Mix';
+
+# Configure syndicated content
+UPDATE shows SET is_syndicated = TRUE, stream_only = TRUE WHERE name LIKE '%NPR%';
+
+# Allow downloads for talk content
+UPDATE shows SET stream_only = FALSE WHERE content_type = 'talk';
+```
+
+**API Access**:
+```bash
+# Download allowed (returns file)
+curl "https://radiograb.svaha.com/api/get-recording.php?token=OBFUSCATED_TOKEN"
+
+# Download blocked (returns 403)
+curl "https://radiograb.svaha.com/api/get-recording.php?token=STREAM_ONLY_TOKEN"
+# Response: "Download not allowed for stream-only content"
+```
+
+#### **🔧 Technical Implementation**
+- **Database Migration**: `add_streaming_download_controls.sql` with smart defaults
+- **Interface Integration**: DMCA controls embedded in show management workflows
+- **API Security**: Token-based download system with comprehensive validation
+- **JavaScript Enhancement**: Client-side path obfuscation utilities
+- **Logging System**: Access monitoring for compliance documentation
+
+#### **📊 Migration Applied Successfully**
+```bash
+# Production deployment completed
+ssh radiograb@167.71.84.143 "docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 radiograb < /opt/radiograb/database/migrations/add_streaming_download_controls.sql"
+
+# Verification - all features operational:
+# ✅ stream_only field added to shows table
+# ✅ content_type classification system active
+# ✅ Auto-categorization completed for existing shows
+# ✅ Download restrictions enforced in UI and API
+# ✅ Path obfuscation system functional
+```
+
+#### **🎯 Use Cases Addressed**
+- **Music Shows**: Automatically set to stream-only to prevent copyright issues
+- **Talk Shows**: Downloads allowed as typically original, non-copyrighted content
+- **Syndicated Content**: NPR, BBC, national programs automatically restricted
+- **Local Programming**: Station-specific content with configurable policies
+- **Mixed Content**: Admin flexibility for shows with varied content types
+
 ---
 
 **🚨 CRITICAL REMINDERS**
