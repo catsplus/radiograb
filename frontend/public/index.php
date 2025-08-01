@@ -7,8 +7,59 @@
 session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
+require_once '../includes/router.php';
 
-// Set page variables for shared template
+// Initialize router and check for friendly URLs
+$router = new RadioGrabRouter($db);
+$route = $router->route($_SERVER['REQUEST_URI']);
+
+// Handle routing
+switch ($route['type']) {
+    case 'station':
+        $station = $route['station'];
+        require_once '../includes/pages/station-detail.php';
+        exit;
+        
+    case 'show':
+        $show = $route['show'];
+        require_once '../includes/pages/show-detail.php';
+        exit;
+        
+    case 'user':
+        $user = $route['user'];
+        require_once '../includes/pages/user-profile.php';
+        exit;
+        
+    case 'playlist':
+    case 'user_playlist':
+        $playlist = $route['playlist'];
+        require_once '../includes/pages/playlist-detail.php';
+        exit;
+        
+    case 'system_page':
+        // Redirect to actual system page files
+        $page = $route['page'];
+        if (file_exists($page . '.php')) {
+            header('Location: /' . $page . '.php');
+            exit;
+        } else {
+            http_response_code(404);
+            require_once '../includes/pages/404.php';
+            exit;
+        }
+        
+    case 'not_found':
+        http_response_code(404);
+        require_once '../includes/pages/404.php';
+        exit;
+        
+    case 'dashboard':
+    default:
+        // Continue with dashboard rendering below
+        break;
+}
+
+// Set page variables for shared template (dashboard)
 $page_title = 'RadioGrab Dashboard';
 $active_nav = 'dashboard';
 

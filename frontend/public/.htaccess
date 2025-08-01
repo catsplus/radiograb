@@ -1,0 +1,22 @@
+RewriteEngine On
+
+# Redirect trailing slashes except for directories
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.+)/$ /$1 [R=301,L]
+
+# Skip rewriting for existing files and directories
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Skip rewriting for API endpoints
+RewriteRule ^api/ - [L]
+
+# Skip rewriting for assets
+RewriteRule ^assets/ - [L]
+
+# Skip rewriting for .php files (direct access to system pages)
+RewriteRule \.php$ - [L]
+
+# Route everything else through index.php for friendly URL handling
+RewriteRule ^ index.php [L]
