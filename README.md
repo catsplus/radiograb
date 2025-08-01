@@ -9,8 +9,8 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.9.1 (August 1, 2025)
-**Latest Features**: 🎛️ **ENHANCED SHOWS MANAGEMENT** - Comprehensive filtering and sorting system for shows page with multi-criteria filtering (search, station, status, genre, tags) and advanced sorting options (show name, station, genre, tags, next air date, recording count, latest recording). Two-row filter layout with persistent filtering via URL parameters. Also includes 🎯 **ENHANCED RSS FEED SYSTEM** with multiple feed types and complete web interface. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v3.10.0 (August 1, 2025)
+**Latest Features**: 🎵 **COMPREHENSIVE PLAYLIST ENHANCEMENT SYSTEM** - Complete overhaul with drag-and-drop upload anywhere on page, URL/YouTube audio conversion, enhanced player with rewind/fast-forward, ID3v2 metadata embedding (Artist=Show, Album=Station), and professional track management. Also includes 🎛️ **ENHANCED SHOWS MANAGEMENT** with comprehensive filtering and 🎯 **ENHANCED RSS FEED SYSTEM** with multiple feed types. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
@@ -26,9 +26,12 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **Show Links Parser**: Works with any HTML structure with show links (`_parse_show_links_schedule`)
 - **StreamTheWorld Fallback**: Generic HD2→HD1→base quality fallback for any station
 - **Smart Logo Detection**: Intelligent scoring system with homepage priority and path analysis
-- **Playlist Upload System**: User audio file uploads with drag & drop track ordering and playlist management
-- **MP3 Metadata Implementation**: Automatic metadata writing for all recordings (artist=show name, album=station name, recording date, description)
-- **Multi-Format Audio Support**: Upload MP3, WAV, M4A, AAC, OGG, FLAC with automatic MP3 conversion
+- **🎵 Comprehensive Playlist Enhancement System**: Complete drag-and-drop upload system with full-page drop zones, URL/YouTube audio conversion, enhanced player with rewind/fast-forward controls, and professional track management
+- **🎛️ Enhanced Audio Player**: Professional-grade playback controls with 15-second skip, click-to-seek progress bar, keyboard shortcuts, and seamless track transitions
+- **🏷️ ID3v2 Metadata System**: Automatic metadata embedding for all recordings (Artist=Show, Album=Station, Date, Comment) with UTF-8 encoding and database validation
+- **🔗 URL & YouTube Integration**: Direct audio URL support and automatic YouTube-to-MP3 conversion using yt-dlp with quality optimization
+- **📱 Drag-and-Drop Upload**: Full-page drop zones with multi-file support, playlist auto-detection, and visual upload feedback
+- **🎼 Multi-Format Audio Support**: Upload MP3, WAV, M4A, AAC, OGG, FLAC with automatic MP3 conversion and format validation
 - **Multiple Show Airings**: Support for original + repeat broadcasts with natural language scheduling ("Mondays at 7 PM and Thursdays at 3 PM")
 - **Smart Recording Status**: Clean, unobtrusive recording indicators that only appear for actively recording shows with compact progress tracking
 - **Automatic Show Recording**: APScheduler-based system that automatically records shows at scheduled times
