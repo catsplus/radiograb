@@ -370,8 +370,10 @@ require_once '../includes/header.php';
                                             <button type="button" 
                                                     class="btn btn-outline-danger btn-sm delete-recording"
                                                     data-recording-id="<?= $recording['id'] ?>"
-                                                    data-recording-title="<?= h($recording['title'] ?: $recording['show_name']) ?>">
-                                                <i class="fas fa-trash"></i> Delete
+                                                    data-recording-title="<?= h($recording['title'] ?: $recording['show_name']) ?>"
+                                                    data-file-exists="<?= recordingFileExists($recording['filename']) ? 'true' : 'false' ?>">
+                                                <i class="fas fa-trash"></i> 
+                                                <?= recordingFileExists($recording['filename']) ? 'Delete' : 'Remove Entry' ?>
                                             </button>
                                         </div>
                                     </div>
@@ -448,9 +450,13 @@ require_once '../includes/header.php';
                 </div>
                 <div class="modal-body">
                     <p>Are you sure you want to delete the recording <strong id="recordingTitle"></strong>?</p>
-                    <p class="text-danger">
+                    <p class="text-danger" id="deleteWarning">
                         <i class="fas fa-exclamation-triangle"></i>
                         This will permanently delete the audio file. This action cannot be undone.
+                    </p>
+                    <p class="text-info d-none" id="orphanedWarning">
+                        <i class="fas fa-info-circle"></i>
+                        This will remove the database entry for a missing recording file.
                     </p>
                 </div>
                 <div class="modal-footer">
@@ -467,6 +473,41 @@ require_once '../includes/header.php';
             </div>
         </div>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle delete recording modal
+        const deleteButtons = document.querySelectorAll('.delete-recording');
+        const deleteModal = document.getElementById('deleteModal');
+        const recordingTitle = document.getElementById('recordingTitle');
+        const deleteRecordingId = document.getElementById('deleteRecordingId');
+        const deleteWarning = document.getElementById('deleteWarning');
+        const orphanedWarning = document.getElementById('orphanedWarning');
+        
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const recordingId = this.dataset.recordingId;
+                const title = this.dataset.recordingTitle;
+                const fileExists = this.dataset.fileExists === 'true';
+                
+                recordingTitle.textContent = title;
+                deleteRecordingId.value = recordingId;
+                
+                // Show appropriate warning based on file existence
+                if (fileExists) {
+                    deleteWarning.classList.remove('d-none');
+                    orphanedWarning.classList.add('d-none');
+                } else {
+                    deleteWarning.classList.add('d-none');
+                    orphanedWarning.classList.remove('d-none');
+                }
+                
+                const modal = new bootstrap.Modal(deleteModal);
+                modal.show();
+            });
+        });
+    });
+    </script>
 
     <?php
 // RadioGrab.js handles the delete functionality
