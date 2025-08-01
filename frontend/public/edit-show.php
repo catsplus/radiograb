@@ -59,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $station_id = (int)($_POST['station_id'] ?? 0);
     $description = trim($_POST['description'] ?? '');
+    $image_url = trim($_POST['image_url'] ?? '');
     $schedule_text = trim($_POST['schedule_text'] ?? '');
     $duration_minutes = (int)($_POST['duration_minutes'] ?? 60);
     $host = trim($_POST['host'] ?? '');
@@ -101,6 +102,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Invalid TTL type';
     }
     
+    if ($image_url && !filter_var($image_url, FILTER_VALIDATE_URL)) {
+        $errors[] = 'Image URL must be a valid URL';
+    }
+    
     if (empty($errors)) {
         try {
             // Parse schedule text using Python schedule parser
@@ -124,6 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'station_id' => $station_id,
                         'name' => $name,
                         'description' => $description ?: null,
+                        'image_url' => $image_url ?: null,
                         'schedule_pattern' => $schedule_data['cron'],
                         'schedule_description' => $schedule_data['description'] ?? $schedule_text,
                         'duration_minutes' => $duration_minutes,
@@ -241,6 +247,14 @@ require_once '../includes/header.php';
                             <div class="mb-3">
                                 <label for="description" class="form-label">Description</label>
                                 <textarea class="form-control" id="description" name="description" rows="3"><?= h($show['description']) ?></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="image_url" class="form-label">Show Image/Logo</label>
+                                <input type="url" class="form-control" id="image_url" name="image_url" 
+                                       value="<?= h($show['image_url'] ?? '') ?>" 
+                                       placeholder="https://example.com/show-logo.png">
+                                <div class="form-text">URL to the show's logo or cover art image</div>
                             </div>
                             
                             <div class="mb-3">

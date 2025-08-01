@@ -112,6 +112,7 @@ docker logs radiograb-recorder-1 --tail 50 | grep -i schedule
 - **Multiple Airings Support**: Groups shows by name, displays all broadcast times
 - **Interactive Selection**: Individual "Add" buttons for each show/airing combination
 - **CSRF Protection**: Full security integration with session management
+- **Manual Fallback**: ICS file upload system when automatic discovery fails
 
 ### JavaScript Calendar Parsing (`js_calendar_parser.py`)
 - **Chromium WebDriver**: Uses system-installed `chromium-browser` for JavaScript execution
@@ -123,6 +124,7 @@ docker logs radiograb-recorder-1 --tail 50 | grep -i schedule
 ### API Endpoints
 - **`/api/discover-station-schedule.php`**: Station schedule discovery
 - **`/api/schedule-verification.php`**: Calendar verification and testing
+- **`/api/import-schedule-ics.php`**: Manual ICS file upload and parsing
 - **Browser Testing**: All APIs tested through actual browser workflows
 
 ### 🧪 Testing Requirements
@@ -316,6 +318,8 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git stash && git pull origin m
 ## 🆕 RECENT UPDATES (August 2025)
 
 ### ✅ Major Features Completed
+- **📅 Manual Schedule Import System**: ICS file upload with AI-powered conversion workflow (August 1, 2025)
+- **✏️ Station & Show Edit Functionality**: Complete CRUD interface for station and show management (August 1, 2025)
 - **🎵 Comprehensive Playlist Enhancement System**: Complete overhaul with drag-and-drop, URL/YouTube support, enhanced player (August 1, 2025)
 - **Enhanced RSS Feed System**: Comprehensive RSS/podcast architecture with multiple feed types (July 31, 2025)
 - **Playlist Upload System**: Multi-format audio uploads with MP3 conversion and metadata tagging
@@ -688,6 +692,322 @@ ssh radiograb@167.71.84.143 "docker exec radiograb-mysql-1 mysql -u radiograb -p
 - **UI Improvements**: Empty show hiding, progress tracking, real-time updates
 - **Recording Service v2.0**: Database-driven with duplicate prevention
 - **Quality Validation**: AAC→MP3 conversion with file size checks
+
+## 📅 Manual Schedule Import System (COMPLETED August 1, 2025)
+
+### 🚀 **AI-Powered Schedule Conversion Workflow**
+When automatic calendar discovery fails, RadioGrab provides a comprehensive manual import system:
+
+#### **User-Guided Workflow**
+1. **Visit Station Schedule**: User navigates to station's schedule page manually
+2. **AI Conversion Prompt**: Copy pre-written prompt for ChatGPT/Claude/Grok:
+   ```
+   Please convert the schedule on this page into a downloadable .ics file with weekly recurring events. Include show names, times, days of the week, and descriptions if available. Make sure to set proper recurring rules (RRULE) for weekly shows. Also provide a brief summary of the methods you used to extract the schedule data so we can improve our automatic discovery system.
+   ```
+3. **ICS File Generation**: AI assistant converts schedule to standard ICS calendar format
+4. **File Upload**: User uploads resulting .ics file through RadioGrab interface
+5. **Automatic Import**: System parses and imports shows as if auto-discovered
+
+#### **Technical Integration**
+- **Seamless UI**: Manual import appears in "Add Show" interface when calendar URL fails
+- **Copy-to-Clipboard**: One-click prompt copying for user convenience
+- **File Validation**: Comprehensive .ics/.ical file format validation
+- **Show Processing**: Uses same validation and filtering as automatic discovery
+
+### 🔧 **ICS Parser Service** (`backend/services/ics_parser.py`)
+
+#### **Core Functionality**
+```python
+class ICSParser:
+    def parse_ics_file(self, file_path: str, station_id: int) -> ICSParseResult:
+        """Parse ICS file and extract show information with RRULE support"""
+        # Parse calendar events
+        # Handle recurring rules (RRULE) for weekly shows
+        # Apply same show name filtering as automatic discovery
+        # Return structured show data for database insertion
+```
+
+#### **Key Features**
+- **RRULE Processing**: Handles weekly recurring event rules (FREQ=WEEKLY, BYDAY=MO,TU,WE...)
+- **Timezone Support**: Proper timezone handling for show times
+- **Show Validation**: Same 40+ invalid pattern filtering as automatic discovery
+- **Error Handling**: Comprehensive error reporting for invalid ICS files
+- **Data Extraction**: Extracts show names, descriptions, air times, day patterns
+
+#### **Dependencies**
+```bash
+# Python ICS/Calendar processing
+icalendar>=5.0.0               # Industry-standard ICS parsing library
+python-dateutil>=2.8.0        # Timezone and date handling
+```
+
+### 📤 **Upload API Endpoint** (`/api/import-schedule-ics.php`)
+
+#### **Security & Validation**
+- **File Type Validation**: Accepts only .ics and .ical file extensions
+- **Size Limits**: Maximum 10MB file size for calendar imports
+- **CSRF Protection**: Full token validation for secure file uploads
+- **Content Verification**: Validates ICS file structure before processing
+
+#### **Processing Flow**
+```php
+1. Validate uploaded file (type, size, structure)
+2. Save to temporary location for processing
+3. Call Python ICS parser service with station context
+4. Parse results and format for client response
+5. Clean up temporary files
+6. Return structured show data for user review
+```
+
+#### **Response Format**
+```json
+{
+    "success": true,
+    "shows": [
+        {
+            "name": "Morning Edition",
+            "description": "NPR's morning news program",
+            "schedule_text": "Monday 6:00 AM",
+            "duration_minutes": 120
+        }
+    ],
+    "debug_info": "Processed 15 events, found 8 valid shows"
+}
+```
+
+### 🎨 **User Interface Integration** (`/add-show.php`)
+
+#### **Fallback UI Design**
+- **Contextual Appearance**: Shows only when calendar discovery fails or no calendar URL provided
+- **Step-by-Step Instructions**: Clear workflow guidance for users
+- **AI Prompt Display**: Pre-formatted prompt with copy button
+- **File Upload Zone**: Drag-and-drop interface for ICS files
+- **Progress Feedback**: Upload progress and processing status
+
+#### **Interactive Elements**
+```javascript
+// Copy AI prompt to clipboard
+function copyToClipboard(elementId) {
+    const text = document.getElementById(elementId).textContent;
+    navigator.clipboard.writeText(text);
+    showAlert('success', 'Prompt copied to clipboard!');
+}
+
+// Handle ICS file upload
+async function handleICSUpload(file, stationId) {
+    const formData = new FormData();
+    formData.append('ics_file', file);
+    formData.append('station_id', stationId);
+    formData.append('csrf_token', getCsrfToken());
+    
+    const response = await fetch('/api/import-schedule-ics.php', {
+        method: 'POST',
+        body: formData
+    });
+    
+    return await response.json();
+}
+```
+
+### 🔄 **Integration with Existing Systems**
+
+#### **Show Discovery Pipeline**
+1. **Automatic Discovery**: First attempt via JavaScript calendar parsing
+2. **Manual Fallback**: If automatic fails, present ICS upload option
+3. **Unified Processing**: Both methods use same show validation and filtering
+4. **Database Integration**: Shows imported with same schema and relationships
+
+#### **Quality Assurance**
+- **Same Validation Rules**: Manual imports use identical filtering as automatic discovery
+- **Show Name Filtering**: 40+ invalid patterns rejected (navigation, admin elements)
+- **Time Requirement**: Shows must have valid schedules to be imported
+- **User Activation**: Imported shows start as "Inactive" for user review
+
+### 📊 **Usage Analytics & Monitoring**
+
+#### **Import Tracking**
+- **Success Metrics**: Track successful ICS imports vs automatic discovery
+- **Error Logging**: Comprehensive logging of parsing failures and issues
+- **User Feedback**: System learns from manual imports to improve automatic discovery
+
+#### **System Integration**
+```bash
+# Manual ICS import testing
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/ics_parser.py --test-file /path/to/schedule.ics --station-id 1
+
+# Debug ICS parsing issues
+docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services/ics_parser.py --validate-ics /path/to/schedule.ics
+```
+
+## ✏️ Station & Show Edit Functionality (COMPLETED August 1, 2025)
+
+### 🏢 **Station Edit Interface** (`/edit-station.php`)
+
+#### **Comprehensive Station Management**
+RadioGrab now provides complete CRUD functionality for station information:
+
+#### **Editable Fields**
+- **Station Name**: Primary station identifier and display name
+- **Call Letters**: Unique station call sign (WYSO, KQED, etc.)
+- **Description**: Detailed station information and background
+- **Logo URL**: Station logo/branding image URL with validation
+- **Stream URL**: Direct audio stream URL for recording (optional)
+- **Calendar URL**: Schedule page URL for automatic show discovery (optional)
+- **Website URL**: Station's main website for reference
+- **Frequency**: Broadcast frequency (91.3 FM, 1010 AM, etc.)
+- **Location**: Geographic location (Yellow Springs, OH)
+- **Time Zone**: Station's local timezone for accurate scheduling
+
+#### **Advanced Features**
+- **Live Preview**: Real-time preview of station information as you edit
+- **URL Validation**: Automatic validation of all URL fields
+- **Logo Preview**: Live logo preview with fallback to default image
+- **Timezone Selection**: Comprehensive US timezone dropdown
+- **Statistics Display**: Show count, recording count, and total storage usage
+- **Duplicate Prevention**: Call letters uniqueness validation
+
+#### **User Experience**
+```javascript
+// Live preview functionality
+function updatePreview() {
+    if (nameInput.value) {
+        previewName.textContent = nameInput.value;
+    }
+    
+    let callText = callLettersInput.value || originalCallLetters;
+    if (frequencyInput.value) {
+        callText += ' - ' + frequencyInput.value;
+    }
+    previewCall.innerHTML = callText;
+    
+    if (logoInput.value) {
+        previewLogo.src = logoInput.value;
+    }
+}
+```
+
+### 📻 **Show Edit Interface** (`/edit-show.php`)
+
+#### **Complete Show Management**
+Enhanced show editing with all essential fields for comprehensive show management:
+
+#### **Editable Fields**
+- **Show Title**: Primary show name and identifier
+- **Description**: Show synopsis, format, and content description
+- **Show Image/Logo**: Cover art or logo URL with validation
+- **Associated Station**: Dropdown selection of available stations
+- **Schedule**: Natural language schedule input ("Monday 9:00 AM")
+- **Duration**: Show length in minutes with validation
+- **Host**: Show host or presenter information
+- **Genre**: Show category/genre classification
+- **Active Status**: Enable/disable recording with toggle switch
+- **Recording Retention**: TTL settings with time unit selection
+
+#### **Advanced Scheduling**
+- **Natural Language Parser**: "Monday 9:00 AM" → "0 9 * * 1" cron conversion
+- **Schedule Validation**: Real-time validation of schedule formats
+- **Cron Preview**: Display generated cron expression for verification
+- **Scheduler Integration**: Automatic APScheduler updates on save
+
+#### **Metadata Management**
+- **Image URL Support**: Show logos and cover art with URL validation
+- **Genre Classification**: Organized show categorization
+- **Host Information**: Producer/presenter attribution
+- **TTL Configuration**: Flexible retention policies (days/weeks/months/indefinite)
+
+### 🔧 **Technical Implementation**
+
+#### **Database Operations**
+```php
+// Station update with comprehensive validation
+$db->update('stations', [
+    'name' => $name,
+    'description' => $description,
+    'logo_url' => $logo_url ?: null,
+    'stream_url' => $stream_url ?: null,
+    'calendar_url' => $calendar_url ?: null,
+    'timezone' => $timezone ?: 'America/New_York',
+    'call_letters' => $call_letters,
+    'website_url' => $website_url ?: null,
+    'frequency' => $frequency ?: null,
+    'location' => $location ?: null,
+    'updated_at' => date('Y-m-d H:i:s')
+], 'id = ?', [$station_id]);
+```
+
+#### **Security & Validation**
+- **CSRF Protection**: All form submissions require valid CSRF tokens
+- **Input Sanitization**: Comprehensive input validation and sanitization
+- **URL Validation**: Proper URL format validation for all URL fields
+- **Duplicate Prevention**: Call letters and show name uniqueness checking
+- **Error Handling**: User-friendly error messages and form repopulation
+
+#### **Integration with Recording System**
+```bash
+# Automatic scheduler updates after show edits
+/opt/radiograb/venv/bin/python backend/services/schedule_manager.py --update-show $show_id
+
+# TTL updates for existing recordings
+/opt/radiograb/venv/bin/python backend/services/ttl_manager.py --update-show-ttl $show_id --ttl-days $retention_days
+```
+
+### 🎨 **User Interface Design**
+
+#### **Responsive Layout**
+- **Two-Column Design**: Edit form on left, preview/statistics on right
+- **Mobile Optimized**: Responsive design for tablet and mobile editing
+- **Bootstrap Integration**: Consistent UI components and styling
+- **Form Validation**: Real-time client-side validation with server-side backup
+
+#### **Enhanced User Experience**
+- **Breadcrumb Navigation**: Clear page hierarchy and navigation
+- **Cancel/Save Actions**: Proper form controls with confirmation
+- **Field Helpers**: Contextual help text and validation messages
+- **Status Indicators**: Visual feedback for active/inactive states
+
+#### **Accessibility Features**
+- **Keyboard Navigation**: Full keyboard accessibility for form controls
+- **Screen Reader Support**: Proper labeling and ARIA attributes
+- **High Contrast**: Clear visual hierarchy and contrast ratios
+- **Form Validation**: Accessible error messaging and field indicators
+
+### 🔄 **Backend Service Integration**
+
+#### **Schedule Management**
+```python
+# Show schedule updates trigger APScheduler refresh
+class ScheduleManager:
+    def update_show(self, show_id):
+        """Update show schedule in APScheduler after edit"""
+        show = self.get_show(show_id)
+        if show['active']:
+            self.schedule_show(show)
+        else:
+            self.unschedule_show(show_id)
+```
+
+#### **TTL Management**
+```python
+# Recording retention updates
+class TTLManager:
+    def update_show_ttl(self, show_id, ttl_days, ttl_type):
+        """Update TTL for existing recordings without overrides"""
+        # Update recordings that don't have manual TTL overrides
+        # Apply new retention policy to future recordings
+```
+
+### 📊 **Statistics & Monitoring**
+
+#### **Station Statistics**
+- **Show Count**: Total number of shows for the station
+- **Active Shows**: Currently active/recording shows
+- **Total Recordings**: Cumulative recording count
+- **Storage Usage**: Total disk space used by station recordings
+
+#### **Real-Time Updates**
+- **Cache Clearing**: Test results cleared when station info changes
+- **Preview Updates**: Live preview updates as user types
+- **Statistics Refresh**: Real-time statistics updates after changes
 
 ### 📅 Enhanced Calendar Discovery System (July 30, 2025)
 
