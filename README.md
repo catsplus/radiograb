@@ -9,12 +9,13 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.9.0 (July 31, 2025)
-**Latest Features**: 🎯 **ENHANCED RSS FEED SYSTEM** - Comprehensive RSS/podcast feed architecture with multiple feed types: Station Feeds (all shows per station), Custom Feeds (user-selected shows with custom metadata), Playlist Feeds (manual track ordering), and Universal Feeds (All Shows/All Playlists aggregated). Complete web interface with tabbed navigation, iTunes podcast compatibility, image fallback logic (Show → Station → Default), and automatic feed updates. Enhanced deployment script with intelligent code change detection. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v3.9.1 (August 1, 2025)
+**Latest Features**: 🎛️ **ENHANCED SHOWS MANAGEMENT** - Comprehensive filtering and sorting system for shows page with multi-criteria filtering (search, station, status, genre, tags) and advanced sorting options (show name, station, genre, tags, next air date, recording count, latest recording). Two-row filter layout with persistent filtering via URL parameters. Also includes 🎯 **ENHANCED RSS FEED SYSTEM** with multiple feed types and complete web interface. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
+- **🎛️ Enhanced Shows Management**: Comprehensive filtering and sorting system with multi-criteria filtering (search, station, status, genre, tags) and advanced sorting options (show name, station, genre, tags, next air date, recording count, latest recording)
 - **🎯 Station Schedule Discovery**: Automatically discover and display station programming schedules in Add Show interface
 - **📋 Smart Show Management**: Click "Find Shows" to browse station's published schedule with multiple airings support
 - **🖱️ One-Click Show Addition**: Click Add on discovered shows to pre-fill all form fields (name, schedule, description, host, genre)

@@ -114,6 +114,8 @@ function handleToggleActive() {
 }
 
 function handleUpdateTags() {
+    global $db;
+    
     $input = json_decode(file_get_contents('php://input'), true);
     if (!$input) {
         parse_str(file_get_contents('php://input'), $input);
@@ -127,9 +129,22 @@ function handleUpdateTags() {
         return;
     }
     
-    $escaped_tags = escapeshellarg($tags);
-    $result = executeShowManagement("--update-tags {$show_id} --tags {$escaped_tags}");
-    echo json_encode($result);
+    try {
+        // Update tags directly in database
+        $db->query("UPDATE shows SET tags = ? WHERE id = ?", [$tags, $show_id]);
+        
+        // Get show name for response
+        $show = $db->fetchOne("SELECT name FROM shows WHERE id = ?", [$show_id]);
+        $show_name = $show ? $show['name'] : 'Show';
+        
+        echo json_encode([
+            'success' => true, 
+            'message' => "Tags updated for {$show_name}",
+            'tags' => $tags
+        ]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+    }
 }
 
 function handleGetNextRecordings() {

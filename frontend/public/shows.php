@@ -316,6 +316,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $station_id = isset($_GET['station_id']) ? (int)$_GET['station_id'] : null;
 $status = isset($_GET['status']) ? $_GET['status'] : '';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$genre = isset($_GET['genre']) ? trim($_GET['genre']) : '';
+$tags = isset($_GET['tags']) ? trim($_GET['tags']) : '';
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'name';
+$order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'desc' : 'asc';
 
 // Build query - only show scheduled shows (not playlists)
 $where_conditions = ["s.show_type = 'scheduled' OR s.show_type IS NULL"];
@@ -340,7 +344,28 @@ if ($search) {
     $params[] = $search_param;
 }
 
+if ($genre) {
+    $where_conditions[] = "s.genre LIKE ?";
+    $params[] = "%$genre%";
+}
+
+if ($tags) {
+    $where_conditions[] = "s.tags LIKE ?";
+    $params[] = "%$tags%";
+}
+
 $where_clause = $where_conditions ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+
+// Build ORDER BY clause
+$valid_sorts = ['name', 'station_name', 'genre', 'tags', 'next_air_date', 'recording_count', 'latest_recording'];
+$sort_column = in_array($sort, $valid_sorts) ? $sort : 'name';
+
+// Handle special sorting cases
+if ($sort_column === 'next_air_date') {
+    $order_clause = "ORDER BY (CASE WHEN s.schedule_pattern IS NULL OR s.schedule_pattern = '' THEN 1 ELSE 0 END), s.schedule_pattern $order";
+} else {
+    $order_clause = "ORDER BY $sort_column $order";
+}
 
 try {
     // Get shows with station and recording info
@@ -356,7 +381,7 @@ try {
         LEFT JOIN recordings r ON s.id = r.show_id
         $where_clause
         GROUP BY s.id 
-        ORDER BY s.name
+        $order_clause
     ", $params);
     
     // Get stations for filter
@@ -445,11 +470,12 @@ require_once '../includes/header.php';
         </div>
 
 
-        <!-- Filters -->
+        <!-- Enhanced Filters -->
         <div class="card mb-4">
             <div class="card-body">
                 <form method="GET" class="row g-3">
-                    <div class="col-md-4">
+                    <!-- Row 1: Basic Filters -->
+                    <div class="col-md-3">
                         <label class="form-label">Search</label>
                         <input type="text" class="form-control" name="search" 
                                value="<?= h($search) ?>" placeholder="Search shows...">
@@ -473,12 +499,46 @@ require_once '../includes/header.php';
                             <option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Inactive Only</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
+                        <label class="form-label">Genre</label>
+                        <input type="text" class="form-control" name="genre" 
+                               value="<?= h($genre) ?>" placeholder="Filter by genre...">
+                    </div>
+                    
+                    <!-- Row 2: Additional Filters and Sorting -->
+                    <div class="col-md-3">
+                        <label class="form-label">Tags</label>
+                        <input type="text" class="form-control" name="tags" 
+                               value="<?= h($tags) ?>" placeholder="Filter by tags...">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Sort By</label>
+                        <select class="form-select" name="sort">
+                            <option value="name" <?= $sort === 'name' ? 'selected' : '' ?>>Show Name</option>
+                            <option value="station_name" <?= $sort === 'station_name' ? 'selected' : '' ?>>Station</option>
+                            <option value="genre" <?= $sort === 'genre' ? 'selected' : '' ?>>Genre</option>
+                            <option value="tags" <?= $sort === 'tags' ? 'selected' : '' ?>>Tags</option>
+                            <option value="next_air_date" <?= $sort === 'next_air_date' ? 'selected' : '' ?>>Next Air Date</option>
+                            <option value="recording_count" <?= $sort === 'recording_count' ? 'selected' : '' ?>>Recording Count</option>
+                            <option value="latest_recording" <?= $sort === 'latest_recording' ? 'selected' : '' ?>>Latest Recording</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Order</label>
+                        <select class="form-select" name="order">
+                            <option value="asc" <?= $order === 'asc' ? 'selected' : '' ?>>Ascending</option>
+                            <option value="desc" <?= $order === 'desc' ? 'selected' : '' ?>>Descending</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label">&nbsp;</label>
-                        <div class="d-grid">
+                        <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-search"></i> Filter
                             </button>
+                            <a href="/shows.php" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
                         </div>
                     </div>
                 </form>
@@ -788,7 +848,7 @@ require_once '../includes/header.php';
                                         <i class="fas fa-edit"></i> Edit
                                     </a>
                                     <a href="/recordings.php?show_id=<?= $show['id'] ?>" 
-                                       class="btn btn-outline-info btn-sm">
+                                       class="btn btn-primary btn-sm">
                                         <i class="fas fa-file-audio"></i> Recordings
                                     </a>
                                     <button type="button" 
