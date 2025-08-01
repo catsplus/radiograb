@@ -389,86 +389,86 @@ $additional_js = '
         let currentStationId = null;
         
         // Handle delete modal
-        document.addEventListener('DOMContentLoaded', function() {
-            const deleteModal = document.getElementById('deleteModal');
-            deleteModal.addEventListener('show.bs.modal', function(event) {
+        document.addEventListener("DOMContentLoaded", function() {
+            const deleteModal = document.getElementById("deleteModal");
+            deleteModal.addEventListener("show.bs.modal", function(event) {
                 const button = event.relatedTarget;
-                const stationId = button.getAttribute('data-station-id');
-                const stationName = button.getAttribute('data-station-name');
+                const stationId = button.getAttribute("data-station-id");
+                const stationName = button.getAttribute("data-station-name");
                 
-                document.getElementById('deleteStationId').value = stationId;
-                document.getElementById('stationName').textContent = stationName;
+                document.getElementById("deleteStationId").value = stationId;
+                document.getElementById("stationName").textContent = stationName;
             });
             
             // Handle import schedule buttons
-            document.querySelectorAll('.import-schedule').forEach(btn => {
-                btn.addEventListener('click', function() {
+            document.querySelectorAll(".import-schedule").forEach(btn => {
+                btn.addEventListener("click", function() {
                     currentStationId = this.dataset.stationId;
-                    document.getElementById('importStationName').textContent = this.dataset.stationName;
+                    document.getElementById("importStationName").textContent = this.dataset.stationName;
                     
                     // Reset modal state
-                    document.getElementById('importStep1').style.display = 'block';
-                    document.getElementById('importStep2').style.display = 'none';
-                    document.getElementById('importStep3').style.display = 'none';
-                    document.getElementById('importStep4').style.display = 'none';
-                    document.getElementById('previewBtn').style.display = 'inline-block';
-                    document.getElementById('importBtn').style.display = 'none';
+                    document.getElementById("importStep1").style.display = "block";
+                    document.getElementById("importStep2").style.display = "none";
+                    document.getElementById("importStep3").style.display = "none";
+                    document.getElementById("importStep4").style.display = "none";
+                    document.getElementById("previewBtn").style.display = "inline-block";
+                    document.getElementById("importBtn").style.display = "none";
                     
                     // Show modal
-                    new bootstrap.Modal(document.getElementById('importModal')).show();
+                    new bootstrap.Modal(document.getElementById("importModal")).show();
                 });
             });
             
             // Handle preview button
-            document.getElementById('previewBtn').addEventListener('click', function() {
+            document.getElementById("previewBtn").addEventListener("click", function() {
                 previewSchedule();
             });
             
             // Handle import button
-            document.getElementById('importBtn').addEventListener('click', function() {
+            document.getElementById("importBtn").addEventListener("click", function() {
                 importSchedule();
             });
         });
         
         async function previewSchedule() {
-            document.getElementById('importStep1').style.display = 'none';
-            document.getElementById('importStep2').style.display = 'block';
+            document.getElementById("importStep1").style.display = "none";
+            document.getElementById("importStep2").style.display = "block";
             
             try {
-                const response = await fetch('/api/import-schedule.php', {
-                    method: 'POST',
+                const response = await fetch("/api/import-schedule.php", {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
+                        "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        action: 'preview',
+                        action: "preview",
                         station_id: currentStationId,
-                        csrf_token: '<?= generateCSRFToken() ?>'
+                        csrf_token: "<?= generateCSRFToken() ?>"
                     })
                 });
                 
                 const result = await response.json();
                 
-                document.getElementById('importStep2').style.display = 'none';
+                document.getElementById("importStep2").style.display = "none";
                 
                 if (result.success) {
                     displayPreview(result.shows);
-                    document.getElementById('importStep3').style.display = 'block';
-                    document.getElementById('previewBtn').style.display = 'none';
-                    document.getElementById('importBtn').style.display = 'inline-block';
+                    document.getElementById("importStep3").style.display = "block";
+                    document.getElementById("previewBtn").style.display = "none";
+                    document.getElementById("importBtn").style.display = "inline-block";
                 } else {
-                    alert('Error: ' + result.error);
-                    document.getElementById('importStep1').style.display = 'block';
+                    alert("Error: " + result.error);
+                    document.getElementById("importStep1").style.display = "block";
                 }
             } catch (error) {
-                document.getElementById('importStep2').style.display = 'none';
-                document.getElementById('importStep1').style.display = 'block';
-                alert('Network error occurred');
+                document.getElementById("importStep2").style.display = "none";
+                document.getElementById("importStep1").style.display = "block";
+                alert("Network error occurred");
             }
         }
         
         function toggleAllShows(select) {
-            const checkboxes = document.querySelectorAll('.show-checkbox');
+            const checkboxes = document.querySelectorAll(".show-checkbox");
             checkboxes.forEach(checkbox => {
                 checkbox.checked = select;
             });
@@ -476,7 +476,7 @@ $additional_js = '
         
         function getSelectedShows() {
             const selectedShows = [];
-            const checkboxes = document.querySelectorAll('.show-checkbox:checked');
+            const checkboxes = document.querySelectorAll(".show-checkbox:checked");
             checkboxes.forEach(checkbox => {
                 const index = parseInt(checkbox.value);
                 if (window.previewShows && window.previewShows[index]) {
@@ -491,59 +491,59 @@ $additional_js = '
             const selectedShows = getSelectedShows();
             
             if (selectedShows.length === 0) {
-                alert('Please select at least one show to import.');
+                alert("Please select at least one show to import.");
                 return;
             }
             
-            document.getElementById('importStep3').style.display = 'none';
-            document.getElementById('importStep2').style.display = 'block';
-            document.querySelector('#importStep2 p').textContent = `Importing ${selectedShows.length} selected shows...`;
+            document.getElementById("importStep3").style.display = "none";
+            document.getElementById("importStep2").style.display = "block";
+            document.querySelector("#importStep2 p").textContent = `Importing ${selectedShows.length} selected shows...`;
             
             try {
-                const response = await fetch('/api/import-schedule.php', {
-                    method: 'POST',
+                const response = await fetch("/api/import-schedule.php", {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
+                        "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        action: 'import',
+                        action: "import",
                         station_id: currentStationId,
-                        auto_create: document.getElementById('autoCreate').checked,
-                        update_existing: document.getElementById('updateExisting').checked,
+                        auto_create: document.getElementById("autoCreate").checked,
+                        update_existing: document.getElementById("updateExisting").checked,
                         selected_shows: selectedShows,
-                        csrf_token: '<?= generateCSRFToken() ?>'
+                        csrf_token: "<?= generateCSRFToken() ?>"
                     })
                 });
                 
                 const result = await response.json();
                 
-                document.getElementById('importStep2').style.display = 'none';
+                document.getElementById("importStep2").style.display = "none";
                 
                 if (result.success) {
                     displayResults(result.results);
-                    document.getElementById('importStep4').style.display = 'block';
-                    document.getElementById('importBtn').style.display = 'none';
+                    document.getElementById("importStep4").style.display = "block";
+                    document.getElementById("importBtn").style.display = "none";
                     
                     // Refresh page after successful import
                     setTimeout(() => {
                         window.location.reload();
                     }, 3000);
                 } else {
-                    alert('Error: ' + result.error);
-                    document.getElementById('importStep3').style.display = 'block';
+                    alert("Error: " + result.error);
+                    document.getElementById("importStep3").style.display = "block";
                 }
             } catch (error) {
-                document.getElementById('importStep2').style.display = 'none';
-                document.getElementById('importStep3').style.display = 'block';
-                alert('Network error occurred');
+                document.getElementById("importStep2").style.display = "none";
+                document.getElementById("importStep3").style.display = "block";
+                alert("Network error occurred");
             }
         }
         
         function displayPreview(shows) {
-            const container = document.getElementById('previewShows');
+            const container = document.getElementById("previewShows");
             
             if (shows.length === 0) {
-                container.innerHTML = '<p class="text-muted">No shows found in the station schedule.</p>';
+                container.innerHTML = "<p class=\"text-muted\">No shows found in the station schedule.</p>";
                 return;
             }
             
@@ -557,8 +557,8 @@ $additional_js = '
             `;
             
             shows.forEach((show, index) => {
-                const badgeClass = show.exists ? 'bg-warning' : 'bg-success';
-                const badgeText = show.exists ? 'EXISTS' : 'NEW';
+                const badgeClass = show.exists ? "bg-warning" : "bg-success";
+                const badgeText = show.exists ? "EXISTS" : "NEW";
                 const showId = `show_${index}`;
                 
                 html += `
@@ -566,13 +566,13 @@ $additional_js = '
                         <div class="d-flex align-items-start">
                             <div class="form-check me-3">
                                 <input class="form-check-input show-checkbox" type="checkbox" 
-                                       id="${showId}" value="${index}" ${!show.exists ? 'checked' : ''}>
+                                       id="${showId}" value="${index}" ${!show.exists ? "checked" : ""}>
                                 <label class="form-check-label" for="${showId}"></label>
                             </div>
                             <div class="flex-grow-1">
                                 <h6 class="mb-1">${show.name}</h6>
                                 <p class="mb-1">${show.schedule}</p>
-                                ${show.host ? `<small class="text-muted">Host: ${show.host}</small>` : ''}
+                                ${show.host ? `<small class="text-muted">Host: ${show.host}</small>` : ""}
                             </div>
                             <span class="badge ${badgeClass}">${badgeText}</span>
                         </div>
@@ -580,7 +580,7 @@ $additional_js = '
                 `;
             });
             
-            html += '</div>';
+            html += "</div>";
             container.innerHTML = html;
             
             // Store shows data for later use
@@ -588,7 +588,7 @@ $additional_js = '
         }
         
         function displayResults(results) {
-            const container = document.getElementById('importResults');
+            const container = document.getElementById("importResults");
             
             container.innerHTML = `
                 <div class="row text-center">
@@ -609,7 +609,7 @@ $additional_js = '
                         <small class="text-muted">Skipped</small>
                     </div>
                 </div>
-                ${results.errors > 0 ? `<div class="alert alert-warning mt-3">Some errors occurred during import.</div>` : ''}
+                ${results.errors > 0 ? `<div class="alert alert-warning mt-3">Some errors occurred during import.</div>` : ""}
                 <div class="alert alert-success mt-3">Import completed! The page will refresh shortly.</div>
             `;
         }
@@ -617,21 +617,21 @@ $additional_js = '
         // Function to get fresh CSRF token from API (maintains session)
         async function getCSRFToken() {
             try {
-                const response = await fetch('/api/get-csrf-token.php', {
-                    credentials: 'same-origin'
+                const response = await fetch("/api/get-csrf-token.php", {
+                    credentials: "same-origin"
                 });
                 const data = await response.json();
-                console.log('CSRF token response:', data);
+                console.log("CSRF token response:", data);
                 return data.csrf_token;
             } catch (error) {
-                console.error('Failed to get CSRF token:', error);
+                console.error("Failed to get CSRF token:", error);
                 return null;
             }
         }
         
         // Handle test stream buttons (Re-check buttons)
-        document.querySelectorAll('.test-stream').forEach(btn => {
-            btn.addEventListener('click', async function() {
+        document.querySelectorAll(".test-stream").forEach(btn => {
+            btn.addEventListener("click", async function() {
                 const stationId = this.dataset.stationId;
                 const stationName = this.dataset.stationName;
                 const streamUrl = this.dataset.streamUrl;
@@ -642,42 +642,42 @@ $additional_js = '
                 
                 // Disable button and show loading
                 this.disabled = true;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+                this.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i> Testing...";
                 
                 try {
                     // Get fresh CSRF token from API
                     const csrfToken = await getCSRFToken();
-                    console.log('CSRF Token fetched:', csrfToken);
+                    console.log("CSRF Token fetched:", csrfToken);
                     if (!csrfToken) {
-                        throw new Error('Failed to get CSRF token');
+                        throw new Error("Failed to get CSRF token");
                     }
                     
                     const requestBody = new URLSearchParams({
-                        action: 'test_recording',
+                        action: "test_recording",
                         station_id: stationId,
                         csrf_token: csrfToken
                     });
-                    console.log('Request body:', requestBody.toString());
+                    console.log("Request body:", requestBody.toString());
                     
-                    const response = await fetch('/api/test-recording.php', {
-                        method: 'POST',
+                    const response = await fetch("/api/test-recording.php", {
+                        method: "POST",
                         headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
+                            "Content-Type": "application/x-www-form-urlencoded",
                         },
-                        credentials: 'same-origin',
+                        credentials: "same-origin",
                         body: requestBody
                     });
                     
-                    console.log('Response status:', response.status);
+                    console.log("Response status:", response.status);
                     const responseText = await response.text();
-                    console.log('Response text:', responseText);
+                    console.log("Response text:", responseText);
                     
                     let result;
                     try {
                         result = JSON.parse(responseText);
                     } catch (e) {
-                        console.error('Failed to parse JSON response:', responseText);
-                        throw new Error('Invalid JSON response from server');
+                        console.error("Failed to parse JSON response:", responseText);
+                        throw new Error("Invalid JSON response from server");
                     }
                     
                     if (result.success) {
@@ -689,19 +689,19 @@ $additional_js = '
                     }
                     
                 } catch (error) {
-                    console.error('Test recording error:', error);
-                    alert('Network error occurred during test recording');
+                    console.error("Test recording error:", error);
+                    alert("Network error occurred during test recording");
                 } finally {
                     // Re-enable button
                     this.disabled = false;
-                    this.innerHTML = '<i class="fas fa-sync"></i> Re-check';
+                    this.innerHTML = "<i class=\"fas fa-sync\"></i> Re-check";
                 }
             });
         });
         
         // Handle record now buttons
-        document.querySelectorAll('.record-now').forEach(btn => {
-            btn.addEventListener('click', async function() {
+        document.querySelectorAll(".record-now").forEach(btn => {
+            btn.addEventListener("click", async function() {
                 const stationId = this.dataset.stationId;
                 const stationName = this.dataset.stationName;
                 const streamUrl = this.dataset.streamUrl;
@@ -712,22 +712,22 @@ $additional_js = '
                 
                 // Disable button and show loading
                 this.disabled = true;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+                this.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i> Starting...";
                 
                 try {
                     // Get fresh CSRF token from API
                     const csrfToken = await getCSRFToken();
                     if (!csrfToken) {
-                        throw new Error('Failed to get CSRF token');
+                        throw new Error("Failed to get CSRF token");
                     }
                     
-                    const response = await fetch('/api/test-recording.php', {
-                        method: 'POST',
+                    const response = await fetch("/api/test-recording.php", {
+                        method: "POST",
                         headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
+                            "Content-Type": "application/x-www-form-urlencoded",
                         },
                         body: new URLSearchParams({
-                            action: 'record_now',
+                            action: "record_now",
                             station_id: stationId,
                             csrf_token: csrfToken
                         })
@@ -742,12 +742,12 @@ $additional_js = '
                     }
                     
                 } catch (error) {
-                    console.error('On-demand recording error:', error);
-                    alert('Network error occurred during on-demand recording');
+                    console.error("On-demand recording error:", error);
+                    alert("Network error occurred during on-demand recording");
                 } finally {
                     // Re-enable button
                     this.disabled = false;
-                    this.innerHTML = '<i class="fas fa-record-vinyl"></i> Record Now (1h)';
+                    this.innerHTML = "<i class=\"fas fa-record-vinyl\"></i> Record Now (1h)";
                 }
             });
         });
@@ -803,46 +803,46 @@ $additional_js = '
             `;
             
             // Remove any existing modal
-            const existingModal = document.getElementById('recordingProgressModal');
+            const existingModal = document.getElementById("recordingProgressModal");
             if (existingModal) {
                 existingModal.remove();
             }
             
             // Add modal to page
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            document.body.insertAdjacentHTML("beforeend", modalHtml);
             
             // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('recordingProgressModal'));
+            const modal = new bootstrap.Modal(document.getElementById("recordingProgressModal"));
             modal.show();
             
             // Start countdown
             let remaining = duration;
-            const countdownElement = document.getElementById('recordingCountdown');
-            const progressBar = document.getElementById('recordingProgressBar');
+            const countdownElement = document.getElementById("recordingCountdown");
+            const progressBar = document.getElementById("recordingProgressBar");
             
             const interval = setInterval(() => {
                 remaining--;
                 const progress = ((duration - remaining) / duration) * 100;
                 
                 countdownElement.textContent = remaining;
-                progressBar.style.width = progress + '%';
-                progressBar.setAttribute('aria-valuenow', progress);
+                progressBar.style.width = progress + "%";
+                progressBar.setAttribute("aria-valuenow", progress);
                 
                 if (remaining <= 0) {
                     clearInterval(interval);
                     
                     // Update to completion state
-                    countdownElement.textContent = '0';
-                    progressBar.style.width = '100%';
-                    progressBar.className = 'progress-bar bg-success';
-                    progressBar.textContent = 'Complete!';
+                    countdownElement.textContent = "0";
+                    progressBar.style.width = "100%";
+                    progressBar.className = "progress-bar bg-success";
+                    progressBar.textContent = "Complete!";
                     
                     // Hide modal after 2 seconds
                     setTimeout(() => {
                         modal.hide();
                         // Remove modal from DOM after hiding
                         setTimeout(() => {
-                            document.getElementById('recordingProgressModal')?.remove();
+                            document.getElementById("recordingProgressModal")?.remove();
                         }, 300);
                     }, 2000);
                 }
@@ -850,8 +850,8 @@ $additional_js = '
         }
         
         // Handle calendar verification buttons
-        document.querySelectorAll('.verify-calendar').forEach(btn => {
-            btn.addEventListener('click', async function() {
+        document.querySelectorAll(".verify-calendar").forEach(btn => {
+            btn.addEventListener("click", async function() {
                 const stationId = this.dataset.stationId;
                 const stationName = this.dataset.stationName;
                 
@@ -861,23 +861,23 @@ $additional_js = '
                 
                 // Disable button and show loading
                 this.disabled = true;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+                this.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i> Checking...";
                 
                 try {
                     const csrfToken = await getCSRFToken();
                     if (!csrfToken) {
-                        throw new Error('Failed to get CSRF token');
+                        throw new Error("Failed to get CSRF token");
                     }
                     
                     const response = await fetch(`/api/schedule-verification.php?action=verify_station&station_id=${stationId}`, {
-                        method: 'GET',
-                        credentials: 'same-origin'
+                        method: "GET",
+                        credentials: "same-origin"
                     });
                     
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert(`Calendar verification completed for ${stationName}!\n\nResult: ${result.message || 'Verification completed successfully'}`);
+                        alert(`Calendar verification completed for ${stationName}!\n\nResult: ${result.message || "Verification completed successfully"}`);
                         // Refresh page to show updated verification status
                         setTimeout(() => {
                             window.location.reload();
@@ -887,12 +887,12 @@ $additional_js = '
                     }
                     
                 } catch (error) {
-                    console.error('Calendar verification error:', error);
-                    alert('Network error occurred during calendar verification');
+                    console.error("Calendar verification error:", error);
+                    alert("Network error occurred during calendar verification");
                 } finally {
                     // Re-enable button
                     this.disabled = false;
-                    this.innerHTML = '<i class="fas fa-sync"></i> Re-check';
+                    this.innerHTML = "<i class=\"fas fa-sync\"></i> Re-check";
                 }
             });
         });
@@ -900,7 +900,7 @@ $additional_js = '
         // Check for test recordings and show play icons
         async function checkForTestRecordings() {
             try {
-                const response = await fetch('/api/test-recordings.php?action=list');
+                const response = await fetch("/api/test-recordings.php?action=list");
                 const result = await response.json();
                 
                 if (result.success && result.recordings.length > 0) {
@@ -921,24 +921,24 @@ $additional_js = '
                             const latestRecording = recordingsByStation[stationId][0]; // Already sorted newest first
                             playButton.dataset.filename = latestRecording.filename;
                             playButton.dataset.url = latestRecording.url;
-                            playButton.style.display = 'inline-block';
+                            playButton.style.display = "inline-block";
                         }
                     });
                 }
             } catch (error) {
-                console.error('Failed to check for test recordings:', error);
+                console.error("Failed to check for test recordings:", error);
             }
         }
         
         // Handle play test recording buttons
-        document.querySelectorAll('.play-test-recording').forEach(btn => {
-            btn.addEventListener('click', function() {
+        document.querySelectorAll(".play-test-recording").forEach(btn => {
+            btn.addEventListener("click", function() {
                 const filename = this.dataset.filename;
                 const url = this.dataset.url;
                 const stationCall = this.dataset.stationCall;
                 
                 if (!filename || !url) {
-                    alert('No test recording available');
+                    alert("No test recording available");
                     return;
                 }
                 
@@ -968,7 +968,7 @@ $additional_js = '
                                 </audio>
                                 
                                 <div class="d-flex justify-content-center gap-2">
-                                    <a href="/api/test-recordings.php?action=download&file=${encodeURIComponent(filename.split('/').pop())}" 
+                                    <a href="/api/test-recordings.php?action=download&file=${encodeURIComponent(filename.split("/").pop())}" 
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-download"></i> Download
                                     </a>
@@ -990,20 +990,20 @@ $additional_js = '
             `;
             
             // Remove any existing modal
-            const existingModal = document.getElementById('audioPlayerModal');
+            const existingModal = document.getElementById("audioPlayerModal");
             if (existingModal) {
                 existingModal.remove();
             }
             
             // Add modal to page
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            document.body.insertAdjacentHTML("beforeend", modalHtml);
             
             // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('audioPlayerModal'));
+            const modal = new bootstrap.Modal(document.getElementById("audioPlayerModal"));
             modal.show();
             
             // Clean up modal when hidden
-            document.getElementById('audioPlayerModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById("audioPlayerModal").addEventListener("hidden.bs.modal", function() {
                 this.remove();
             });
         }
@@ -1017,50 +1017,50 @@ $additional_js = '
         // Load station verification status
         async function loadStationVerificationStatus() {
             try {
-                const response = await fetch('/api/schedule-verification.php?action=get_verification_status');
+                const response = await fetch("/api/schedule-verification.php?action=get_verification_status");
                 const result = await response.json();
                 
                 if (result.success) {
                     displayStationVerificationStatus(result.stations, result.summary);
                 }
             } catch (error) {
-                console.error('Failed to load station verification status:', error);
+                console.error("Failed to load station verification status:", error);
             }
         }
         
         // Display station verification status
         function displayStationVerificationStatus(stations, summary) {
             const needAttention = stations.filter(station => 
-                station.verification_status === 'never' || 
-                station.verification_status === 'overdue' || 
-                station.verification_status === 'due_soon'
+                station.verification_status === "never" || 
+                station.verification_status === "overdue" || 
+                station.verification_status === "due_soon"
             );
             
             if (needAttention.length === 0) {
-                document.getElementById('stationsNeedingAttention').style.display = 'none';
+                document.getElementById("stationsNeedingAttention").style.display = "none";
                 return;
             }
             
             // Show the alert
-            document.getElementById('stationsNeedingAttention').style.display = 'block';
+            document.getElementById("stationsNeedingAttention").style.display = "block";
             
             // Update summary text
-            const summaryElement = document.getElementById('stationAlertSummary');
-            let summaryText = '';
+            const summaryElement = document.getElementById("stationAlertSummary");
+            let summaryText = "";
             if (summary.never > 0) summaryText += ` ${summary.never} Never Checked`;
             if (summary.overdue > 0) summaryText += ` ${summary.overdue} Overdue`;
             if (summary.due_soon > 0) summaryText += ` ${summary.due_soon} Due Soon`;
             summaryElement.textContent = summaryText;
             
             // Build details HTML
-            let detailsHtml = '<div class="row">';
+            let detailsHtml = "<div class=\"row\">";
             needAttention.forEach(station => {
-                const statusIcon = station.verification_status === 'never' ? 'fas fa-question-circle text-muted' :
-                                 station.verification_status === 'overdue' ? 'fas fa-exclamation-triangle text-danger' :
-                                 'fas fa-clock text-warning';
+                const statusIcon = station.verification_status === "never" ? "fas fa-question-circle text-muted" :
+                                 station.verification_status === "overdue" ? "fas fa-exclamation-triangle text-danger" :
+                                 "fas fa-clock text-warning";
                 
-                const statusText = station.verification_status === 'never' ? 'Never Checked' :
-                                 station.verification_status === 'overdue' ? `Overdue (${station.days_since_check} days ago)` :
+                const statusText = station.verification_status === "never" ? "Never Checked" :
+                                 station.verification_status === "overdue" ? `Overdue (${station.days_since_check} days ago)` :
                                  `Due Soon (${station.days_since_check} days ago)`;
                 
                 detailsHtml += `
@@ -1082,14 +1082,14 @@ $additional_js = '
                     </div>
                 `;
             });
-            detailsHtml += '</div>';
+            detailsHtml += "</div>";
             
-            document.getElementById('stationAlertDetails').innerHTML = detailsHtml;
-            document.getElementById('stationAlertDetails').style.display = 'block';
+            document.getElementById("stationAlertDetails").innerHTML = detailsHtml;
+            document.getElementById("stationAlertDetails").style.display = "block";
             
             // Add event listeners to "Check now" buttons
-            document.querySelectorAll('.check-station-now').forEach(btn => {
-                btn.addEventListener('click', async function() {
+            document.querySelectorAll(".check-station-now").forEach(btn => {
+                btn.addEventListener("click", async function() {
                     const stationId = this.dataset.stationId;
                     const stationName = this.dataset.stationName;
                     
@@ -1099,18 +1099,18 @@ $additional_js = '
                     
                     // Disable button and show loading
                     this.disabled = true;
-                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+                    this.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i> Checking...";
                     
                     try {
                         const response = await fetch(`/api/schedule-verification.php?action=verify_station&station_id=${stationId}`, {
-                            method: 'GET',
-                            credentials: 'same-origin'
+                            method: "GET",
+                            credentials: "same-origin"
                         });
                         
                         const result = await response.json();
                         
                         if (result.success) {
-                            alert(`Station check completed for ${stationName}!\n\nResult: ${result.output || 'Verification completed successfully'}`);
+                            alert(`Station check completed for ${stationName}!\n\nResult: ${result.output || "Verification completed successfully"}`);
                             // Refresh the verification status
                             setTimeout(() => {
                                 loadStationVerificationStatus();
@@ -1121,12 +1121,12 @@ $additional_js = '
                         }
                         
                     } catch (error) {
-                        console.error('Station check error:', error);
-                        alert('Network error occurred during station check');
+                        console.error("Station check error:", error);
+                        alert("Network error occurred during station check");
                     } finally {
                         // Re-enable button
                         this.disabled = false;
-                        this.innerHTML = '<i class="fas fa-sync"></i> Check now';
+                        this.innerHTML = "<i class=\"fas fa-sync\"></i> Check now";
                     }
                 });
             });
@@ -1134,10 +1134,10 @@ $additional_js = '
         
         // Refresh station verification status
         async function refreshStationVerification() {
-            const refreshBtn = document.querySelector('button[onclick="refreshStationVerification()"]');
+            const refreshBtn = document.querySelector("button[onclick=\"refreshStationVerification()\"]");
             if (refreshBtn) {
                 refreshBtn.disabled = true;
-                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+                refreshBtn.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i> Refreshing...";
             }
             
             try {
@@ -1145,7 +1145,7 @@ $additional_js = '
             } finally {
                 if (refreshBtn) {
                     refreshBtn.disabled = false;
-                    refreshBtn.innerHTML = '<i class="fas fa-sync"></i> Refresh Status';
+                    refreshBtn.innerHTML = "<i class=\"fas fa-sync\"></i> Refresh Status";
                 }
             }
         }
