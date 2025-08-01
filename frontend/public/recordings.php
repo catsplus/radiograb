@@ -84,6 +84,9 @@ if ($search) {
     $params[] = $search_param;
 }
 
+// Filter out playlist uploads - only show regular recordings
+$where_conditions[] = "(s.show_type != 'playlist' OR s.show_type IS NULL OR r.source_type != 'uploaded')";
+
 $where_clause = $where_conditions ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
 // Validate sort column
@@ -466,31 +469,7 @@ require_once '../includes/header.php';
     </div>
 
     <?php
-$additional_js = '<script src="/assets/js/radiograb.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    // Additional binding for delete recording buttons to ensure they work
-    document.querySelectorAll(".delete-recording").forEach(btn => {
-        btn.addEventListener("click", function(e) {
-            e.preventDefault();
-            const recordingId = this.dataset.recordingId;
-            const recordingTitle = this.dataset.recordingTitle;
-            
-            if (!recordingId) {
-                console.error("Missing recording ID");
-                return;
-            }
-            
-            // Update modal content
-            document.getElementById("deleteRecordingId").value = recordingId;
-            document.getElementById("recordingTitle").textContent = recordingTitle || "this recording";
-            
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById("deleteModal"));
-            modal.show();
-        });
-    });
-});
-</script>';
+// RadioGrab.js handles the delete functionality
+$additional_js = '<script src="/assets/js/radiograb.js"></script>';
 require_once '../includes/footer.php';
 ?>
