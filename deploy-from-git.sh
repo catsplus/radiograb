@@ -78,9 +78,27 @@ sleep 10
 echo "🩺 Container health check:"
 docker compose ps
 
+# Check for active recordings
+echo "🎧 Checking for active recordings..."
+RECORDING_STATUS=$(curl -s https://radiograb.svaha.com/api/recording-status.php)
+RECORDING_COUNT=$(echo "$RECORDING_STATUS" | jq -r '.count')
 
+if [ "$RECORDING_COUNT" -gt 0 ]; then
+    echo "⚠️  WARNING: There are $RECORDING_COUNT active recordings!"
+    echo "Details:"
+    echo "$RECORDING_STATUS" | jq '.current_recordings[] | {show_name, station_name, start_time, end_time, progress_percent}'
 
-# Test basic functionality
+    read -p "Continuing deployment will interrupt active recordings. Do you want to proceed? (yes/no): " CONFIRM_DEPLOY
+    if [[ ! "$CONFIRM_DEPLOY" =~ ^[Yy][Ee][Ss]$ ]]; then
+        echo "Deployment aborted by user."
+        exit 1
+    fi
+    echo "Proceeding with deployment despite active recordings."
+else
+    echo "✅ No active recordings found."
+fi
+
+# Test basic functionality:
 echo "🧪 Basic functionality test:"
 if curl -s -f https://radiograb.svaha.com/ > /dev/null; then
     echo "   ✅ Website is accessible"
