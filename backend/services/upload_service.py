@@ -29,10 +29,14 @@ import sys
 import logging
 import uuid
 import subprocess
+import requests
+import re
+import json
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Optional, Tuple, Any
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 # Add project root to path
 sys.path.insert(0, '/opt/radiograb')
@@ -74,6 +78,55 @@ class AudioUploadService:
         # Ensure directories exist
         self.recordings_dir.mkdir(parents=True, exist_ok=True)
         self.temp_dir.mkdir(parents=True, exist_ok=True)
+    
+    def upload_url(self, url: str, show_id: int, title: str = None, 
+                  description: str = None) -> UploadResult:
+        """
+        Download and upload audio from URL (including YouTube)
+        
+        Args:
+            url: URL to download from
+            show_id: ID of the show/playlist to add to
+            title: Optional title for the recording
+            description: Optional description
+            
+        Returns:
+            UploadResult with success status and details
+        """
+        try:
+            # Validate show exists and allows uploads
+            db = SessionLocal()
+            try:
+                show = db.query(Show).filter(Show.id == show_id).first()
+                if not show:
+                    return UploadResult(success=False, error="Show not found")
+                
+                if show.show_type == 'scheduled' and not show.allow_uploads:
+                    return UploadResult(success=False, error="Show does not accept uploads")
+                
+                # Download the URL
+                temp_file = self._download_url(url)
+                if not temp_file:
+                    return UploadResult(success=False, error="Failed to download URL")
+                
+                # Use the existing upload_file method to process the downloaded file
+                original_filename = self._extract_filename_from_url(url)
+                result = self.upload_file(str(temp_file), show_id, title, description, original_filename)
+                
+                # Clean up temp file
+                try:
+                    temp_file.unlink()
+                except:
+                    pass
+                
+                return result
+                
+            finally:
+                db.close()
+                
+        except Exception as e:
+            logger.error(f"Error uploading URL: {e}")
+            return UploadResult(success=False, error=str(e))
     
     def upload_file(self, file_path: str, show_id: int, title: str = None, 
                    description: str = None, original_filename: str = None) -> UploadResult:
@@ -380,6 +433,129 @@ class AudioUploadService:
         # Limit length to prevent overly long filenames
         return sanitized[:50].strip('_')
     
+    def _download_url(self, url: str) -> Optional[Path]:
+        """Download audio from URL (handles YouTube and direct links)"""
+        try:
+            # Check if it's a YouTube URL
+            if self._is_youtube_url(url):
+                return self._download_youtube(url)
+            else:
+                return self._download_direct_url(url)
+        except Exception as e:
+            logger.error(f"Error downloading URL {url}: {e}")
+            return None
+    
+    def _is_youtube_url(self, url: str) -> bool:
+        """Check if URL is a YouTube URL"""
+        youtube_patterns = [
+            r'youtube\.com/watch\?v=',
+            r'youtu\.be/',
+            r'youtube\.com/embed/',
+            r'youtube\.com/v/',
+            r'm\.youtube\.com'
+        ]
+        return any(re.search(pattern, url, re.IGNORECASE) for pattern in youtube_patterns)
+    
+    def _download_youtube(self, url: str) -> Optional[Path]:
+        """Download audio from YouTube using yt-dlp"""
+        try:
+            temp_filename = f"youtube_{uuid.uuid4().hex[:8]}.%(ext)s"
+            temp_path = self.temp_dir / temp_filename
+            
+            cmd = [
+                'yt-dlp',
+                '--extract-audio',
+                '--audio-format', 'mp3',
+                '--audio-quality', '0',  # Best quality
+                '--output', str(temp_path),
+                '--no-playlist',
+                '--max-duration', '3600',  # Max 1 hour
+                url
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            
+            if result.returncode == 0:
+                # Find the downloaded file (yt-dlp changes the extension)
+                pattern = str(temp_path).replace('.%(ext)s', '.*')
+                import glob
+                matches = glob.glob(pattern)
+                if matches:
+                    downloaded_file = Path(matches[0])
+                    logger.info(f"Downloaded YouTube video: {downloaded_file.name}")
+                    return downloaded_file
+            else:
+                logger.error(f"yt-dlp failed: {result.stderr}")
+                
+        except subprocess.TimeoutExpired:
+            logger.error(f"YouTube download timeout for {url}")
+        except FileNotFoundError:
+            logger.error("yt-dlp not found. Install with: pip install yt-dlp")
+        except Exception as e:
+            logger.error(f"YouTube download error: {e}")
+            
+        return None
+    
+    def _download_direct_url(self, url: str) -> Optional[Path]:
+        """Download audio from direct URL"""
+        try:
+            response = requests.head(url, timeout=10, allow_redirects=True)
+            content_type = response.headers.get('content-type', '').lower()
+            
+            # Check if it's an audio file
+            if not any(audio_type in content_type for audio_type in 
+                      ['audio/', 'application/ogg', 'video/mp4']):
+                logger.error(f"URL does not appear to be an audio file: {content_type}")
+                return None
+            
+            # Get file extension from URL or content type
+            parsed_url = urlparse(url)
+            filename = Path(parsed_url.path).name
+            if not filename or '.' not in filename:
+                # Guess extension from content type
+                ext_map = {
+                    'audio/mpeg': '.mp3',
+                    'audio/mp3': '.mp3',
+                    'audio/wav': '.wav',
+                    'audio/mp4': '.m4a',
+                    'audio/aac': '.aac',
+                    'audio/ogg': '.ogg',
+                    'audio/flac': '.flac'
+                }
+                extension = ext_map.get(content_type.split(';')[0], '.mp3')
+                filename = f"download_{uuid.uuid4().hex[:8]}{extension}"
+            
+            temp_file = self.temp_dir / filename
+            
+            # Download the file
+            with requests.get(url, stream=True, timeout=30) as r:
+                r.raise_for_status()
+                with open(temp_file, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            
+            logger.info(f"Downloaded direct URL: {temp_file.name}")
+            return temp_file
+            
+        except requests.RequestException as e:
+            logger.error(f"Error downloading direct URL {url}: {e}")
+        except Exception as e:
+            logger.error(f"Direct download error: {e}")
+            
+        return None
+    
+    def _extract_filename_from_url(self, url: str) -> str:
+        """Extract filename from URL for metadata purposes"""
+        try:
+            if self._is_youtube_url(url):
+                return "YouTube Video"
+            else:
+                parsed = urlparse(url)
+                filename = Path(parsed.path).name
+                return filename if filename else "URL Download"
+        except:
+            return "URL Download"
+    
     def delete_upload(self, recording_id: int) -> bool:
         """Delete an uploaded recording"""
         try:
@@ -489,6 +665,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description='Audio Upload Service')
     parser.add_argument('--upload', help='Upload audio file')
+    parser.add_argument('--upload-url', help='Upload audio from URL (including YouTube)')
     parser.add_argument('--show-id', type=int, help='Show ID to upload to')
     parser.add_argument('--title', help='Recording title')
     parser.add_argument('--description', help='Recording description')
@@ -499,14 +676,31 @@ if __name__ == '__main__':
     
     logging.basicConfig(level=logging.INFO)
     
+    service = AudioUploadService()
+    
     if args.upload and args.show_id:
-        service = AudioUploadService()
         result = service.upload_file(
             args.upload, 
             args.show_id, 
             args.title, 
             args.description,
             Path(args.upload).name
+        )
+        
+        if result.success:
+            print(f"✅ Upload successful: {result.filename}")
+            print(f"   Recording ID: {result.recording_id}")
+            print(f"   File size: {result.file_size} bytes")
+            print(f"   Duration: {result.duration} seconds")
+        else:
+            print(f"❌ Upload failed: {result.error}")
+    
+    elif args.upload_url and args.show_id:
+        result = service.upload_url(
+            args.upload_url,
+            args.show_id,
+            args.title,
+            args.description
         )
         
         if result.success:

@@ -328,11 +328,38 @@ if (isset($error)): ?>
                     <span id="upload_show_name"></span>
                 </div>
                 
+                <!-- Upload Type Selection -->
                 <div class="mb-3">
+                    <label class="form-label">Upload Method</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="upload_method" id="method_file" value="file" checked>
+                        <label class="btn btn-outline-primary" for="method_file">
+                            <i class="fas fa-file"></i> Upload File
+                        </label>
+                        <input type="radio" class="btn-check" name="upload_method" id="method_url" value="url">
+                        <label class="btn btn-outline-primary" for="method_url">
+                            <i class="fas fa-link"></i> From URL
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- File Upload Section -->
+                <div class="mb-3" id="file_upload_section">
                     <label for="upload_file" class="form-label">Audio File</label>
                     <input type="file" class="form-control" id="upload_file" name="audio_file" 
-                           accept=".mp3,.wav,.m4a,.aac,.ogg,.flac" required>
+                           accept=".mp3,.wav,.m4a,.aac,.ogg,.flac">
                     <div class="form-text">Supported formats: MP3, WAV, M4A, AAC, OGG, FLAC (Max: 100MB)</div>
+                </div>
+                
+                <!-- URL Upload Section -->
+                <div class="mb-3" id="url_upload_section" style="display: none;">
+                    <label for="upload_url" class="form-label">Audio URL</label>
+                    <input type="url" class="form-control" id="upload_url" name="url" 
+                           placeholder="https://example.com/audio.mp3 or YouTube URL">
+                    <div class="form-text">
+                        <i class="fas fa-info-circle"></i> 
+                        Supports direct MP3/audio links and YouTube videos (auto-converted to MP3)
+                    </div>
                 </div>
                 
                 <div class="mb-3">

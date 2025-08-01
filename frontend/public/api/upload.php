@@ -32,8 +32,16 @@ try {
             handleFileUpload();
             break;
             
+        case 'upload_url':
+            handleUrlUpload();
+            break;
+            
         case 'create_playlist':
             handleCreatePlaylist();
+            break;
+            
+        case 'upload_playlist_image':
+            handlePlaylistImageUpload();
             break;
             
         case 'delete_upload':
@@ -165,6 +173,154 @@ function handleFileUpload() {
         }
         
         echo json_encode(['success' => false, 'error' => $error]);
+    }
+}
+
+function handleUrlUpload() {
+    $show_id = intval($_POST['show_id'] ?? 0);
+    $url = trim($_POST['url'] ?? '');
+    $title = trim($_POST['title'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    
+    if (!$show_id) {
+        echo json_encode(['success' => false, 'error' => 'Show ID required']);
+        return;
+    }
+    
+    if (!$url) {
+        echo json_encode(['success' => false, 'error' => 'URL required']);
+        return;
+    }
+    
+    // Validate URL
+    if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        echo json_encode(['success' => false, 'error' => 'Invalid URL format']);
+        return;
+    }
+    
+    // Use Python upload service to process the URL
+    $python_script = '/opt/radiograb/backend/services/upload_service.py';
+    $escaped_url = escapeshellarg($url);
+    $escaped_title = escapeshellarg($title);
+    $escaped_description = escapeshellarg($description);
+    
+    $command = "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python {$python_script} " .
+               "--upload-url {$escaped_url} --show-id {$show_id}";
+    
+    if ($title) {
+        $command .= " --title {$escaped_title}";
+    }
+    if ($description) {
+        $command .= " --description {$escaped_description}";
+    }
+    
+    $command .= " 2>&1";
+    
+    $output = shell_exec($command);
+    
+    if ($output === null) {
+        error_log("URL upload command failed: $command");
+        echo json_encode(['success' => false, 'error' => 'Failed to process URL upload']);
+        return;
+    }
+    
+    // Log output for debugging
+    error_log("URL upload command output: " . $output);
+    
+    // Check if upload was successful
+    if (strpos($output, '✅ Upload successful') !== false) {
+        // Extract recording info from output
+        preg_match('/Recording ID: (\d+)/', $output, $matches);
+        $recording_id = $matches[1] ?? null;
+        
+        preg_match('/File size: (\d+) bytes/', $output, $matches);
+        $file_size = intval($matches[1] ?? 0);
+        
+        preg_match('/Duration: (\d+) seconds/', $output, $matches);
+        $duration = intval($matches[1] ?? 0);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'URL uploaded successfully',
+            'recording_id' => $recording_id,
+            'file_size' => $file_size,
+            'duration' => $duration
+        ]);
+    } else {
+        // Extract error message
+        $error = 'URL upload failed';
+        if (strpos($output, '❌ Upload failed:') !== false) {
+            $error = trim(substr($output, strpos($output, '❌ Upload failed:') + 18));
+        }
+        
+        echo json_encode(['success' => false, 'error' => $error]);
+    }
+}
+
+function handlePlaylistImageUpload() {
+    $show_id = intval($_POST['show_id'] ?? 0);
+    
+    if (!$show_id) {
+        echo json_encode(['success' => false, 'error' => 'Show ID required']);
+        return;
+    }
+    
+    if (!isset($_FILES['image_file']) || $_FILES['image_file']['error'] !== UPLOAD_ERR_OK) {
+        $error_message = getUploadErrorMessage($_FILES['image_file']['error'] ?? UPLOAD_ERR_NO_FILE);
+        echo json_encode(['success' => false, 'error' => $error_message]);
+        return;
+    }
+    
+    $uploaded_file = $_FILES['image_file'];
+    $temp_path = $uploaded_file['tmp_name'];
+    $original_filename = $uploaded_file['name'];
+    
+    // Validate file type
+    $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime_type = finfo_file($finfo, $temp_path);
+    finfo_close($finfo);
+    
+    if (!in_array($mime_type, $allowed_types)) {
+        echo json_encode(['success' => false, 'error' => 'Unsupported image format. Use JPEG, PNG, GIF, or WebP.']);
+        return;
+    }
+    
+    // Create unique filename
+    $extension = strtolower(pathinfo($original_filename, PATHINFO_EXTENSION));
+    $filename = 'playlist_' . $show_id . '_' . time() . '.' . $extension;
+    
+    // Save to playlist images directory
+    $upload_dir = '/var/radiograb/playlist_images';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+    
+    $file_path = $upload_dir . '/' . $filename;
+    
+    if (!move_uploaded_file($temp_path, $file_path)) {
+        echo json_encode(['success' => false, 'error' => 'Failed to save image file']);
+        return;
+    }
+    
+    // Update database with image path
+    try {
+        global $db;
+        $db->update('shows', ['image_url' => '/playlist_images/' . $filename], 'id = ?', [$show_id]);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Playlist image uploaded successfully',
+            'image_url' => '/playlist_images/' . $filename
+        ]);
+        
+    } catch (Exception $e) {
+        // Clean up file if database update fails
+        if (file_exists($file_path)) {
+            unlink($file_path);
+        }
+        echo json_encode(['success' => false, 'error' => 'Failed to update playlist image']);
     }
 }
 

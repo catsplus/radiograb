@@ -172,14 +172,20 @@ require_once '../includes/header.php';
                         <!-- Audio Controls -->
                         <div class="audio-controls mt-4">
                             <div class="d-flex justify-content-center align-items-center mb-3">
-                                <button class="btn control-btn me-3" id="prev-btn">
+                                <button class="btn control-btn me-2" id="rewind-btn" title="Rewind 15s">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <button class="btn control-btn me-2" id="prev-btn" title="Previous Track">
                                     <i class="fas fa-step-backward"></i>
                                 </button>
-                                <button class="btn control-btn play-btn me-3" id="play-btn">
+                                <button class="btn control-btn play-btn me-2" id="play-btn" title="Play/Pause">
                                     <i class="fas fa-play"></i>
                                 </button>
-                                <button class="btn control-btn" id="next-btn">
+                                <button class="btn control-btn me-2" id="next-btn" title="Next Track">
                                     <i class="fas fa-step-forward"></i>
+                                </button>
+                                <button class="btn control-btn" id="forward-btn" title="Forward 15s">
+                                    <i class="fas fa-redo"></i>
                                 </button>
                             </div>
                             
@@ -257,6 +263,8 @@ class PlaylistPlayer {
         this.playBtn = document.getElementById('play-btn');
         this.prevBtn = document.getElementById('prev-btn');
         this.nextBtn = document.getElementById('next-btn');
+        this.rewindBtn = document.getElementById('rewind-btn');
+        this.forwardBtn = document.getElementById('forward-btn');
         this.progressContainer = document.getElementById('progress-container');
         this.progressBar = document.getElementById('progress-bar');
         this.currentTimeEl = document.getElementById('current-time');
@@ -271,6 +279,8 @@ class PlaylistPlayer {
         this.playBtn.addEventListener('click', () => this.togglePlay());
         this.prevBtn.addEventListener('click', () => this.previousTrack());
         this.nextBtn.addEventListener('click', () => this.nextTrack());
+        this.rewindBtn.addEventListener('click', () => this.rewind());
+        this.forwardBtn.addEventListener('click', () => this.fastForward());
         
         // Progress bar
         this.progressContainer.addEventListener('click', (e) => this.seek(e));
@@ -312,8 +322,9 @@ class PlaylistPlayer {
         this.currentTrackIndex = index;
         const track = this.tracks[index];
         
-        // Update audio source
-        this.audio.src = `<?= getRecordingUrl('') ?>${track.filename}`;
+        // Update audio source - handle both old and new path formats
+        const baseUrl = `<?= rtrim(getRecordingUrl(''), '/') ?>`;
+        this.audio.src = `${baseUrl}/${track.filename}`;
         
         // Update UI
         this.trackTitleEl.textContent = track.title;
@@ -353,6 +364,22 @@ class PlaylistPlayer {
     
     nextTrack() {
         this.loadTrack(this.currentTrackIndex + 1);
+    }
+    
+    rewind() {
+        if (this.audio.currentTime >= 15) {
+            this.audio.currentTime -= 15;
+        } else {
+            this.audio.currentTime = 0;
+        }
+    }
+    
+    fastForward() {
+        if (this.audio.currentTime + 15 <= this.audio.duration) {
+            this.audio.currentTime += 15;
+        } else {
+            this.audio.currentTime = this.audio.duration - 1;
+        }
     }
     
     seek(e) {
