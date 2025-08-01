@@ -82,7 +82,7 @@ class OnAirStatusManager {
     }
 
     /**
-     * Update show cards with ON-AIR status
+     * Update show cards with ON-AIR status (ONLY for actively recording shows)
      */
     updateShowCards() {
         // Find all show cards and update their status
@@ -90,6 +90,7 @@ class OnAirStatusManager {
         
         showCards.forEach(card => {
             const showId = parseInt(card.dataset.showId);
+            // Only show indicator if THIS specific show is recording (not just station)
             const recording = this.currentRecordings.find(r => r.show_id === showId);
             
             if (recording) {
@@ -227,16 +228,25 @@ class OnAirStatusManager {
     }
 
     /**
-     * Update recording banners on dashboard/main pages (only for actively recording shows)
+     * Update recording banners (small badge on shows page, compact banner on other pages)
      */
     updateRecordingBanners() {
         // Remove existing banners
         const existingBanners = document.querySelectorAll('.on-air-banner-container');
         existingBanners.forEach(banner => banner.remove());
         
-        // Only show banner if there are active recordings
+        // Check if we're on the shows page
+        const isShowsPage = window.location.pathname.includes('/shows.php') || 
+                           document.querySelector('#recording-status-badge');
+        
         if (this.currentRecordings.length > 0) {
-            this.createRecordingBanner();
+            if (isShowsPage) {
+                this.updateShowsPageRecordingBadge();
+            } else {
+                this.createRecordingBanner();
+            }
+        } else if (isShowsPage) {
+            this.hideShowsPageRecordingBadge();
         }
     }
 
@@ -323,6 +333,38 @@ class OnAirStatusManager {
         }
     }
     
+    /**
+     * Update the small recording badge on shows page
+     */
+    updateShowsPageRecordingBadge() {
+        const badge = document.getElementById('recording-status-badge');
+        const text = document.getElementById('recording-status-text');
+        
+        if (!badge || !text) return;
+        
+        if (this.currentRecordings.length === 1) {
+            const recording = this.currentRecordings[0];
+            text.innerHTML = `<strong>Recording:</strong> ${recording.show_name} on ${recording.station_name} (${this.formatDuration(recording.remaining_seconds)} remaining)`;
+        } else {
+            const recordingList = this.currentRecordings.map(r => 
+                `${r.show_name} (${r.station_name})`
+            ).join(', ');
+            text.innerHTML = `<strong>Recording ${this.currentRecordings.length} shows:</strong> ${recordingList}`;
+        }
+        
+        badge.style.display = 'block';
+    }
+    
+    /**
+     * Hide the recording badge on shows page
+     */
+    hideShowsPageRecordingBadge() {
+        const badge = document.getElementById('recording-status-badge');
+        if (badge) {
+            badge.style.display = 'none';
+        }
+    }
+
     /**
      * Create the banner element
      */

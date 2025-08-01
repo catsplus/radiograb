@@ -449,23 +449,11 @@ require_once '../includes/header.php';
             </div>
         </div>
 
-        <!-- Next Recordings -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-primary">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Next Recordings</h5>
-                        <button class="btn btn-sm btn-outline-light" onclick="refreshNextRecordings()">
-                            <i class="fas fa-sync"></i> Refresh
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div id="next-recordings-loading" class="text-center py-3">
-                            <i class="fas fa-spinner fa-spin"></i> Loading next recordings...
-                        </div>
-                        <div id="next-recordings-content" style="display: none;"></div>
-                    </div>
-                </div>
+        <!-- Recording Status (small badge, only when actively recording) -->
+        <div id="recording-status-badge" class="mb-3" style="display: none;">
+            <div class="alert alert-danger d-flex align-items-center" role="alert">
+                <i class="fas fa-record-vinyl me-2"></i>
+                <span id="recording-status-text"></span>
             </div>
         </div>
 
@@ -1029,9 +1017,6 @@ require_once '../includes/header.php';
     <script src="/assets/js/radiograb.js"></script>
     <script src="/assets/js/on-air-status.js"></script>
     <script>
-        let countdownIntervals = [];
-        let nextRecordingsData = [];
-
         // Handle delete modal
         document.addEventListener('DOMContentLoaded', function() {
             const deleteModal = document.getElementById('deleteModal');
@@ -1043,9 +1028,6 @@ require_once '../includes/header.php';
                 document.getElementById('deleteShowId').value = showId;
                 document.getElementById('showName').textContent = showName;
             });
-
-            // Load next recordings on page load
-            loadNextRecordings();
         });
         
         // Toggle show status
@@ -1209,143 +1191,6 @@ require_once '../includes/header.php';
             });
         }
 
-        // Next recordings functions
-        function loadNextRecordings() {
-            const loading = document.getElementById('next-recordings-loading');
-            const content = document.getElementById('next-recordings-content');
-            
-            loading.style.display = 'block';
-            content.style.display = 'none';
-            
-            // Clear existing countdowns
-            countdownIntervals.forEach(interval => clearInterval(interval));
-            countdownIntervals = [];
-            
-            fetch('/api/show-management.php?action=get_next_recordings&limit=3')
-                .then(response => response.json())
-                .then(data => {
-                    loading.style.display = 'none';
-                    content.style.display = 'block';
-                    
-                    if (data.success && data.recordings && data.recordings.length > 0) {
-                        nextRecordingsData = data.recordings;
-                        displayNextRecordings(data.recordings);
-                        startCountdowns();
-                    } else {
-                        content.innerHTML = `
-                            <div class="text-center py-4">
-                                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                                <h5 class="text-muted">No upcoming recordings scheduled</h5>
-                                <p class="text-muted mb-0">Add shows with schedules to see upcoming recordings</p>
-                                <a href="/add-show.php<?= $station_id ? "?station_id=$station_id" : '' ?>" class="btn btn-primary mt-3">
-                                    <i class="fas fa-plus"></i> Add Show
-                                </a>
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    loading.style.display = 'none';
-                    content.style.display = 'block';
-                    content.innerHTML = `
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            Unable to load next recordings: ${error.message}
-                        </div>
-                    `;
-                });
-        }
-
-        function displayNextRecordings(recordings) {
-            const content = document.getElementById('next-recordings-content');
-            
-            let html = '<div class="row">';
-            
-            recordings.forEach((recording, index) => {
-                const colClass = recordings.length === 1 ? 'col-12' : recordings.length === 2 ? 'col-md-6' : 'col-md-4';
-                const badgeClass = index === 0 ? 'bg-success' : index === 1 ? 'bg-info' : 'bg-secondary';
-                const position = index === 0 ? 'Next' : index === 1 ? '2nd' : '3rd';
-                
-                html += `
-                    <div class="${colClass} mb-3">
-                        <div class="card border-${index === 0 ? 'success' : index === 1 ? 'info' : 'secondary'} h-100">
-                            <div class="card-body text-center">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="card-title text-start mb-0">${recording.title}</h6>
-                                    <span class="badge ${badgeClass} ms-2">${position}</span>
-                                </div>
-                                <p class="card-text mb-2">
-                                    <i class="fas fa-clock text-primary"></i> 
-                                    <strong>${recording.next_run}</strong>
-                                </p>
-                                <div class="countdown-display" id="countdown-${index}">
-                                    <div class="alert alert-${index === 0 ? 'success' : index === 1 ? 'info' : 'secondary'} py-2 mb-0">
-                                        <div class="countdown-timer" data-target="${recording.next_run}">
-                                            Calculating...
-                                        </div>
-                                    </div>
-                                </div>
-                                ${recording.tags ? `
-                                    <div class="mt-2">
-                                        <small class="text-muted">
-                                            <i class="fas fa-tags"></i> ${recording.tags}
-                                        </small>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            content.innerHTML = html;
-        }
-
-        function startCountdowns() {
-            const countdownElements = document.querySelectorAll('.countdown-timer');
-            
-            countdownElements.forEach((element, index) => {
-                const targetTime = new Date(element.dataset.target).getTime();
-                
-                const interval = setInterval(() => {
-                    const now = new Date().getTime();
-                    const distance = targetTime - now;
-                    
-                    if (distance < 0) {
-                        element.innerHTML = '<strong class="text-danger">Recording should be active!</strong>';
-                        clearInterval(interval);
-                        return;
-                    }
-                    
-                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                    
-                    let countdownText = '';
-                    if (days > 0) {
-                        countdownText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-                    } else if (hours > 0) {
-                        countdownText = `${hours}h ${minutes}m ${seconds}s`;
-                    } else if (minutes > 0) {
-                        countdownText = `${minutes}m ${seconds}s`;
-                    } else {
-                        countdownText = `${seconds}s`;
-                        element.parentElement.classList.add('alert-warning');
-                        element.parentElement.classList.remove('alert-success', 'alert-info', 'alert-secondary');
-                    }
-                    
-                    element.innerHTML = `<strong>${countdownText}</strong>`;
-                }, 1000);
-                
-                countdownIntervals.push(interval);
-            });
-        }
-
-        function refreshNextRecordings() {
-            loadNextRecordings();
-        }
 
 
         // Load functionality on page load
