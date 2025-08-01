@@ -39,13 +39,16 @@ echo -e "${BLUE}📖 Extracted from VERSION file:${NC}"
 echo "   Version: $VERSION"
 echo "   Description: ${DESCRIPTION:0:100}..."
 
-# Update database version using Python script
+# Update database version using direct MySQL command
 echo -e "${YELLOW}🔄 Updating database version...${NC}"
 
-cd /opt/radiograb
-PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python backend/services/version_manager.py --set "$VERSION" --description "$DESCRIPTION"
+# Escape quotes in description for SQL
+ESCAPED_DESCRIPTION=$(echo "$DESCRIPTION" | sed "s/'/''/g")
 
-if [ $? -eq 0 ]; then
+# Update database directly using Docker exec
+SQL_COMMAND="INSERT INTO system_info (key_name, version, description, created_at, updated_at) VALUES ('current_version', '$VERSION', '$ESCAPED_DESCRIPTION', NOW(), NOW()) ON DUPLICATE KEY UPDATE version = '$VERSION', description = '$ESCAPED_DESCRIPTION', updated_at = NOW();"
+
+if docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 radiograb -e "$SQL_COMMAND" 2>/dev/null; then
     echo -e "${GREEN}✅ Version synchronized successfully${NC}"
     echo "   Database version: $VERSION"
     echo -e "${BLUE}🌐 Version will be displayed on website footer${NC}"
@@ -56,9 +59,9 @@ fi
 
 # Verify the version was set correctly
 echo -e "${YELLOW}🔍 Verifying version...${NC}"
-DB_VERSION=$(PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python backend/services/version_manager.py --get)
+DB_VERSION=$(docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 radiograb -se "SELECT version FROM system_info WHERE key_name = 'current_version';" 2>/dev/null)
 
-if [[ "$DB_VERSION" == *"$VERSION"* ]]; then
+if [[ "$DB_VERSION" == "$VERSION" ]]; then
     echo -e "${GREEN}✅ Version verification successful${NC}"
 else
     echo -e "${RED}❌ Version verification failed${NC}"

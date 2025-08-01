@@ -98,6 +98,18 @@ else
     echo "✅ No active recordings found."
 fi
 
+# Sync version from VERSION file to database
+echo "🔄 Synchronizing version..."
+if [ -f "scripts/sync-version.sh" ]; then
+    if bash scripts/sync-version.sh; then
+        echo "   ✅ Version synchronized successfully"
+    else
+        echo "   ⚠️  Version sync failed (continuing deployment)"
+    fi
+else
+    echo "   ⚠️  Version sync script not found"
+fi
+
 # Test basic functionality:
 echo "🧪 Basic functionality test:"
 if curl -s -f https://radiograb.svaha.com/ > /dev/null; then
