@@ -454,6 +454,7 @@ frontend/public/.htaccess                 # Apache URL rewriting
 ## 🆕 RECENT UPDATES (August 2025)
 
 ### ✅ Major Features Completed
+- **🎙️ DJ Audio Snippet Recording (Issue #28)**: Complete browser-based audio recording system with WebRTC MediaRecorder API, professional recording modal, voice clip management, and mobile compatibility for DJ intros/outros/drops (August 1, 2025)
 - **📋 Shows Table View System (Issue #24)**: Complete table view implementation for shows page with sortable columns (Show Name, Station, Recordings), responsive design, view toggle buttons, and hyperlinks to individual show detail pages (August 1, 2025)
 - **🎵 Playlist Management Enhancement (Issue #29)**: Fixed "Failed to load tracks: Show ID Required" error and created dedicated edit-playlist.php page with playlist-specific interface removing schedule/duration/host fields (August 1, 2025)
 - **🔧 Production Bug Fixes & QA Testing**: Orphaned recording cleanup and comprehensive system testing (August 1, 2025)
@@ -473,12 +474,87 @@ frontend/public/.htaccess                 # Apache URL rewriting
 - **Database Backups**: Weekly automated backups with 3-week retention
 
 ### ✅ System Improvements
+- **DJ Voice Recording System**: WebRTC MediaRecorder API integration with professional recording interface, 5-minute recording limit, audio preview, and voice_clip source type tracking
+- **Mobile Browser Compatibility**: Full recording functionality on Chrome, Safari, Firefox mobile with responsive recording modal and touch-optimized controls
+- **Voice Clip Visual Differentiation**: Green badges, microphone icons, and border styling to distinguish voice clips from regular audio tracks
 - **Shows Table View Implementation**: Complete responsive table layout with sortable columns, view toggle functionality, and mobile optimization
 - **Playlist API Corrections**: Fixed parameter mismatch in playlist-tracks.php API (playlist_id → show_id) resolving track loading errors
 - **Dedicated Playlist Editor**: Separate edit-playlist.php with playlist-only fields (name, description, image, file size limits, active status)
 - **Calendar Discovery Filtering**: Navigation elements (e.g., "Shows A-Z") filtered out, requires valid time schedules
 - **User-Controlled Show Activation**: New shows inactive by default - users manually choose which to activate
 - **Enhanced Deployment Script**: Intelligent code change detection for reliable deployments
+
+## 🎙️ DJ Audio Snippet Recording System (COMPLETED August 1, 2025)
+
+### 🚀 **Browser-Based Audio Recording**
+RadioGrab now provides a complete DJ voice recording system using modern WebRTC technology:
+
+#### **Professional Recording Interface**
+- **WebRTC MediaRecorder API**: Native browser audio recording with high-quality output
+- **Real-Time Controls**: Start/stop recording with visual feedback and elapsed timer
+- **5-Minute Recording Limit**: Automatic stop with warning to prevent excessive file sizes
+- **Audio Format Optimization**: WebM/Opus preferred, with MP4/AAC fallback for maximum compatibility
+- **Visual Recording Status**: Animated indicators, progress tracking, and color-coded alerts
+
+#### **Recording Workflow**
+1. **Microphone Access**: Request user permission with clear messaging
+2. **Recording Interface**: Professional controls with timer and status indicators
+3. **Audio Preview**: Built-in playback before saving with metadata editing
+4. **Playlist Integration**: Seamless upload to existing playlist with voice_clip source type
+5. **Visual Differentiation**: Green badges and microphone icons distinguish voice clips
+
+### 📱 **Mobile & Browser Compatibility**
+- **Desktop Browsers**: Chrome, Firefox, Safari, Edge - Full functionality
+- **Mobile Browsers**: iOS Safari, Android Chrome, Mobile Firefox - Complete support
+- **Responsive Design**: Touch-optimized controls and mobile-friendly modal layout
+- **Permission Handling**: Clear microphone access requests with help links
+
+### 🎨 **User Experience Features**
+- **Recording Tips Panel**: Best practices for DJ voice recording
+- **Browser Compatibility Info**: Real-time compatibility checking and guidance
+- **Error Handling**: Comprehensive error messages with troubleshooting guidance
+- **Drag-and-Drop Integration**: Voice clips work with existing track reordering system
+
+### 🔧 **Technical Implementation**
+
+#### **Frontend Architecture** (`audio-recorder.js`)
+```javascript
+class AudioRecorder {
+    // WebRTC MediaRecorder integration
+    // Real-time recording controls
+    // Audio preview and metadata editing
+    // Seamless playlist upload integration
+}
+```
+
+#### **Backend Integration**
+- **Enhanced Upload API**: Added `voice_clip` source type parameter
+- **Python Service Updates**: Modified `upload_service.py` for voice clip handling
+- **Database Schema**: Extended recordings table with `source_type` differentiation
+- **File Format Support**: Added WebM audio format for browser recordings
+
+#### **Visual Design System**
+```css
+/* Voice clip styling */
+.voice-clip-badge { background: #28a745; } /* Green theme */
+.voice-clip-border { border-color: #28a745; }
+.voice-clip-icon { color: #28a745; } /* Microphone icons */
+```
+
+### 🎯 **Perfect DJ Use Cases**
+- **Station IDs**: "You're listening to WXYZ 101.5 FM"
+- **Show Intros**: "Welcome back to the Morning Coffee Show"
+- **Transitions**: "Coming up next, we have..." or "That was [artist] with [song]"
+- **Show Outros**: "Thanks for tuning in, we'll see you tomorrow"
+- **Custom Drops**: Personalized DJ voice drops, stings, and promotional announcements
+- **Emergency Recordings**: Quick voice notes or backup content
+
+### 📊 **Recording Quality & Specifications**
+- **Sample Rate**: 44.1kHz (CD quality)
+- **Audio Processing**: Echo cancellation, noise suppression, auto gain control
+- **File Formats**: WebM (preferred), MP4, OGG - automatic browser optimization
+- **Maximum Duration**: 5 minutes with auto-stop protection
+- **File Size**: Typically 1-5MB for 30-second to 2-minute voice clips
 
 ## 🎵 Comprehensive Playlist Enhancement System (COMPLETED August 1, 2025)
 

@@ -9,12 +9,13 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.11.1 (August 1, 2025)
-**Latest Features**: 📋 **SHOWS TABLE VIEW SYSTEM** - Complete table view implementation for shows page with sortable columns, responsive design, and view toggle functionality. 🎵 **PLAYLIST MANAGEMENT ENHANCEMENT** - Fixed playlist track loading errors and created dedicated playlist editing interface. Previous features: 🌐 **FRIENDLY URL ROUTING SYSTEM**, 🔧 **PRODUCTION BUG FIXES & QA TESTING**, and 📅 **MANUAL SCHEDULE IMPORT SYSTEM**. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v3.12.0 (August 1, 2025)
+**Latest Features**: 🎙️ **DJ AUDIO SNIPPET RECORDING** - Complete browser-based voice recording system with WebRTC for DJ intros, outros, and station IDs. Features professional recording interface, mobile compatibility, and seamless playlist integration. 📋 **SHOWS TABLE VIEW SYSTEM** - Table view with sortable columns and responsive design. 🎵 **PLAYLIST MANAGEMENT ENHANCEMENT** - Fixed playlist errors and dedicated editing interface. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
+- **🎙️ DJ Audio Snippet Recording**: Complete browser-based voice recording system using WebRTC MediaRecorder API with professional recording interface, 5-minute recording limit, audio preview, mobile compatibility, and seamless playlist integration for DJ intros, outros, station IDs, and custom drops
 - **📋 Shows Table View System**: Complete table view implementation for shows page with sortable columns (Show Name, Station, Recordings), responsive design, view toggle buttons (cards/table), and hyperlinks to individual show detail pages
 - **🎵 Playlist Management Enhancement**: Fixed "Failed to load tracks: Show ID Required" error and created dedicated edit-playlist.php page with playlist-specific interface removing schedule/duration/host fields
 - **🌐 Friendly URL Routing System**: SEO-friendly URLs with individual pages for stations (`/weru`), shows (`/weru/fresh_air`), users (`/user/mattbaya`), and playlists (`/user/mattbaya/my_mix`) featuring comprehensive detail pages, advanced audio players, statistics dashboards, and responsive Bootstrap design
@@ -213,11 +214,17 @@ RadioGrab uses a 5-container Docker architecture:
 
 ### Managing Playlists
 1. Create a **Playlist** type show
-2. Click **Upload Audio** to add files
+2. Click **Upload Audio** to add files or **Record Voice Clip** for DJ snippets
 3. Upload supported formats: MP3, WAV, M4A, AAC, OGG, FLAC
-4. Use **Order** button to manage track sequence
-5. Drag & drop tracks to reorder or edit track numbers manually
-6. All uploads automatically include MP3 metadata (artist=show name, album=station name)
+4. **DJ Voice Recording**: Record intros, outros, station IDs directly in browser
+   - Professional recording interface with real-time controls
+   - 5-minute maximum recording with visual timer
+   - Audio preview before saving with metadata editing
+   - Mobile browser compatible (iOS Safari, Android Chrome, etc.)
+5. Use **Order** button to manage track sequence
+6. Drag & drop tracks to reorder or edit track numbers manually
+7. Voice clips display with green badges and microphone icons
+8. All uploads automatically include MP3 metadata (artist=show name, album=station name)
 
 ### Testing Streams
 - Use **Test Recording** buttons to verify streams work

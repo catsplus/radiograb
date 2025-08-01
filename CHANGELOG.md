@@ -1,5 +1,56 @@
 # RadioGrab Changelog
 
+## [3.12.0] - 2025-08-01 - DJ Audio Snippet Recording System
+
+### 🎙️ Complete Browser-Based Audio Recording
+- **WebRTC MediaRecorder API**: Native browser audio recording with high-quality output
+- **Professional Recording Interface**: Real-time controls with start/stop functionality and visual timer
+- **Audio Preview System**: Built-in playback before saving with metadata editing capabilities
+- **5-Minute Recording Limit**: Automatic stop with warning to prevent excessive file sizes
+- **Mobile Compatibility**: Full functionality on iOS Safari, Android Chrome, and mobile browsers
+
+### 🎨 Recording User Experience
+- **Professional Recording Modal**: Two-column layout with controls and tips panel
+- **Recording Tips**: Best practices for DJ voice recording with browser compatibility info
+- **Visual Feedback**: Animated recording status, progress tracking, and color-coded alerts
+- **Error Handling**: Comprehensive error messages with troubleshooting guidance
+- **Touch-Optimized**: Responsive design with mobile-friendly controls
+
+### 🔧 Technical Implementation
+- **New JavaScript Module**: `audio-recorder.js` with complete WebRTC integration
+- **Enhanced Upload API**: Added `voice_clip` source type support in upload.php
+- **Python Service Updates**: Modified `upload_service.py` for voice clip handling
+- **Database Extensions**: Extended recordings table with source_type differentiation
+- **File Format Support**: Added WebM audio format for browser recordings
+
+### 🎵 Playlist Integration
+- **Voice Clip Visual Differentiation**: Green badges, microphone icons, and border styling
+- **Drag-and-Drop Support**: Voice clips work with existing track reordering system
+- **Source Type Tracking**: Database distinguishes voice clips from regular uploads
+- **Playlist API Updates**: Enhanced playlist-tracks.php to include source_type information
+
+### 🎯 Perfect DJ Use Cases
+- **Station IDs**: "You're listening to WXYZ 101.5 FM"
+- **Show Intros/Outros**: Welcome messages and sign-offs
+- **Transitions**: "Coming up next..." or "That was [artist] with [song]"
+- **Custom Drops**: Personalized DJ voice drops, stings, and promotional announcements
+
+## [3.11.1] - 2025-08-01 - Shows Table View & Playlist Management
+
+### 📋 Shows Table View System
+- **Complete Table Implementation**: Sortable columns (Show Name, Station, Recordings)
+- **View Toggle Functionality**: Switch between card and table views with URL persistence
+- **Responsive Design**: Mobile-optimized table with Bootstrap styling
+- **Interactive Sorting**: Visual indicators for ascending/descending sort order
+- **Hyperlink Integration**: Show names link to individual show detail pages
+
+### 🎵 Playlist Management Enhancement
+- **Bug Fix**: Resolved "Failed to load tracks: Show ID Required" error
+- **Dedicated Editor**: New `edit-playlist.php` with playlist-specific interface
+- **Simplified Fields**: Removed schedule, duration, host, retention fields for playlists
+- **Playlist Image Field**: Changed from "Show Image/Logo" to "Playlist Image/Logo"
+- **API Corrections**: Fixed parameter mismatch in playlist-tracks.php API
+
 ## [3.9.0] - 2025-07-31 - Enhanced RSS Feed System
 
 ### 📡 Comprehensive RSS/Podcast Feed Architecture
