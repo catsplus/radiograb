@@ -76,3 +76,4 @@ yarn-error.log*
 # PHP
 vendor/
 composer.lock
+check_timezone.php
