@@ -320,6 +320,7 @@ $genre = isset($_GET['genre']) ? trim($_GET['genre']) : '';
 $tags = isset($_GET['tags']) ? trim($_GET['tags']) : '';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'name';
 $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'desc' : 'asc';
+$view = isset($_GET['view']) && $_GET['view'] === 'table' ? 'table' : 'cards';
 
 // Build query - only show scheduled shows (not playlists)
 $where_conditions = ["s.show_type = 'scheduled' OR s.show_type IS NULL"];
@@ -403,7 +404,27 @@ try {
 // Set page variables for shared template
 $page_title = $station_info ? h($station_info['call_letters']) . ' Shows' : 'Shows';
 $active_nav = 'shows';
-$additional_css = '<link href="/assets/css/on-air.css" rel="stylesheet">';
+$additional_css = '<link href="/assets/css/on-air.css" rel="stylesheet">
+<style>
+.table th a {
+    color: inherit;
+    text-decoration: none !important;
+}
+.table th a:hover {
+    color: var(--bs-primary);
+}
+.show-row:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+@media (max-width: 768px) {
+    .table-responsive table {
+        font-size: 0.875rem;
+    }
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.375rem;
+    }
+}
+</style>';
 
 require_once '../includes/header.php';
 ?>
@@ -443,6 +464,18 @@ require_once '../includes/header.php';
                 <?php endif; ?>
             </div>
             <div class="col-auto">
+                <div class="btn-group me-3" role="group" aria-label="View toggle">
+                    <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'cards'])) ?>" 
+                       class="btn <?= $view === 'cards' ? 'btn-primary' : 'btn-outline-primary' ?>" 
+                       title="Card View">
+                        <i class="fas fa-th-large"></i>
+                    </a>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'table'])) ?>" 
+                       class="btn <?= $view === 'table' ? 'btn-primary' : 'btn-outline-primary' ?>" 
+                       title="Table View">
+                        <i class="fas fa-table"></i>
+                    </a>
+                </div>
                 <a href="/add-show.php<?= $station_id ? "?station_id=$station_id" : '' ?>" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Add Show<?= $station_info ? ' to ' . h($station_info['call_letters']) : '' ?>
                 </a>
@@ -462,6 +495,9 @@ require_once '../includes/header.php';
         <div class="card mb-4">
             <div class="card-body">
                 <form method="GET" class="row g-3">
+                    <?php if ($view === 'table'): ?>
+                        <input type="hidden" name="view" value="table">
+                    <?php endif; ?>
                     <!-- Row 1: Basic Filters -->
                     <div class="col-md-3">
                         <label class="form-label">Search</label>
@@ -546,6 +582,196 @@ require_once '../includes/header.php';
                         <p class="text-muted mb-4">Add stations and import their schedules to get started.</p>
                         <a href="/stations.php" class="btn btn-primary">Manage Stations</a>
                     <?php endif; ?>
+                </div>
+            </div>
+        <?php elseif ($view === 'table'): ?>
+            <!-- Table View -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <a href="?<?= http_build_query(array_merge($_GET, ['sort' => 'name', 'order' => $sort === 'name' && $order === 'asc' ? 'desc' : 'asc'])) ?>" 
+                                           class="text-decoration-none">
+                                            Show Name
+                                            <?php if ($sort === 'name'): ?>
+                                                <i class="fas fa-sort-<?= $order === 'asc' ? 'up' : 'down' ?>"></i>
+                                            <?php endif; ?>
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="?<?= http_build_query(array_merge($_GET, ['sort' => 'station_name', 'order' => $sort === 'station_name' && $order === 'asc' ? 'desc' : 'asc'])) ?>" 
+                                           class="text-decoration-none">
+                                            Station
+                                            <?php if ($sort === 'station_name'): ?>
+                                                <i class="fas fa-sort-<?= $order === 'asc' ? 'up' : 'down' ?>"></i>
+                                            <?php endif; ?>
+                                        </a>
+                                    </th>
+                                    <th>Schedule</th>
+                                    <th>Description</th>
+                                    <th class="text-center">
+                                        <a href="?<?= http_build_query(array_merge($_GET, ['sort' => 'recording_count', 'order' => $sort === 'recording_count' && $order === 'asc' ? 'desc' : 'asc'])) ?>" 
+                                           class="text-decoration-none">
+                                            Recordings
+                                            <?php if ($sort === 'recording_count'): ?>
+                                                <i class="fas fa-sort-<?= $order === 'asc' ? 'up' : 'down' ?>"></i>
+                                            <?php endif; ?>
+                                        </a>
+                                    </th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($shows as $show): ?>
+                                    <?php 
+                                    // Skip On-Demand Recording shows with no recordings
+                                    if (strpos($show['name'], 'On-Demand Recordings') !== false && $show['recording_count'] == 0) {
+                                        continue;
+                                    }
+                                    
+                                    // Generate schedule display
+                                    $schedule_display = '';
+                                    if ($show['schedule_description']) {
+                                        $schedule_display = $show['schedule_description'];
+                                    } elseif ($show['schedule_pattern']) {
+                                        $schedule_display = formatSchedulePattern($show['schedule_pattern']);
+                                    }
+                                    
+                                    // Generate next air date
+                                    $next_air_formatted = null;
+                                    if ($show['schedule_pattern']) {
+                                        $next_air_date = getNextAirDate($show['schedule_pattern']);
+                                        $next_air_formatted = formatNextAirDate($next_air_date);
+                                    }
+                                    ?>
+                                    <tr class="show-row" data-show-id="<?= $show['id'] ?>">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img src="<?= h(getStationLogo(['logo_url' => $show['logo_url']])) ?>" 
+                                                     alt="<?= h($show['station_name']) ?>" 
+                                                     class="me-2 rounded"
+                                                     style="width: 40px; height: 40px; object-fit: cover;"
+                                                     onerror="this.src='/assets/images/default-station-logo.png'">
+                                                <div>
+                                                    <h6 class="mb-1">
+                                                        <a href="/<?= strtolower($show['call_letters']) ?>/<?= h($show['slug']) ?>" 
+                                                           class="text-decoration-none">
+                                                            <?= h($show['name']) ?>
+                                                        </a>
+                                                        <?php if ($show['genre']): ?>
+                                                            <span class="badge bg-light text-dark ms-1"><?= h($show['genre']) ?></span>
+                                                        <?php endif; ?>
+                                                    </h6>
+                                                    <?php if ($show['host']): ?>
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-user"></i> <?= h($show['host']) ?>
+                                                        </small>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="/<?= strtolower($show['call_letters']) ?>" 
+                                               class="text-decoration-none">
+                                                <?= h($show['station_name']) ?>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <?php if ($schedule_display): ?>
+                                                <div>
+                                                    <small class="fw-bold text-primary">
+                                                        <i class="fas fa-calendar"></i> <?= h($schedule_display) ?>
+                                                    </small>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($next_air_formatted): ?>
+                                                <div>
+                                                    <small class="text-success">
+                                                        <i class="fas fa-clock"></i> Next: <?= h($next_air_formatted['formatted']) ?>
+                                                        <span class="badge bg-light text-success ms-1"><?= h($next_air_formatted['relative']) ?></span>
+                                                    </small>
+                                                </div>
+                                            <?php elseif ($show['schedule_pattern']): ?>
+                                                <div>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-calendar-times"></i> No upcoming airings
+                                                    </small>
+                                                </div>
+                                            <?php else: ?>
+                                                <div>
+                                                    <small class="text-warning">
+                                                        <i class="fas fa-exclamation-triangle"></i> No schedule configured
+                                                    </small>
+                                                </div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php 
+                                            $display_description = $show['long_description'] ?: $show['description'];
+                                            if ($display_description): 
+                                                $short_description = strlen($display_description) > 100 ? substr($display_description, 0, 100) . '...' : $display_description;
+                                            ?>
+                                                <small class="text-muted"><?= h($short_description) ?></small>
+                                            <?php else: ?>
+                                                <small class="text-muted fst-italic">No description</small>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="fw-bold"><?= number_format($show['recording_count']) ?></div>
+                                            <?php if ($show['latest_recording']): ?>
+                                                <small class="text-muted">Latest: <?= timeAgo($show['latest_recording']) ?></small>
+                                            <?php else: ?>
+                                                <small class="text-muted">Never</small>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check form-switch d-flex justify-content-center">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="toggle-table-<?= $show['id'] ?>"
+                                                       <?= $show['active'] ? 'checked' : '' ?>
+                                                       onchange="toggleShowStatus(<?= $show['id'] ?>)">
+                                            </div>
+                                            <small class="badge <?= $show['active'] ? 'bg-success' : 'bg-secondary' ?>">
+                                                <?= $show['active'] ? 'Active' : 'Inactive' ?>
+                                            </small>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="/edit-show.php?id=<?= $show['id'] ?>" 
+                                                   class="btn btn-outline-primary" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="/<?= strtolower($show['call_letters']) ?>/<?= h($show['slug']) ?>" 
+                                                   class="btn btn-primary" title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <?php if ($show['recording_count'] > 0): ?>
+                                                    <a href="/api/enhanced-feeds.php?type=show&id=<?= $show['id'] ?>" 
+                                                       class="btn btn-outline-success" title="RSS Feed" target="_blank">
+                                                        <i class="fas fa-rss"></i>
+                                                    </a>
+                                                <?php endif; ?>
+                                                <button type="button" 
+                                                        class="btn btn-outline-danger delete-confirm"
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#deleteModal"
+                                                        data-show-id="<?= $show['id'] ?>"
+                                                        data-show-name="<?= h($show['name']) ?>"
+                                                        title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         <?php else: ?>
@@ -1032,8 +1258,8 @@ require_once '../includes/header.php';
         
         // Toggle show status
         function toggleShowStatus(showId) {
-            // Use AJAX for better UX
-            const toggle = document.getElementById(`toggle${showId}`);
+            // Use AJAX for better UX - handle both card and table view toggles
+            const toggle = document.getElementById(`toggle${showId}`) || document.getElementById(`toggle-table-${showId}`);
             const active = toggle.checked;
             
             fetch('/api/show-management.php', {
@@ -1051,14 +1277,17 @@ require_once '../includes/header.php';
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update badge
-                    const badge = toggle.parentElement.querySelector('.badge');
-                    if (active) {
-                        badge.className = 'badge bg-success';
-                        badge.textContent = 'Active';
-                    } else {
-                        badge.className = 'badge bg-secondary';
-                        badge.textContent = 'Inactive';
+                    // Update badge - handle both card and table view
+                    const row = toggle.closest('.card') || toggle.closest('tr');
+                    const badge = row.querySelector('.badge');
+                    if (badge) {
+                        if (active) {
+                            badge.className = 'badge bg-success';
+                            badge.textContent = 'Active';
+                        } else {
+                            badge.className = 'badge bg-secondary';
+                            badge.textContent = 'Inactive';
+                        }
                     }
                 } else {
                     // Revert toggle on error
