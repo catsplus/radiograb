@@ -454,6 +454,8 @@ frontend/public/.htaccess                 # Apache URL rewriting
 ## 🆕 RECENT UPDATES (August 2025)
 
 ### ✅ Major Features Completed
+- **📋 Shows Table View System (Issue #24)**: Complete table view implementation for shows page with sortable columns (Show Name, Station, Recordings), responsive design, view toggle buttons, and hyperlinks to individual show detail pages (August 1, 2025)
+- **🎵 Playlist Management Enhancement (Issue #29)**: Fixed "Failed to load tracks: Show ID Required" error and created dedicated edit-playlist.php page with playlist-specific interface removing schedule/duration/host fields (August 1, 2025)
 - **🔧 Production Bug Fixes & QA Testing**: Orphaned recording cleanup and comprehensive system testing (August 1, 2025)
 - **📅 Manual Schedule Import System**: ICS file upload with AI-powered conversion workflow (August 1, 2025)
 - **✏️ Station & Show Edit Functionality**: Complete CRUD interface for station and show management (August 1, 2025)
@@ -471,6 +473,9 @@ frontend/public/.htaccess                 # Apache URL rewriting
 - **Database Backups**: Weekly automated backups with 3-week retention
 
 ### ✅ System Improvements
+- **Shows Table View Implementation**: Complete responsive table layout with sortable columns, view toggle functionality, and mobile optimization
+- **Playlist API Corrections**: Fixed parameter mismatch in playlist-tracks.php API (playlist_id → show_id) resolving track loading errors
+- **Dedicated Playlist Editor**: Separate edit-playlist.php with playlist-only fields (name, description, image, file size limits, active status)
 - **Calendar Discovery Filtering**: Navigation elements (e.g., "Shows A-Z") filtered out, requires valid time schedules
 - **User-Controlled Show Activation**: New shows inactive by default - users manually choose which to activate
 - **Enhanced Deployment Script**: Intelligent code change detection for reliable deployments

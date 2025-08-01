@@ -9,12 +9,14 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.11.0 (August 1, 2025)
-**Latest Features**: 🌐 **FRIENDLY URL ROUTING SYSTEM** - Complete SEO-friendly URL structure with individual pages for stations, shows, users, and playlists. Clean URLs like `/weru` and `/weru/fresh_air` with comprehensive detail pages, advanced audio players, and responsive design. Previous features: 🔧 **PRODUCTION BUG FIXES & QA TESTING**, 📅 **MANUAL SCHEDULE IMPORT SYSTEM**, and 🎵 **COMPREHENSIVE PLAYLIST ENHANCEMENT SYSTEM**. See [CHANGELOG.md](CHANGELOG.md) for full details.
+## 📅 Current Version: v3.11.1 (August 1, 2025)
+**Latest Features**: 📋 **SHOWS TABLE VIEW SYSTEM** - Complete table view implementation for shows page with sortable columns, responsive design, and view toggle functionality. 🎵 **PLAYLIST MANAGEMENT ENHANCEMENT** - Fixed playlist track loading errors and created dedicated playlist editing interface. Previous features: 🌐 **FRIENDLY URL ROUTING SYSTEM**, 🔧 **PRODUCTION BUG FIXES & QA TESTING**, and 📅 **MANUAL SCHEDULE IMPORT SYSTEM**. See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
+- **📋 Shows Table View System**: Complete table view implementation for shows page with sortable columns (Show Name, Station, Recordings), responsive design, view toggle buttons (cards/table), and hyperlinks to individual show detail pages
+- **🎵 Playlist Management Enhancement**: Fixed "Failed to load tracks: Show ID Required" error and created dedicated edit-playlist.php page with playlist-specific interface removing schedule/duration/host fields
 - **🌐 Friendly URL Routing System**: SEO-friendly URLs with individual pages for stations (`/weru`), shows (`/weru/fresh_air`), users (`/user/mattbaya`), and playlists (`/user/mattbaya/my_mix`) featuring comprehensive detail pages, advanced audio players, statistics dashboards, and responsive Bootstrap design
 - **🔧 Production Bug Fixes & QA Testing**: Enhanced orphaned recording cleanup with dynamic delete UI, comprehensive manual browser testing, and production deployment verification
 - **📅 Manual Schedule Import System**: AI-powered schedule conversion workflow using ChatGPT/Claude/Grok with ICS file upload and parsing for fallback when automatic discovery fails
