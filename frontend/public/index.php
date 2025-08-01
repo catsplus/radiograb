@@ -16,19 +16,14 @@ $active_nav = 'dashboard';
 try {
     $stats = [
         'stations' => $db->fetchOne("SELECT COUNT(*) as count FROM stations WHERE status = 'active'")['count'],
-        'shows' => $db->fetchOne("SELECT COUNT(*) as count FROM shows WHERE active = 1")['count'],
+        'shows' => $db->fetchOne("SELECT COUNT(*) as count FROM shows WHERE active = 1 AND (show_type != 'playlist' OR show_type IS NULL)")['count'],
         'recordings' => $db->fetchOne("
             SELECT COUNT(*) as count 
             FROM recordings r 
             JOIN shows s ON r.show_id = s.id 
             WHERE s.show_type != 'playlist' AND r.source_type != 'uploaded'
         ")['count'],
-        'total_size' => $db->fetchOne("
-            SELECT COALESCE(SUM(r.file_size_bytes), 0) as size 
-            FROM recordings r 
-            JOIN shows s ON r.show_id = s.id 
-            WHERE s.show_type != 'playlist' AND r.source_type != 'uploaded'
-        ")['size']
+        'playlists' => $db->fetchOne("SELECT COUNT(*) as count FROM shows WHERE show_type = 'playlist' AND active = 1")['count']
     ];
     
     // Recent recordings (exclude playlist uploads)
@@ -44,7 +39,7 @@ try {
     
     // Active shows
     $active_shows = $db->fetchAll("
-        SELECT s.*, st.name as station_name, 
+        SELECT s.*, st.name as station_name, st.logo_url,
                COUNT(r.id) as recording_count
         FROM shows s 
         JOIN stations st ON s.station_id = st.id 
@@ -56,7 +51,7 @@ try {
     
 } catch (Exception $e) {
     $error = "Database error: " . $e->getMessage();
-    $stats = ['stations' => 0, 'shows' => 0, 'recordings' => 0, 'total_size' => 0];
+    $stats = ['stations' => 0, 'shows' => 0, 'recordings' => 0, 'playlists' => 0];
     $recent_recordings = [];
     $active_shows = [];
 }
@@ -99,6 +94,9 @@ if (isset($error)): ?>
                             </div>
                         </div>
                     </div>
+                    <a href="/stations.php" class="btn btn-light btn-sm mt-2 w-100">
+                        <i class="fas fa-cog"></i> Manage Stations
+                    </a>
                 </div>
             </div>
             <div class="col-md-3">
@@ -114,6 +112,9 @@ if (isset($error)): ?>
                             </div>
                         </div>
                     </div>
+                    <a href="/shows.php" class="btn btn-light btn-sm mt-2 w-100">
+                        <i class="fas fa-list"></i> View Shows
+                    </a>
                 </div>
             </div>
             <div class="col-md-3">
@@ -129,6 +130,9 @@ if (isset($error)): ?>
                             </div>
                         </div>
                     </div>
+                    <a href="/recordings.php" class="btn btn-light btn-sm mt-2 w-100">
+                        <i class="fas fa-play"></i> View Recordings
+                    </a>
                 </div>
             </div>
             <div class="col-md-3">
@@ -136,14 +140,17 @@ if (isset($error)): ?>
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div>
-                                <h5 class="card-title">Storage Used</h5>
-                                <h2><?= formatFileSize($stats['total_size']) ?></h2>
+                                <h5 class="card-title">Playlists</h5>
+                                <h2><?= $stats['playlists'] ?></h2>
                             </div>
                             <div class="align-self-center">
-                                <i class="fas fa-hdd fa-2x"></i>
+                                <i class="fas fa-list fa-2x"></i>
                             </div>
                         </div>
                     </div>
+                    <a href="/playlists.php" class="btn btn-light btn-sm mt-2 w-100">
+                        <i class="fas fa-eye"></i> View Playlists
+                    </a>
                 </div>
             </div>
         </div>
@@ -251,10 +258,23 @@ if (isset($error)): ?>
                             <div class="list-group list-group-flush">
                                 <?php foreach (array_slice($active_shows, 0, 8) as $show): ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <h6 class="mb-1"><?= h($show['name']) ?></h6>
-                                            <p class="mb-1 text-muted small"><?= h($show['station_name']) ?></p>
-                                            <small class="text-muted"><?= h($show['schedule_description']) ?></small>
+                                        <div class="d-flex align-items-start">
+                                            <div class="me-3">
+                                                <img src="<?= h(getStationLogo(['logo_url' => $show['logo_url']])) ?>" 
+                                                     alt="<?= h($show['station_name']) ?>" 
+                                                     class="station-logo-small"
+                                                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;"
+                                                     onerror="this.src='/assets/images/default-station-logo.png'">
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    <a href="/shows.php?show_id=<?= $show['id'] ?>" class="text-decoration-none">
+                                                        <?= h($show['name']) ?>
+                                                    </a>
+                                                </h6>
+                                                <p class="mb-1 text-muted small"><?= h($show['station_name']) ?></p>
+                                                <small class="text-muted"><?= h($show['schedule_description']) ?></small>
+                                            </div>
                                         </div>
                                         <span class="badge bg-secondary rounded-pill">
                                             <?= $show['recording_count'] ?>
