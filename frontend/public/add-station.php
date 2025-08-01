@@ -167,15 +167,18 @@ require_once '../includes/header.php';
                                            name="website_url" 
                                            value="<?= h($_POST['website_url'] ?? '') ?>"
                                            placeholder="https://example-radio.com"
-                                           required>
+                                           required
+                                           autocomplete="url">
                                     <button type="button" 
                                             id="discover-station" 
-                                            class="btn btn-outline-secondary">
+                                            class="btn btn-outline-secondary"
+                                            title="Automatically discover station information">
                                         <i class="fas fa-search"></i> Discover
                                     </button>
                                 </div>
                                 <div class="form-text">
                                     Enter the radio station's website URL. We'll try to automatically find streaming information.
+                                    <br><strong>Example:</strong> https://kexp.org or https://wnyc.org
                                 </div>
                             </div>
 
@@ -193,6 +196,33 @@ require_once '../includes/header.php';
                                 </div>
                             </div>
 
+                            <!-- Discovery Error -->
+                            <div id="discovery-error" class="alert alert-warning d-none">
+                                <h6><i class="fas fa-exclamation-triangle"></i> Discovery Issue</h6>
+                                <div id="discovery-error-message"></div>
+                                <div class="mt-2">
+                                    <button type="button" id="manual-entry" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i> Continue Manually
+                                    </button>
+                                    <button type="button" id="retry-discovery" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-redo"></i> Try Again
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Loading Indicator -->
+                            <div id="discovery-loading" class="alert alert-info d-none">
+                                <div class="d-flex align-items-center">
+                                    <div class="spinner-border spinner-border-sm me-3" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Discovering Station Information...</h6>
+                                        <small class="text-muted">This may take a few seconds</small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="mb-3">
                                 <label for="name" class="form-label">Station Name *</label>
                                 <input type="text" 
@@ -201,7 +231,12 @@ require_once '../includes/header.php';
                                        name="name" 
                                        value="<?= h($_POST['name'] ?? '') ?>"
                                        placeholder="KEXP 90.3 FM"
-                                       required>
+                                       required
+                                       autocomplete="organization"
+                                       maxlength="100">
+                                <div class="form-text">
+                                    Full station name including frequency if applicable
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -222,27 +257,49 @@ require_once '../includes/header.php';
 
                             <div class="mb-3">
                                 <label for="stream_url" class="form-label">Stream URL</label>
-                                <input type="url" 
-                                       class="form-control" 
-                                       id="stream_url" 
-                                       name="stream_url" 
-                                       value="<?= h($_POST['stream_url'] ?? '') ?>"
-                                       placeholder="http://stream.example.com:8000/live">
-                                <div class="form-text">
-                                    Direct link to the audio stream. This will be auto-discovered if possible.
+                                <div class="input-group">
+                                    <input type="url" 
+                                           class="form-control" 
+                                           id="stream_url" 
+                                           name="stream_url" 
+                                           value="<?= h($_POST['stream_url'] ?? '') ?>"
+                                           placeholder="http://stream.example.com:8000/live">
+                                    <button type="button" 
+                                            id="test-stream" 
+                                            class="btn btn-outline-success"
+                                            title="Test this stream URL"
+                                            disabled>
+                                        <i class="fas fa-play"></i> Test
+                                    </button>
                                 </div>
+                                <div class="form-text">
+                                    Direct link to the audio stream. Common formats: .mp3, .m3u, .pls
+                                </div>
+                                <div id="stream-test-result" class="mt-1"></div>
                             </div>
 
                             <div class="mb-3">
                                 <label for="logo_url" class="form-label">Logo URL</label>
-                                <input type="url" 
-                                       class="form-control" 
-                                       id="logo_url" 
-                                       name="logo_url" 
-                                       value="<?= h($_POST['logo_url'] ?? '') ?>"
-                                       placeholder="https://example.com/logo.png">
+                                <div class="input-group">
+                                    <input type="url" 
+                                           class="form-control" 
+                                           id="logo_url" 
+                                           name="logo_url" 
+                                           value="<?= h($_POST['logo_url'] ?? '') ?>"
+                                           placeholder="https://example.com/logo.png">
+                                    <button type="button" 
+                                            id="preview-logo" 
+                                            class="btn btn-outline-info"
+                                            title="Preview this logo"
+                                            disabled>
+                                        <i class="fas fa-eye"></i> Preview
+                                    </button>
+                                </div>
                                 <div class="form-text">
-                                    URL to the station's logo image. Will be auto-discovered if possible.
+                                    URL to the station's logo image. Preferred formats: PNG, JPG, SVG
+                                </div>
+                                <div id="logo-preview" class="mt-2 d-none">
+                                    <img id="logo-preview-img" src="" alt="Logo Preview" style="max-width: 100px; max-height: 100px; border-radius: 4px;">
                                 </div>
                             </div>
 
@@ -259,13 +316,18 @@ require_once '../includes/header.php';
                                 </div>
                             </div>
 
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between align-items-center">
                                 <a href="/stations.php" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left"></i> Cancel
                                 </a>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Add Station
-                                </button>
+                                <div>
+                                    <button type="button" id="validate-station" class="btn btn-outline-primary me-2">
+                                        <i class="fas fa-check-circle"></i> Validate
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" id="submit-station">
+                                        <i class="fas fa-plus"></i> Add Station
+                                    </button>
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -331,6 +393,292 @@ require_once '../includes/header.php';
     </div>
 
     <?php
-$additional_js = '<script src="/assets/js/radiograb.js"></script>';
+$additional_js = '
+<script src="/assets/js/radiograb.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const websiteUrl = document.getElementById("website_url");
+    const discoverBtn = document.getElementById("discover-station");
+    const testStreamBtn = document.getElementById("test-stream");
+    const previewLogoBtn = document.getElementById("preview-logo");
+    const validateBtn = document.getElementById("validate-station");
+    const streamUrl = document.getElementById("stream_url");
+    const logoUrl = document.getElementById("logo_url");
+    
+    // Auto-uppercase call letters
+    const callLettersInput = document.getElementById("call_letters");
+    callLettersInput.addEventListener("input", function(e) {
+        e.target.value = e.target.value.toUpperCase();
+    });
+    
+    // Enable/disable buttons based on input
+    function updateButtonStates() {
+        testStreamBtn.disabled = !streamUrl.value.trim();
+        previewLogoBtn.disabled = !logoUrl.value.trim();
+    }
+    
+    streamUrl.addEventListener("input", updateButtonStates);
+    logoUrl.addEventListener("input", updateButtonStates);
+    updateButtonStates();
+    
+    // Discovery functionality
+    discoverBtn.addEventListener("click", function() {
+        const url = websiteUrl.value.trim();
+        if (!url) {
+            showAlert("Please enter a website URL first", "warning");
+            return;
+        }
+        
+        if (!isValidUrl(url)) {
+            showAlert("Please enter a valid URL (starting with http:// or https://)", "warning");
+            return;
+        }
+        
+        performDiscovery(url);
+    });
+    
+    // Test stream functionality
+    testStreamBtn.addEventListener("click", function() {
+        const url = streamUrl.value.trim();
+        if (!url) return;
+        
+        testStream(url);
+    });
+    
+    // Preview logo functionality
+    previewLogoBtn.addEventListener("click", function() {
+        const url = logoUrl.value.trim();
+        if (!url) return;
+        
+        previewLogo(url);
+    });
+    
+    // Validate station functionality
+    validateBtn.addEventListener("click", function() {
+        validateStationForm();
+    });
+    
+    function performDiscovery(url) {
+        hideAllAlerts();
+        showElement("discovery-loading");
+        discoverBtn.disabled = true;
+        
+        fetch("/api/discover-station.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `url=${encodeURIComponent(url)}&csrf_token=${getCSRFToken()}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideElement("discovery-loading");
+            discoverBtn.disabled = false;
+            
+            if (data.success) {
+                showDiscoveryResults(data.results);
+            } else {
+                showDiscoveryError(data.error || "Discovery failed");
+            }
+        })
+        .catch(error => {
+            hideElement("discovery-loading");
+            discoverBtn.disabled = false;
+            showDiscoveryError("Failed to connect to discovery service");
+        });
+    }
+    
+    function testStream(url) {
+        testStreamBtn.disabled = true;
+        testStreamBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Testing...`;
+        
+        const resultDiv = document.getElementById("stream-test-result");
+        resultDiv.innerHTML = "";
+        
+        fetch("/api/test-stream.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `stream_url=${encodeURIComponent(url)}&csrf_token=${getCSRFToken()}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            testStreamBtn.disabled = false;
+            testStreamBtn.innerHTML = `<i class="fas fa-play"></i> Test`;
+            
+            if (data.success) {
+                resultDiv.innerHTML = `<small class="text-success"><i class="fas fa-check"></i> Stream is accessible</small>`;
+            } else {
+                resultDiv.innerHTML = `<small class="text-danger"><i class="fas fa-times"></i> ${data.error || "Stream test failed"}</small>`;
+            }
+        })
+        .catch(error => {
+            testStreamBtn.disabled = false;
+            testStreamBtn.innerHTML = `<i class="fas fa-play"></i> Test`;
+            resultDiv.innerHTML = `<small class="text-danger"><i class="fas fa-times"></i> Test failed</small>`;
+        });
+    }
+    
+    function previewLogo(url) {
+        const previewDiv = document.getElementById("logo-preview");
+        const previewImg = document.getElementById("logo-preview-img");
+        
+        previewImg.onload = function() {
+            previewDiv.classList.remove("d-none");
+        };
+        
+        previewImg.onerror = function() {
+            showAlert("Unable to load logo image", "warning");
+        };
+        
+        previewImg.src = url;
+    }
+    
+    function showDiscoveryResults(results) {
+        const content = document.getElementById("discovery-content");
+        let html = "<div class=\\"row\\">";
+        
+        if (results.name) {
+            html += `<div class=\\"col-md-6\\"><strong>Name:</strong> ${results.name}</div>`;
+        }
+        if (results.call_letters) {
+            html += `<div class=\\"col-md-6\\"><strong>Call Letters:</strong> ${results.call_letters}</div>`;
+        }
+        if (results.stream_url) {
+            html += `<div class=\\"col-12 mt-2\\"><strong>Stream URL:</strong><br><code>${results.stream_url}</code></div>`;
+        }
+        if (results.logo_url) {
+            html += `<div class=\\"col-12 mt-2\\"><strong>Logo URL:</strong><br><code>${results.logo_url}</code></div>`;
+        }
+        if (results.calendar_url) {
+            html += `<div class=\\"col-12 mt-2\\"><strong>Calendar URL:</strong><br><code>${results.calendar_url}</code></div>`;
+        }
+        
+        html += "</div>";
+        content.innerHTML = html;
+        showElement("discovery-results");
+        
+        // Store results for applying
+        window.discoveryResults = results;
+    }
+    
+    function showDiscoveryError(message) {
+        document.getElementById("discovery-error-message").textContent = message;
+        showElement("discovery-error");
+    }
+    
+    function validateStationForm() {
+        const errors = [];
+        
+        if (!websiteUrl.value.trim()) {
+            errors.push("Website URL is required");
+        } else if (!isValidUrl(websiteUrl.value.trim())) {
+            errors.push("Website URL must be a valid URL");
+        }
+        
+        if (!document.getElementById("name").value.trim()) {
+            errors.push("Station name is required");
+        }
+        
+        if (streamUrl.value.trim() && !isValidUrl(streamUrl.value.trim())) {
+            errors.push("Stream URL must be a valid URL");
+        }
+        
+        if (logoUrl.value.trim() && !isValidUrl(logoUrl.value.trim())) {
+            errors.push("Logo URL must be a valid URL");
+        }
+        
+        if (errors.length > 0) {
+            showAlert("Validation errors:\\n• " + errors.join("\\n• "), "danger");
+        } else {
+            showAlert("All fields are valid!", "success");
+        }
+    }
+    
+    // Apply discovery results
+    document.getElementById("apply-discovery").addEventListener("click", function() {
+        if (window.discoveryResults) {
+            const results = window.discoveryResults;
+            
+            if (results.name) document.getElementById("name").value = results.name;
+            if (results.call_letters) document.getElementById("call_letters").value = results.call_letters;
+            if (results.stream_url) document.getElementById("stream_url").value = results.stream_url;
+            if (results.logo_url) document.getElementById("logo_url").value = results.logo_url;
+            if (results.calendar_url) document.getElementById("calendar_url").value = results.calendar_url;
+            
+            hideElement("discovery-results");
+            updateButtonStates();
+            showAlert("Discovery results applied successfully!", "success");
+        }
+    });
+    
+    // Dismiss discovery
+    document.getElementById("dismiss-discovery").addEventListener("click", function() {
+        hideElement("discovery-results");
+    });
+    
+    // Manual entry
+    document.getElementById("manual-entry").addEventListener("click", function() {
+        hideElement("discovery-error");
+        showAlert("You can now fill in the station information manually", "info");
+    });
+    
+    // Retry discovery
+    document.getElementById("retry-discovery").addEventListener("click", function() {
+        hideElement("discovery-error");
+        const url = websiteUrl.value.trim();
+        if (url) {
+            performDiscovery(url);
+        }
+    });
+    
+    // Helper functions
+    function showElement(id) {
+        document.getElementById(id).classList.remove("d-none");
+    }
+    
+    function hideElement(id) {
+        document.getElementById(id).classList.add("d-none");
+    }
+    
+    function hideAllAlerts() {
+        hideElement("discovery-results");
+        hideElement("discovery-error");
+        hideElement("discovery-loading");
+    }
+    
+    function isValidUrl(string) {
+        try {
+            const url = new URL(string);
+            return url.protocol === "http:" || url.protocol === "https:";
+        } catch (_) {
+            return false;
+        }
+    }
+    
+    function showAlert(message, type) {
+        // Create a temporary alert
+        const alertDiv = document.createElement("div");
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message.replace(/\\n/g, "<br>")}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const form = document.getElementById("add-station-form");
+        form.parentNode.insertBefore(alertDiv, form);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+    
+    function getCSRFToken() {
+        return document.querySelector("input[name=csrf_token]").value;
+    }
+});
+</script>';
 require_once '../includes/footer.php';
 ?>
