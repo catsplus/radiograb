@@ -313,9 +313,10 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git stash && git pull origin m
 # 4. Check recording status through dashboard (not just API)
 ```
 
-## 🆕 RECENT UPDATES (July 2025)
+## 🆕 RECENT UPDATES (August 2025)
 
 ### ✅ Major Features Completed
+- **🎵 Comprehensive Playlist Enhancement System**: Complete overhaul with drag-and-drop, URL/YouTube support, enhanced player (August 1, 2025)
 - **Enhanced RSS Feed System**: Comprehensive RSS/podcast architecture with multiple feed types (July 31, 2025)
 - **Playlist Upload System**: Multi-format audio uploads with MP3 conversion and metadata tagging
 - **Multiple Show Airings**: "Mon 7PM and Thu 3PM" parsing with priority system
@@ -332,6 +333,181 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git stash && git pull origin m
 - **Calendar Discovery Filtering**: Navigation elements (e.g., "Shows A-Z") filtered out, requires valid time schedules
 - **User-Controlled Show Activation**: New shows inactive by default - users manually choose which to activate
 - **Enhanced Deployment Script**: Intelligent code change detection for reliable deployments
+
+## 🎵 Comprehensive Playlist Enhancement System (COMPLETED August 1, 2025)
+
+### 🚀 **Major Upload Features**
+RadioGrab now provides a complete playlist management system with multiple upload methods:
+
+#### **Drag-and-Drop Upload System**
+- **Full-Page Drop Zone**: Drop audio files anywhere on the playlist page
+- **Multi-File Support**: Drop multiple files for batch processing
+- **Playlist Selection**: Auto-detects playlists and allows user selection
+- **Visual Feedback**: Animated overlay with upload instructions
+- **Format Support**: MP3, WAV, M4A, AAC, OGG, FLAC (up to 100MB each)
+
+#### **URL & YouTube Integration**
+- **Direct Audio URLs**: Support for MP3, WAV, and other audio formats
+- **YouTube Conversion**: Automatic video-to-MP3 conversion using yt-dlp
+- **Quality Settings**: High-quality audio extraction (best available)
+- **Timeout Protection**: 5-minute download timeout with progress feedback
+- **Metadata Extraction**: Automatic title/description from YouTube videos
+
+#### **Enhanced Upload Modal**
+- **Dual Input Methods**: Toggle between file picker and URL input
+- **Real-Time Validation**: File type and URL format checking
+- **Upload Progress**: Visual progress bars and status messages
+- **Metadata Fields**: Title, description, and track information
+- **Auto-Fill**: Intelligent title extraction from filenames and metadata
+
+### 🎛️ **Enhanced Audio Player**
+The playlist player now includes professional-grade controls:
+
+#### **Advanced Playback Controls**
+- **Play/Pause**: Standard playback toggle with visual feedback
+- **Track Navigation**: Previous/Next track with seamless transitions
+- **Rewind/Fast-Forward**: 15-second skip functionality
+- **Progress Seeking**: Click-to-seek on progress bar
+- **Keyboard Shortcuts**: Spacebar (play/pause), arrows (skip), etc.
+
+#### **Visual Interface**
+- **Now Playing Display**: Current track title, description, and info
+- **Progress Visualization**: Real-time progress bar with time display
+- **Track List**: Interactive sidebar with click-to-play functionality
+- **Active Indicators**: Visual highlighting of currently playing track
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+
+### 🏷️ **ID3v2 Metadata System**
+Every uploaded and recorded audio file receives comprehensive metadata:
+
+#### **Automatic Tag Embedding**
+- **Artist**: Show name (e.g., "Morning Edition")
+- **Album**: Station name (e.g., "WYSO 91.3 FM")
+- **Title**: Recording title or auto-generated name
+- **Date**: Recording date in YYYY-MM-DD format
+- **Comment**: Show description or upload description
+- **Track Number**: Sequential numbering for playlist tracks
+- **UTF-8 Encoding**: Full Unicode support for international characters
+
+#### **Technical Implementation**
+- **FFmpeg Integration**: Uses FFmpeg for reliable metadata writing
+- **Post-Processing Validation**: Verifies tags after writing
+- **Database Storage**: All metadata fields stored in database
+- **Backward Compatibility**: Works with existing recordings
+
+### 🔧 **Track Management System**
+
+#### **Drag-and-Drop Reordering**
+- **Visual Interface**: Drag handles with intuitive UX
+- **Real-Time Updates**: Immediate visual feedback during reordering
+- **Database Sync**: Track numbers updated in real-time
+- **Sortable.js Integration**: Professional drag-and-drop library
+- **Save Confirmation**: Manual save to prevent accidental changes
+
+#### **Track Information Display**
+- **Comprehensive Details**: Title, description, duration, file size
+- **Visual Track Numbers**: Properly formatted (01, 02, 03...)
+- **File Management**: Individual track deletion with confirmation
+- **Batch Operations**: Multi-track management capabilities
+
+### 📱 **User Experience Enhancements**
+
+#### **Responsive Interface**
+- **Mobile Optimized**: Touch-friendly controls and layouts
+- **Progressive Enhancement**: Works without JavaScript (basic functionality)
+- **Fast Loading**: Optimized asset loading and caching
+- **Error Handling**: Comprehensive error messages and recovery
+
+#### **Visual Design**
+- **Modern UI**: Bootstrap 5 with custom styling
+- **Animated Elements**: Smooth transitions and micro-interactions
+- **Icon System**: FontAwesome icons for clear visual communication
+- **Color Coding**: Status indicators (active/inactive, success/error)
+
+### 🛠️ **Technical Architecture**
+
+#### **Backend Services** (`upload_service.py`)
+```python
+class AudioUploadService:
+    - upload_file()       # Handle direct file uploads
+    - upload_url()        # Process URL downloads
+    - _download_youtube() # YouTube-to-MP3 conversion
+    - _download_direct_url() # Direct audio URL downloads
+    - _write_mp3_metadata() # ID3v2 tag embedding
+```
+
+#### **Frontend JavaScript** (`playlists.js`)
+```javascript
+// Key Features:
+- initializeDropZones()    # Full-page drag-and-drop
+- handleUpload()          # Dual-method upload processing
+- loadPlaylistTracks()    # Track management interface
+- PlaylistPlayer class    # Enhanced audio player
+- Real-time CSRF integration
+```
+
+#### **API Endpoints**
+- **`/api/upload.php`**: Multi-action upload handler (file, URL, playlist creation)
+- **`/api/playlist-tracks.php`**: Track listing and reordering
+- **Enhanced CSRF Protection**: All operations token-validated
+
+### 🔒 **Security & Validation**
+
+#### **Upload Security**
+- **File Type Validation**: MIME type checking with ffprobe verification
+- **Size Limits**: Configurable per-playlist (default 100MB)
+- **URL Validation**: Domain filtering and content-type checking
+- **CSRF Protection**: All upload operations require valid tokens
+- **Path Sanitization**: Secure filename generation and storage
+
+#### **Audio Processing**
+- **Format Conversion**: Automatic conversion to MP3 for consistency
+- **Quality Validation**: Duration and file size verification
+- **Metadata Extraction**: Safe parsing with error handling
+- **Temporary File Cleanup**: Automatic cleanup of processing files
+
+### 📊 **Database Integration**
+
+#### **Enhanced Schema**
+```sql
+-- Track ordering and metadata
+recordings.track_number      # Sequential track ordering
+recordings.original_filename # Source filename preservation
+recordings.source_type      # 'uploaded' vs 'recorded' distinction
+
+-- Playlist-specific fields
+shows.show_type            # 'playlist' vs 'scheduled'
+shows.allow_uploads        # Upload permission flag
+shows.max_file_size_mb     # Size limit configuration
+```
+
+#### **Data Management**
+- **Automatic Indexing**: Optimized queries for large playlists
+- **Referential Integrity**: Foreign key constraints and cleanup
+- **Backup Integration**: Playlist data included in system backups
+
+### 🧪 **Testing & Quality Assurance**
+
+#### **Browser Testing Requirements**
+- **Chromium Integration**: All features tested via actual browser workflows
+- **JavaScript Execution**: Selenium WebDriver for dynamic testing
+- **Real User Simulation**: Drag-and-drop, form submission, audio playback
+- **CSRF Token Workflows**: Complete authentication flow testing
+- **Cross-Platform**: Desktop, tablet, and mobile compatibility
+
+### 🚀 **Performance Optimizations**
+
+#### **Upload Processing**
+- **Chunked Uploads**: Large file support with progress tracking
+- **Background Processing**: Non-blocking upload handling
+- **Caching Strategy**: Intelligent metadata caching
+- **Resource Management**: Memory-efficient audio processing
+
+#### **Player Performance**
+- **Lazy Loading**: Tracks loaded on-demand
+- **Audio Preloading**: Next track preparation for seamless playback
+- **State Management**: Efficient track switching and memory usage
+- **Network Optimization**: Optimized audio streaming
 
 ## 🎛️ Enhanced Shows Management System (COMPLETED August 1, 2025)
 
