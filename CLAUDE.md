@@ -315,6 +315,142 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && git stash && git pull origin m
 # 4. Check recording status through dashboard (not just API)
 ```
 
+## 🌐 FRIENDLY URL ROUTING SYSTEM (COMPLETED August 1, 2025)
+
+### 🎯 **Clean, SEO-Friendly URLs**
+RadioGrab now features a comprehensive friendly URL system that provides unique pages for individual stations, shows, users, and playlists with clean, professional URLs.
+
+#### **URL Structure**
+- **Station pages**: `/{call_letters}` (e.g., `/weru`, `/wehc`)
+- **Show pages**: `/{call_letters}/{show_slug}` (e.g., `/weru/fresh_air`, `/wehc/morning_show`)
+- **User pages**: `/user/{username}` (e.g., `/user/mattbaya`)
+- **Playlist pages**: `/user/{username}/{playlist_slug}` (e.g., `/user/mattbaya/my_mix`)
+- **404 handling**: Clean error pages with helpful navigation
+
+#### **Individual Detail Pages**
+
+##### **Station Detail Pages** (`/{call_letters}`)
+- **Comprehensive overview**: Station information, statistics, and branding
+- **Show listings**: All shows from the station with recording counts
+- **Recent recordings**: Latest 10 recordings with direct playbook
+- **Statistics cards**: Total shows, active shows, recordings, and storage size
+- **Navigation**: Breadcrumb navigation and station management links
+
+##### **Show Detail Pages** (`/{call_letters}/{show_slug}`)
+- **Complete show information**: Host, genre, schedule, and description
+- **Recording management**: Paginated recordings list with audio players
+- **Statistics dashboard**: Total recordings, recent activity, storage usage
+- **RSS integration**: Direct feed access and subscription links
+- **Audio playback**: Individual recording players with download options
+
+##### **User Profile Pages** (`/user/{username}`)
+- **User statistics**: Total playlists, active playlists, tracks, and storage
+- **Playlist collection**: Grid view of all user playlists with metadata
+- **Activity tracking**: Latest playlist updates and creation dates
+- **Playlist management**: Direct links to playlist editing and RSS feeds
+
+##### **Playlist Detail Pages** (`/user/{username}/{playlist_slug}`)
+- **Advanced audio player**: Full playlist player with track navigation
+- **Track management**: Ordered track listing with play/download options
+- **Playlist controls**: Play all, previous/next track navigation
+- **Progress tracking**: Real-time playback progress and time display
+- **Auto-advance**: Automatic progression through playlist tracks
+
+### 🔧 **Technical Architecture**
+
+#### **PHP Routing System**
+```php
+// RadioGrabRouter class handles all URL parsing and routing
+$router = new RadioGrabRouter($db);
+$route = $router->route($_SERVER['REQUEST_URI']);
+
+// URL patterns supported:
+// Single segment: /weru -> station page
+// Two segments: /weru/fresh_air -> show page  
+// Three segments: /user/mattbaya/my_mix -> playlist page
+```
+
+#### **Database Schema Updates**
+```sql
+-- URL slugs for friendly URLs
+ALTER TABLE shows ADD COLUMN slug VARCHAR(255) NULL;
+ALTER TABLE users ADD COLUMN slug VARCHAR(255) NULL;
+
+-- Unique constraints for SEO optimization
+ALTER TABLE shows ADD UNIQUE INDEX idx_station_slug (station_id, slug);
+ALTER TABLE users ADD UNIQUE INDEX idx_user_slug (slug);
+```
+
+#### **Web Server Configuration**
+- **Apache `.htaccess`**: URL rewriting rules for friendly URLs
+- **Nginx compatibility**: Works with existing nginx configuration
+- **Fallback handling**: Preserves existing system page functionality
+
+#### **Slug Generation Algorithm**
+```php
+// Intelligent slug generation from names
+function generateSlug($string) {
+    // Convert: "Fresh Air & Music" -> "fresh_air_and_music"
+    // Handles: spaces, special characters, duplicates
+    // Ensures: URL-safe, unique, readable slugs
+}
+```
+
+### 🎨 **User Experience Features**
+
+#### **Responsive Design**
+- **Bootstrap integration**: Mobile-friendly responsive layouts
+- **Progressive enhancement**: Works without JavaScript for core functionality
+- **Accessibility**: Proper ARIA labels and semantic HTML structure
+- **Loading states**: Smooth transitions and progress indicators
+
+#### **Navigation & Breadcrumbs**
+- **Contextual navigation**: Clear hierarchy and relationships
+- **Breadcrumb trails**: Easy navigation back to parent pages
+- **Cross-linking**: Smart links between related content
+- **Search engine friendly**: Proper meta tags and Open Graph data
+
+#### **Audio Integration**
+- **Embedded players**: In-page audio playback without page redirects
+- **Playlist functionality**: Sequential track playback with controls
+- **Download support**: Direct file download links where available
+- **Missing file handling**: Graceful degradation for unavailable files
+
+### 🚀 **SEO & Performance Benefits**
+
+#### **Search Engine Optimization**
+- **Clean URLs**: Human-readable, keyword-rich URLs
+- **Meta tags**: Proper title, description, and Open Graph metadata
+- **Structured data**: Schema markup for rich search results
+- **Canonical URLs**: Prevents duplicate content issues
+
+#### **Performance Optimizations**
+- **Database indexing**: Optimized queries with proper indexes on slug fields
+- **Caching headers**: Appropriate cache control for static and dynamic content
+- **Image optimization**: Proper fallbacks and responsive image loading
+- **Asset bundling**: CSS and JavaScript optimization
+
+### 🔧 **File Structure**
+```bash
+frontend/includes/router.php              # Core routing system
+frontend/includes/pages/
+├── station-detail.php                    # Station overview pages
+├── show-detail.php                       # Individual show pages  
+├── user-profile.php                      # User profile pages
+├── playlist-detail.php                   # Playlist detail pages
+└── 404.php                              # Error page handling
+
+database/migrations/add_url_slugs.sql     # Database schema updates
+frontend/public/.htaccess                 # Apache URL rewriting
+```
+
+### 🧪 **Production Testing Results**
+- **✅ Station URLs**: `/weru` returns HTTP 200 with complete station page
+- **✅ 404 Handling**: Non-existent URLs return proper HTTP 404 responses  
+- **✅ Database Migration**: Slug fields successfully added and populated
+- **✅ Backward Compatibility**: All existing system pages continue to function
+- **✅ Server Integration**: Works seamlessly with existing nginx/PHP-FPM setup
+
 ## 🆕 RECENT UPDATES (August 2025)
 
 ### ✅ Major Features Completed
