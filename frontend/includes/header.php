@@ -32,6 +32,9 @@ if (!isset($active_nav)) {
         case 'feeds.php':
             $active_nav = 'feeds';
             break;
+        case 'browse-templates.php':
+            $active_nav = 'browse-templates';
+            break;
         default:
             $active_nav = '';
     }
@@ -77,6 +80,11 @@ if (!isset($active_nav)) {
                     </li>
                     <li class="nav-item">
                         <a class="nav-link <?= $active_nav === 'stations' ? 'active' : '' ?>" href="/stations.php">Stations</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?= $active_nav === 'browse-templates' ? 'active' : '' ?>" href="/browse-templates.php">
+                            <i class="fas fa-clone"></i> Browse Templates
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link <?= $active_nav === 'shows' ? 'active' : '' ?>" href="/shows.php">Shows</a>
