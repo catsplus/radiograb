@@ -30,9 +30,17 @@ RUN apt-get update && apt-get install -y \
     cron \
     certbot \
     python3-certbot-nginx \
-    chromium-browser \
-    chromium-chromedriver \
+    wget \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Google Chrome for reliable Selenium WebDriver support
+# Ubuntu 22.04 chromium-browser package is broken (requires Snap)
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    apt-get install -y google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create application directory
 WORKDIR /opt/radiograb

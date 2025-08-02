@@ -139,10 +139,13 @@ docker logs radiograb-recorder-1 --tail 50 | grep -i schedule
 ### Technical Implementation
 ```bash
 # Container Dependencies (⚠️ CRITICAL: Must be in Dockerfile)
-chromium-browser                    # Installed via apt-get (lighter than Chrome)
-chromium-chromedriver              # ⚠️ CRITICAL: Required for Selenium, was missing and caused test failures
-selenium>=4.15.0                   # WebDriver automation
-webdriver-manager>=4.0.0          # ChromeDriver management
+google-chrome-stable               # ⚠️ CRITICAL: Ubuntu 22.04 chromium-browser is BROKEN (requires Snap)
+selenium>=4.15.0                   # WebDriver automation  
+webdriver-manager>=4.0.0          # ChromeDriver management (auto-downloads compatible driver)
+
+# ⚠️ IMPORTANT: Ubuntu 22.04 Chromium Issue
+# The ubuntu repository chromium-browser package is broken and requires Snap installation
+# We use Google Chrome stable instead for reliable Selenium WebDriver functionality
 
 # Usage
 docker exec radiograb-web-1 /opt/radiograb/venv/bin/python backend/services/js_calendar_parser.py
@@ -181,7 +184,8 @@ ssh radiograb@167.71.84.143 "docker exec -it radiograb-mysql-1 mysql -u radiogra
 - **SQLAlchemy + pymysql**: Database ORM
 - **BeautifulSoup4**: HTML parsing
 - **Selenium**: JavaScript-aware parsing
-- **chromium-browser + chromium-chromedriver**: Required for Selenium WebDriver (⚠️ CRITICAL: Must be in Dockerfile)
+- **google-chrome-stable**: Required for Selenium WebDriver (⚠️ CRITICAL: Ubuntu chromium-browser is BROKEN)
+- **webdriver-manager**: Automatically downloads compatible ChromeDriver
 - **requests**: HTTP client
 - **Pillow**: Image processing for logo optimization
 - **python-dateutil**: ISO timestamp parsing with timezone support
@@ -286,6 +290,53 @@ docker exec radiograb-recorder-1 /opt/radiograb/venv/bin/python backend/services
 - **AAC Conversion**: Automatic AAC→MP3 with FFmpeg
 - **Auto-Rediscovery**: Failed stations trigger Radio Browser lookup
 - **Visual Status**: ✅/❌/⚠️ icons with tooltips in web interface
+
+## ⚠️ UBUNTU 22.04 CHROMIUM DEPENDENCY ISSUE
+
+### 🚨 CRITICAL: Broken Chromium Package
+Ubuntu 22.04's `chromium-browser` package is **BROKEN** and will cause Selenium WebDriver failures:
+
+```bash
+# ❌ BROKEN - DO NOT USE
+apt-get install chromium-browser chromium-chromedriver
+
+# Error: Command '/usr/bin/chromium-browser' requires the chromium snap to be installed
+```
+
+### ✅ SOLUTION: Use Google Chrome
+**Always use Google Chrome stable instead:**
+
+```bash
+# ✅ CORRECT - Use in Dockerfile
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+apt-get update && apt-get install -y google-chrome-stable
+```
+
+### Python Selenium Configuration
+```python
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+
+options = Options()
+options.add_argument('--headless')
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-dev-shm-usage')
+options.binary_location = '/usr/bin/google-chrome'  # NOT chromium-browser
+
+# Use webdriver-manager for automatic ChromeDriver compatibility
+service = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=service, options=options)
+```
+
+### 🔧 Testing Verification
+```bash
+# Verify installation
+docker exec radiograb-web-1 google-chrome --version
+docker exec radiograb-web-1 /opt/radiograb/venv/bin/python -c "from selenium import webdriver; print('Selenium import successful')"
+```
 
 ## 🚨 CRITICAL SUCCESS FACTORS
 
