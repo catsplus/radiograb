@@ -173,7 +173,8 @@ class StationTemplateService {
             }
             
             // Begin transaction
-            $this->db->beginTransaction();
+            $pdo = $this->db->connect();
+            $pdo->beginTransaction();
             
             // Create new station for user
             $station_name = $custom_name ?: $template['name'];
@@ -211,7 +212,7 @@ class StationTemplateService {
             // Copy any associated shows if they exist in the template
             // (This could be enhanced later to copy show templates too)
             
-            $this->db->commit();
+            $pdo->commit();
             
             return [
                 'success' => true,
@@ -220,7 +221,7 @@ class StationTemplateService {
             ];
             
         } catch (Exception $e) {
-            $this->db->rollback();
+            $pdo->rollback();
             return [
                 'success' => false,
                 'error' => 'Failed to copy template: ' . $e->getMessage()
@@ -263,7 +264,8 @@ class StationTemplateService {
             }
             
             // Begin transaction
-            $this->db->beginTransaction();
+            $pdo = $this->db->connect();
+            $pdo->beginTransaction();
             
             // Create template entry
             $template_id = $this->db->insert('stations_master', [
@@ -302,7 +304,7 @@ class StationTemplateService {
                 }
             }
             
-            $this->db->commit();
+            $pdo->commit();
             
             return [
                 'success' => true,
@@ -311,7 +313,7 @@ class StationTemplateService {
             ];
             
         } catch (Exception $e) {
-            $this->db->rollback();
+            $pdo->rollback();
             return [
                 'success' => false,
                 'error' => 'Failed to submit template: ' . $e->getMessage()
