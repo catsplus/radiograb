@@ -468,6 +468,28 @@ require_once '../includes/header.php';
 .station-logo {
     border: 1px solid #dee2e6;
 }
+
+.rating-stars {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.rating-stars .star {
+    cursor: pointer;
+    color: #ddd;
+    font-size: 1.2em;
+    transition: color 0.2s ease;
+}
+
+.rating-stars .star:hover,
+.rating-stars .star.selected {
+    color: #ffc107;
+}
+
+.rating-stars .star:hover ~ .star {
+    color: #ddd;
+}
 </style>
 
 <script>
@@ -574,9 +596,104 @@ function renderTemplateDetails(template) {
                 </div>
                 
                 ${reviewsHtml}
+                
+                <!-- Add Review Section -->
+                <div class="mt-4 border-top pt-3">
+                    <h6>Rate & Review This Template</h6>
+                    <form id="reviewForm" onsubmit="submitReview(event, ${template.id})">
+                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                        <input type="hidden" name="template_id" value="${template.id}">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Rating *</label>
+                                <div class="rating-stars">
+                                    ${[1,2,3,4,5].map(star => `
+                                        <span class="star" data-rating="${star}" onclick="setRating(${star})">
+                                            <i class="fas fa-star"></i>
+                                        </span>
+                                    `).join('')}
+                                </div>
+                                <input type="hidden" name="rating" id="selectedRating" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Working Status *</label>
+                                <select name="working_status" class="form-select" required>
+                                    <option value="">Select status</option>
+                                    <option value="working">Working perfectly</option>
+                                    <option value="intermittent">Works sometimes</option>
+                                    <option value="not_working">Not working</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Review (Optional)</label>
+                            <textarea name="review_text" class="form-control" rows="3" 
+                                      placeholder="Share your experience with this template..." 
+                                      maxlength="1000"></textarea>
+                            <div class="form-text">Help other users by sharing details about stream quality, reliability, etc.</div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-star"></i> Submit Review
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     `;
+}
+
+// Rating system functions
+let selectedRating = 0;
+
+function setRating(rating) {
+    selectedRating = rating;
+    document.getElementById('selectedRating').value = rating;
+    
+    // Update star display
+    document.querySelectorAll('.star').forEach((star, index) => {
+        if (index < rating) {
+            star.classList.add('selected');
+        } else {
+            star.classList.remove('selected');
+        }
+    });
+}
+
+// Submit review function
+async function submitReview(event, templateId) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    // Validate rating
+    if (!selectedRating) {
+        alert('Please select a rating');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/submit-template-review.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message);
+            // Reload template details to show updated reviews
+            loadTemplateDetails(templateId);
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Failed to submit review. Please try again.');
+    }
 }
 </script>
 

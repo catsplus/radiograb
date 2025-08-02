@@ -27,6 +27,15 @@ try {
         'total_storage' => $db->fetchOne("SELECT COALESCE(SUM(file_size_bytes), 0) as size FROM recordings")['size']
     ];
     
+    // Template system statistics
+    $template_stats = $db->fetchOne("
+        SELECT 
+            COUNT(*) as total_templates,
+            SUM(CASE WHEN is_verified = 0 THEN 1 ELSE 0 END) as pending_templates,
+            SUM(usage_count) as total_copies
+        FROM stations_master
+    ") ?: ['total_templates' => 0, 'pending_templates' => 0, 'total_copies' => 0];
+    
     // Recent user activity
     $recent_activity = $db->fetchAll("
         SELECT ua.*, u.username, u.email
@@ -158,8 +167,96 @@ $page_title = 'Admin Dashboard';
             </div>
         </div>
 
+        <!-- Admin Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-clone"></i> Template Management</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="h5 text-primary"><?= $template_stats['total_templates'] ?></div>
+                                <small>Total</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h5 text-warning"><?= $template_stats['pending_templates'] ?></div>
+                                <small>Pending</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h5 text-success"><?= $template_stats['total_copies'] ?></div>
+                                <small>Copies</small>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <a href="/admin/template-management.php" class="btn btn-primary btn-sm w-100">
+                                <i class="fas fa-cogs"></i> Manage Templates
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="card border-info">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-users"></i> User Overview</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="h5 text-primary"><?= $stats['total_users'] ?></div>
+                                <small>Total Users</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="h5 text-success"><?= $stats['active_users'] ?></div>
+                                <small>Active</small>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <a href="#userManagement" class="btn btn-info btn-sm w-100">
+                                <i class="fas fa-users-cog"></i> View Users Below
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="card border-secondary">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0"><i class="fas fa-chart-bar"></i> System Stats</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="h6 text-primary"><?= $stats['total_stations'] ?></div>
+                                <small>Stations</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="h6 text-success"><?= $stats['total_shows'] ?></div>
+                                <small>Shows</small>
+                            </div>
+                        </div>
+                        <div class="row text-center mt-2">
+                            <div class="col-6">
+                                <div class="h6 text-info"><?= $stats['total_recordings'] ?></div>
+                                <small>Recordings</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="h6 text-dark"><?= formatBytes($stats['total_storage']) ?></div>
+                                <small>Storage</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <!-- User Management -->
+            <div id="userManagement"></div>
             <div class="col-lg-8 mb-4">
                 <div class="card">
                     <div class="card-header">
