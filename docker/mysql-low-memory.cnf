@@ -1,0 +1,45 @@
+[mysqld]
+# Low Memory Configuration for 2GB Server
+# Target: Keep MySQL under 800MB RAM usage
+
+# InnoDB Settings (Primary memory consumer)
+innodb_buffer_pool_size = 256M          # Default: 1GB+ (reduce to 256MB)
+innodb_log_file_size = 16M              # Default: 48MB (reduce for less memory)
+innodb_log_buffer_size = 4M             # Default: 16MB
+innodb_sort_buffer_size = 256K          # Default: 1MB
+
+# Query Cache (Disable - deprecated and memory hungry)
+query_cache_type = 0
+query_cache_size = 0
+
+# Connection Settings
+max_connections = 50                    # Default: 151 (reduce for less memory per connection)
+thread_cache_size = 8                   # Default: varies (cache threads to reduce overhead)
+
+# Buffer Settings
+key_buffer_size = 16M                   # Default: 8MB (for MyISAM tables)
+sort_buffer_size = 256K                 # Default: 256KB (per-connection buffer)
+read_buffer_size = 128K                 # Default: 128KB
+read_rnd_buffer_size = 256K            # Default: 256KB
+myisam_sort_buffer_size = 8M           # Default: 8MB
+
+# Temporary Tables
+tmp_table_size = 32M                    # Default: varies (limit temp table memory)
+max_heap_table_size = 32M              # Default: 16MB
+
+# Performance Schema (Memory intensive monitoring)
+performance_schema = OFF               # Disable to save ~400MB RAM
+
+# Logging
+slow_query_log = 0                     # Disable slow query log to save memory
+general_log = 0                        # Disable general log
+
+# Other Memory Optimizations
+table_open_cache = 64                  # Default: varies (limit open table cache)
+table_definition_cache = 256           # Default: varies
+
+# Skip reverse DNS lookups (performance + slight memory saving)
+skip_name_resolve = 1
+
+# Reduce binlog memory usage
+binlog_cache_size = 32K               # Default: 32KB (per-connection)
