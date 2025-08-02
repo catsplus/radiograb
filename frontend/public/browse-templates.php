@@ -495,9 +495,88 @@ function loadTemplateDetails(templateId) {
 }
 
 function renderTemplateDetails(template) {
-    // This would render detailed template information
-    // Implementation details would go here
-    return `<div class="alert alert-info">Template details would be rendered here</div>`;
+    const verifiedBadge = template.is_verified ? 
+        '<span class="badge bg-success ms-2"><i class="fas fa-shield-alt"></i> Verified</span>' : '';
+    
+    const logoHtml = template.logo_url ? 
+        `<img src="${template.logo_url}" alt="${template.name}" class="img-fluid mb-3" style="max-width: 120px; border-radius: 8px;" onerror="this.src='/assets/images/default-station-logo.png'">` : '';
+    
+    const ratingHtml = template.avg_rating ? 
+        `<div class="mb-2">
+            <strong>Rating:</strong> ${template.avg_rating} <i class="fas fa-star text-warning"></i> 
+            (${template.review_count} ${template.review_count === 1 ? 'review' : 'reviews'})
+         </div>` : '';
+    
+    const testStatusIcon = template.last_test_result === 'success' ? 
+        '<i class="fas fa-check text-success"></i>' : 
+        template.last_test_result === 'failed' ? '<i class="fas fa-times text-danger"></i>' : 
+        '<i class="fas fa-question text-muted"></i>';
+    
+    const testStatusText = template.last_tested ? 
+        `Last tested: ${new Date(template.last_tested).toLocaleDateString()} ${testStatusIcon}` : 
+        'Not yet tested';
+    
+    const categoriesHtml = template.categories && template.categories.length > 0 ? 
+        `<div class="mb-2">
+            <strong>Categories:</strong><br>
+            ${template.categories.map(cat => `<span class="badge bg-light text-dark me-1">${cat.name}</span>`).join('')}
+         </div>` : '';
+    
+    const reviewsHtml = template.reviews && template.reviews.length > 0 ? 
+        `<div class="mt-4">
+            <h6>Recent Reviews</h6>
+            ${template.reviews.map(review => `
+                <div class="border-bottom pb-2 mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <strong>${review.username}</strong>
+                        <div>
+                            ${review.rating} <i class="fas fa-star text-warning"></i>
+                            <span class="badge bg-${review.working_status === 'working' ? 'success' : review.working_status === 'not_working' ? 'danger' : 'warning'} ms-1">
+                                ${review.working_status.replace('_', ' ')}
+                            </span>
+                        </div>
+                    </div>
+                    ${review.review_text ? `<p class="mb-1 text-muted">${review.review_text}</p>` : ''}
+                    <small class="text-muted">${new Date(review.created_at).toLocaleDateString()}</small>
+                </div>
+            `).join('')}
+         </div>` : '';
+    
+    return `
+        <div class="row">
+            <div class="col-md-4 text-center">
+                ${logoHtml}
+                <h5>${template.name} ${verifiedBadge}</h5>
+                <p class="text-muted"><strong>${template.call_letters}</strong></p>
+            </div>
+            <div class="col-md-8">
+                <div class="mb-2"><strong>Genre:</strong> ${template.genre || 'Not specified'}</div>
+                <div class="mb-2"><strong>Country:</strong> ${template.country || 'Not specified'}</div>
+                <div class="mb-2"><strong>Language:</strong> ${template.language || 'Not specified'}</div>
+                ${template.description ? `<div class="mb-2"><strong>Description:</strong><br>${template.description}</div>` : ''}
+                ${ratingHtml}
+                ${categoriesHtml}
+                <div class="mb-2"><strong>Usage:</strong> Copied ${template.usage_count} times</div>
+                <div class="mb-2"><strong>Contributor:</strong> ${template.created_by_username || 'Unknown'}</div>
+                <div class="mb-2"><strong>Added:</strong> ${new Date(template.created_at).toLocaleDateString()}</div>
+                <div class="mb-3"><strong>Status:</strong> ${testStatusText}</div>
+                
+                ${template.website_url ? `<div class="mb-2"><a href="${template.website_url}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="fas fa-external-link-alt"></i> Visit Website</a></div>` : ''}
+                
+                <div class="mt-3">
+                    <strong>Technical Details:</strong><br>
+                    <small class="text-muted">
+                        Stream URL: <code>${template.stream_url || 'Not specified'}</code><br>
+                        ${template.bitrate ? `Bitrate: ${template.bitrate}<br>` : ''}
+                        ${template.format ? `Format: ${template.format}<br>` : ''}
+                        ${template.timezone ? `Timezone: ${template.timezone}<br>` : ''}
+                    </small>
+                </div>
+                
+                ${reviewsHtml}
+            </div>
+        </div>
+    `;
 }
 </script>
 
