@@ -19,8 +19,9 @@ from pathlib import Path
 # Add the project root to Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from backend.includes.database import Database
-from backend.includes.config import get_setting
+# Import database modules
+import mysql.connector
+from mysql.connector import Error
 
 # Configure logging
 logging.basicConfig(
@@ -31,9 +32,51 @@ logger = logging.getLogger(__name__)
 
 class TemplateTestingService:
     def __init__(self):
-        self.db = Database()
         self.temp_dir = Path('/var/radiograb/temp')
         self.temp_dir.mkdir(exist_ok=True)
+        
+        # Database connection parameters
+        self.db_config = {
+            'host': os.environ.get('DB_HOST', 'mysql'),
+            'port': int(os.environ.get('DB_PORT', 3306)),
+            'user': os.environ.get('DB_USER', 'radiograb'),
+            'password': os.environ.get('DB_PASSWORD', 'radiograb_pass_2024'),
+            'database': os.environ.get('DB_NAME', 'radiograb')
+        }
+    
+    def get_db_connection(self):
+        """Get a fresh database connection."""
+        return mysql.connector.connect(**self.db_config)
+    
+    def fetchone(self, query, params=None):
+        """Execute query and fetch one result."""
+        conn = self.get_db_connection()
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute(query, params or ())
+            return cursor.fetchone()
+        finally:
+            conn.close()
+    
+    def fetchall(self, query, params=None):
+        """Execute query and fetch all results."""
+        conn = self.get_db_connection()
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute(query, params or ())
+            return cursor.fetchall()
+        finally:
+            conn.close()
+    
+    def execute(self, query, params=None):
+        """Execute a query without returning results."""
+        conn = self.get_db_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(query, params or ())
+            conn.commit()
+        finally:
+            conn.close()
         
     def test_template_stream(self, template_id, timeout_seconds=30):
         """
@@ -48,7 +91,7 @@ class TemplateTestingService:
         """
         try:
             # Get template information
-            template = self.db.fetchone("""
+            template = self.fetchone("""
                 SELECT id, name, call_letters, stream_url, format, bitrate
                 FROM stations_master 
                 WHERE id = %s AND is_active = 1
@@ -289,7 +332,7 @@ class TemplateTestingService:
         try:
             test_status = 'success' if test_result['success'] else 'failed'
             
-            self.db.execute("""
+            self.execute("""
                 UPDATE stations_master 
                 SET last_tested = %s,
                     last_test_result = %s,
@@ -312,7 +355,7 @@ class TemplateTestingService:
         try:
             cutoff_time = datetime.now() - timedelta(hours=max_age_hours)
             
-            templates = self.db.fetchall("""
+            templates = self.fetchall("""
                 SELECT id, name, call_letters
                 FROM stations_master 
                 WHERE is_active = 1 
