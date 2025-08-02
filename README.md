@@ -9,8 +9,18 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.12.1 (August 2, 2025)
-**Latest Features**: 🎉 **GITHUB ISSUES #29-36 FULLY TESTED & VERIFIED** - Complete UI/UX enhancement suite with comprehensive browser-based testing following TESTING.md standards. All features verified working in production. 🔒 **STREAMING vs DOWNLOAD CONTROLS** - Comprehensive DMCA compliance system with stream-only mode, JavaScript path obfuscation, and intelligent content categorization. 🎙️ **DJ AUDIO SNIPPET RECORDING** - Complete browser-based voice recording system with WebRTC for DJ intros, outros, and station IDs.
+## 📅 Current Version: v3.13.0 (August 2, 2025)
+**Latest Features**: 🔐 **USER AUTHENTICATION & ADMIN ACCESS** - Complete multi-user system with registration, email verification, session management, user-scoped data isolation, and admin dashboard. 🎉 **GITHUB ISSUES #29-36 FULLY TESTED & VERIFIED** - Complete UI/UX enhancement suite with comprehensive browser-based testing following TESTING.md standards. 🔒 **STREAMING vs DOWNLOAD CONTROLS** - Comprehensive DMCA compliance system with stream-only mode, JavaScript path obfuscation, and intelligent content categorization.
+
+### 🔐 **User Authentication & Admin Access System** (August 2, 2025)
+**🎯 Issue #6 COMPLETED**: Comprehensive multi-user authentication system with secure user registration, email verification, session management, user-scoped data isolation, and admin dashboard. All user data is properly isolated by user accounts while maintaining backward compatibility.
+
+**✅ KEY FEATURES:**
+- **User Registration**: Email verification workflow with modern UI and password strength validation
+- **Secure Authentication**: Login/logout with session management and CSRF protection
+- **Data Isolation**: All stations, shows, and recordings scoped to individual user accounts
+- **Admin Dashboard**: System administration with user management and activity monitoring
+- **Database Migration**: Successfully deployed with existing data preservation
 
 ### 🎉 **GitHub Issues #29-36 FULLY TESTED & COMPLETED** (August 2, 2025)
 **🚀 COMPREHENSIVE TESTING VERIFICATION**: All 8 GitHub issues have been systematically tested using real user workflows through the live production site. Every enhancement has been verified to work correctly following the comprehensive testing methodology documented in [TESTING.md](TESTING.md).

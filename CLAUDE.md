@@ -48,6 +48,7 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && docker compose down && docker 
 - **Test & On-Demand**: 10-second tests + manual recordings with duplicate prevention
 - **Call Letters Format**: `WYSO_ShowName_20250727_1400.mp3` naming
 - **RSS Feeds**: Individual show feeds + master combined feed
+- **User Authentication**: Multi-user system with admin access and data isolation
 - **Retention Policies**: Configurable TTL with automatic cleanup
 - **Real-time Status**: ON-AIR indicators, progress tracking, browser notifications
 
@@ -452,6 +453,56 @@ frontend/public/.htaccess                 # Apache URL rewriting
 - **✅ Server Integration**: Works seamlessly with existing nginx/PHP-FPM setup
 
 ## 🆕 RECENT UPDATES (August 2025)
+
+### ✅ GitHub Issue #6: User Authentication & Admin Access COMPLETED (August 2, 2025)
+
+**🔐 Comprehensive Multi-User Authentication System Implemented**
+- Complete user registration with email verification workflow
+- Secure login/logout with session management and admin access controls  
+- User-scoped data isolation (stations, shows, recordings filtered by user_id)
+- Admin dashboard with user management and system-wide statistics
+- Database migration successfully applied with backward compatibility
+
+#### **🏗️ Database Schema Enhancements**
+- **Users Table**: Enhanced with email verification, admin flags, profile data
+- **Session Management**: `user_sessions` table for secure session tracking
+- **Activity Logging**: `user_activity_log` for admin monitoring and audit trails
+- **User Preferences**: `user_preferences` for customizable user settings
+- **Data Scoping**: Foreign key relationships added to existing tables (stations, shows, custom_feeds)
+
+#### **🔒 Security Features**
+- **Email Verification**: Required for account activation with token-based verification
+- **Password Security**: 10+ character minimum with strength validation and hashing
+- **Session Management**: Secure session handling with timeout and cleanup
+- **CSRF Protection**: Token validation on all forms and API endpoints
+- **Admin Controls**: Role-based access with admin-only dashboard and user management
+
+#### **📱 User Interface**  
+- **Registration Page**: Modern gradient design with real-time password validation
+- **Login System**: Support for email or username authentication
+- **User Dashboard**: Personalized statistics and user-scoped data display
+- **Admin Dashboard**: System administration with user management interface
+- **Email Verification**: Streamlined verification workflow with clear messaging
+
+#### **🛡️ Admin Features**
+- **User Management**: View, edit, activate/deactivate user accounts
+- **System Statistics**: Total users, stations, shows, recordings, and storage usage
+- **Activity Monitoring**: Real-time user activity logs and system monitoring
+- **Admin Controls**: Secure admin access with proper authentication validation
+
+#### **⚡ Production Deployment**
+- **Database Migration**: Successfully applied with existing user preservation  
+- **Admin Account**: Pre-configured admin user (service@svaha.com) with full access
+- **Live Testing**: Authentication system verified working on production server
+- **Backward Compatibility**: Existing data migrated and properly associated with admin user
+
+### ✅ GitHub Issue #37: Shows Page Recording Indicators TESTED (August 2, 2025)
+
+**✅ Status: ALREADY FIXED - No Action Required**
+- **Issue**: Shows page incorrectly displayed recording notices for ALL shows from a station
+- **Analysis**: JavaScript code correctly identifies recordings by specific `show_id` (line 94 in on-air-status.js)
+- **Test Environment**: 120 WERU shows with only 1 recording (show_id 230) correctly showed indicator on specific show only
+- **Technical Verification**: `r.show_id === showId` ensures show-specific matching, not station-wide indicators
 
 ### ✅ GitHub Issues 29-36 COMPLETED (August 1, 2025)
 
