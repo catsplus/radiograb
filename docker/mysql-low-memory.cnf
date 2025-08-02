@@ -8,9 +8,7 @@ innodb_log_file_size = 16M              # Default: 48MB (reduce for less memory)
 innodb_log_buffer_size = 4M             # Default: 16MB
 innodb_sort_buffer_size = 256K          # Default: 1MB
 
-# Query Cache (Disable - deprecated and memory hungry)
-query_cache_type = 0
-query_cache_size = 0
+# Query Cache (Removed in MySQL 8.0 - no longer needed)
 
 # Connection Settings
 max_connections = 50                    # Default: 151 (reduce for less memory per connection)
@@ -39,7 +37,7 @@ table_open_cache = 64                  # Default: varies (limit open table cache
 table_definition_cache = 256           # Default: varies
 
 # Skip reverse DNS lookups (performance + slight memory saving)
-skip_name_resolve = 1
+skip-name-resolve
 
 # Reduce binlog memory usage
 binlog_cache_size = 32K               # Default: 32KB (per-connection)
