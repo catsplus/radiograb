@@ -102,7 +102,6 @@ if (isset($_GET['logout'])) {
         <?php
         exit;
     }
-}
 
 // Handle settings updates
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
