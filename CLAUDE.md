@@ -138,8 +138,9 @@ docker logs radiograb-recorder-1 --tail 50 | grep -i schedule
 
 ### Technical Implementation
 ```bash
-# Container Dependencies
+# Container Dependencies (⚠️ CRITICAL: Must be in Dockerfile)
 chromium-browser                    # Installed via apt-get (lighter than Chrome)
+chromium-chromedriver              # ⚠️ CRITICAL: Required for Selenium, was missing and caused test failures
 selenium>=4.15.0                   # WebDriver automation
 webdriver-manager>=4.0.0          # ChromeDriver management
 
@@ -180,6 +181,7 @@ ssh radiograb@167.71.84.143 "docker exec -it radiograb-mysql-1 mysql -u radiogra
 - **SQLAlchemy + pymysql**: Database ORM
 - **BeautifulSoup4**: HTML parsing
 - **Selenium**: JavaScript-aware parsing
+- **chromium-browser + chromium-chromedriver**: Required for Selenium WebDriver (⚠️ CRITICAL: Must be in Dockerfile)
 - **requests**: HTTP client
 - **Pillow**: Image processing for logo optimization
 - **python-dateutil**: ISO timestamp parsing with timezone support

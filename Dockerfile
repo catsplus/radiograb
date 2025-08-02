@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y \
     certbot \
     python3-certbot-nginx \
     chromium-browser \
+    chromium-chromedriver \
     && rm -rf /var/lib/apt/lists/*
 
 # Create application directory
