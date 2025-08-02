@@ -25,6 +25,15 @@
 session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
+require_once '../includes/auth.php';
+
+$auth = new UserAuth($db);
+
+// Require authentication
+requireAuth($auth);
+
+$current_user = $auth->getCurrentUser();
+$user_id = $auth->getCurrentUserId();
 
 // Handle recording deletion
 if ($_POST['action'] ?? '' === 'delete' && isset($_POST['recording_id'])) {
@@ -32,8 +41,13 @@ if ($_POST['action'] ?? '' === 'delete' && isset($_POST['recording_id'])) {
         try {
             $recording_id = (int)$_POST['recording_id'];
             
-            // Get recording file path before deletion
-            $recording = $db->fetchOne("SELECT filename FROM recordings WHERE id = ?", [$recording_id]);
+            // Get recording file path before deletion (ensure user owns this recording)
+            $recording = $db->fetchOne("
+                SELECT r.filename 
+                FROM recordings r 
+                JOIN shows s ON r.show_id = s.id 
+                WHERE r.id = ? AND s.user_id = ?
+            ", [$recording_id, $user_id]);
             
             // Delete from database
             $db->delete('recordings', 'id = ?', [$recording_id]);
@@ -87,6 +101,10 @@ if ($search) {
 // Filter out playlist uploads - only show regular recordings
 $where_conditions[] = "(s.show_type != 'playlist' OR s.show_type IS NULL OR r.source_type != 'uploaded')";
 
+// Add user_id scoping to only show user's recordings
+$where_conditions[] = "s.user_id = ?";
+$params[] = $user_id;
+
 $where_clause = $where_conditions ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
 // Validate sort column
@@ -123,15 +141,21 @@ try {
     
     $total_pages = ceil($total_count / $per_page);
     
-    // Get filter options
+    // Get filter options (user-scoped)
     $shows = $db->fetchAll("
         SELECT s.id, s.name, st.name as station_name 
         FROM shows s 
         JOIN stations st ON s.station_id = st.id 
+        WHERE s.user_id = ?
         ORDER BY st.name, s.name
-    ");
+    ", [$user_id]);
     
-    $stations = $db->fetchAll("SELECT id, name FROM stations ORDER BY name");
+    $stations = $db->fetchAll("
+        SELECT id, name 
+        FROM stations 
+        WHERE user_id = ? 
+        ORDER BY name
+    ", [$user_id]);
     
 } catch (Exception $e) {
     $error = "Database error: " . $e->getMessage();
