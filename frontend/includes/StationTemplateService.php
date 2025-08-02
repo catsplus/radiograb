@@ -207,7 +207,7 @@ class StationTemplateService {
             // Update template usage count
             $this->db->update('stations_master', [
                 'usage_count' => $template['usage_count'] + 1
-            ], 'id = ?', [$template_id]);
+            ], 'id = :id', ['id' => $template_id]);
             
             // Copy any associated shows if they exist in the template
             // (This could be enhanced later to copy show templates too)
@@ -292,7 +292,7 @@ class StationTemplateService {
             // Mark original station as submitted
             $this->db->update('stations', [
                 'submitted_as_template' => true
-            ], 'id = ?', [$station_id]);
+            ], 'id = :id', ['id' => $station_id]);
             
             // Add to categories if specified
             if (!empty($submission_data['category_ids'])) {
@@ -401,7 +401,7 @@ class StationTemplateService {
             $this->db->update('stations_master', [
                 'is_verified' => $verified ? 1 : 0,
                 'updated_at' => date('Y-m-d H:i:s')
-            ], 'id = ?', [$template_id]);
+            ], 'id = :id', ['id' => $template_id]);
             
             return [
                 'success' => true,
