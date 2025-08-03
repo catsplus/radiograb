@@ -403,6 +403,28 @@ require_once '../includes/header.php';
                                                 <?php endif; ?>
                                             <?php endif; ?>
                                             
+                                            <!-- Transcription Button -->
+                                            <?php if (recordingFileExists($recording['filename'])): ?>
+                                                <?php if ($recording['transcript_file'] && file_exists($recording['transcript_file'])): ?>
+                                                    <button type="button" 
+                                                            class="btn btn-outline-success btn-sm view-transcript"
+                                                            data-recording-id="<?= $recording['id'] ?>"
+                                                            data-show-name="<?= h($recording['show_name']) ?>"
+                                                            title="View transcript">
+                                                        <i class="fas fa-file-text"></i> Transcript
+                                                    </button>
+                                                <?php else: ?>
+                                                    <button type="button" 
+                                                            class="btn btn-outline-info btn-sm transcribe-recording"
+                                                            data-recording-id="<?= $recording['id'] ?>"
+                                                            data-show-name="<?= h($recording['show_name']) ?>"
+                                                            data-duration="<?= $recording['duration_seconds'] ?>"
+                                                            title="Generate transcript">
+                                                        <i class="fas fa-microphone"></i> Transcribe
+                                                    </button>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+                                            
                                             <button type="button" 
                                                     class="btn btn-outline-danger btn-sm delete-recording"
                                                     data-recording-id="<?= $recording['id'] ?>"
@@ -542,6 +564,338 @@ require_once '../includes/header.php';
                 modal.show();
             });
         });
+    });
+    </script>
+
+    <!-- Transcription Modal -->
+    <div class="modal fade" id="transcriptionModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-microphone"></i> Generate Transcript
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="transcriptionProviderSelection">
+                        <p>Select a transcription provider to generate a transcript for <strong id="transcribeShowName"></strong>:</p>
+                        
+                        <div id="providerCards" class="row">
+                            <!-- Provider cards will be loaded here -->
+                        </div>
+                        
+                        <div class="alert alert-warning mt-3" id="noProvidersWarning" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            No transcription services configured. Please configure your API keys in 
+                            <a href="/settings/api-keys.php" class="alert-link">Settings → API Keys</a>.
+                        </div>
+                    </div>
+                    
+                    <div id="transcriptionProgress" style="display: none;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Transcribing...</span>
+                            </div>
+                            <h5>Generating Transcript</h5>
+                            <p class="text-muted">This may take a few minutes depending on the recording length and provider...</p>
+                            <div class="progress mb-3">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 100%"></div>
+                            </div>
+                            <p><strong>Provider:</strong> <span id="selectedProvider"></span></p>
+                            <p><strong>Estimated Cost:</strong> $<span id="estimatedCost">0.00</span></p>
+                        </div>
+                    </div>
+                    
+                    <div id="transcriptionComplete" style="display: none;">
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            Transcription completed successfully!
+                        </div>
+                        <div class="transcription-details">
+                            <p><strong>Provider:</strong> <span id="completedProvider"></span></p>
+                            <p><strong>Cost:</strong> $<span id="actualCost">0.00</span></p>
+                            <p><strong>Duration:</strong> <span id="transcribedDuration">0</span> minutes</p>
+                        </div>
+                    </div>
+                    
+                    <div id="transcriptionError" style="display: none;">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <strong>Transcription Failed:</strong> <span id="errorMessage"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transcript Viewer Modal -->
+    <div class="modal fade" id="transcriptModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-text"></i> Transcript - <span id="transcriptShowName"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="transcriptContent">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading transcript...</span>
+                            </div>
+                            <p>Loading transcript...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" id="copyTranscript">
+                        <i class="fas fa-copy"></i> Copy to Clipboard
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Transcription functionality
+        const transcriptionModal = document.getElementById('transcriptionModal');
+        const transcriptModal = document.getElementById('transcriptModal');
+        
+        // Handle transcribe recording buttons
+        document.querySelectorAll('.transcribe-recording').forEach(button => {
+            button.addEventListener('click', function() {
+                const recordingId = this.dataset.recordingId;
+                const showName = this.dataset.showName;
+                const duration = parseInt(this.dataset.duration || 3600);
+                
+                document.getElementById('transcribeShowName').textContent = showName;
+                
+                // Load available providers
+                loadTranscriptionProviders(recordingId, duration);
+                
+                const modal = new bootstrap.Modal(transcriptionModal);
+                modal.show();
+            });
+        });
+        
+        // Handle view transcript buttons
+        document.querySelectorAll('.view-transcript').forEach(button => {
+            button.addEventListener('click', function() {
+                const recordingId = this.dataset.recordingId;
+                const showName = this.dataset.showName;
+                
+                document.getElementById('transcriptShowName').textContent = showName;
+                
+                // Load transcript content
+                loadTranscript(recordingId);
+                
+                const modal = new bootstrap.Modal(transcriptModal);
+                modal.show();
+            });
+        });
+        
+        // Copy transcript to clipboard
+        document.getElementById('copyTranscript').addEventListener('click', function() {
+            const content = document.getElementById('transcriptContent').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                showToast('Transcript copied to clipboard', 'success');
+            });
+        });
+        
+        function loadTranscriptionProviders(recordingId, duration) {
+            // Reset modal state
+            document.getElementById('transcriptionProviderSelection').style.display = 'block';
+            document.getElementById('transcriptionProgress').style.display = 'none';
+            document.getElementById('transcriptionComplete').style.display = 'none';
+            document.getElementById('transcriptionError').style.display = 'none';
+            
+            // Mock provider data - in real implementation, this would come from an API
+            const providers = [
+                {
+                    id: 'openai_whisper',
+                    name: 'OpenAI Whisper API',
+                    cost_per_minute: 0.006,
+                    description: 'High accuracy, official OpenAI service'
+                },
+                {
+                    id: 'deepinfra_whisper',
+                    name: 'DeepInfra Whisper',
+                    cost_per_minute: 0.0006,
+                    description: 'Cost-effective, same quality as OpenAI'
+                }
+            ];
+            
+            const providerCards = document.getElementById('providerCards');
+            const durationMinutes = duration / 60;
+            
+            if (providers.length === 0) {
+                document.getElementById('noProvidersWarning').style.display = 'block';
+                providerCards.innerHTML = '';
+                return;
+            }
+            
+            providerCards.innerHTML = providers.map(provider => {
+                const estimatedCost = (durationMinutes * provider.cost_per_minute).toFixed(4);
+                return `
+                    <div class="col-md-6 mb-3">
+                        <div class="card provider-card" data-provider="${provider.id}" data-cost="${estimatedCost}">
+                            <div class="card-body">
+                                <h6 class="card-title">${provider.name}</h6>
+                                <p class="card-text text-muted small">${provider.description}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-success fw-bold">$${estimatedCost}</span>
+                                    <button class="btn btn-primary btn-sm transcribe-with-provider" 
+                                            data-provider="${provider.id}" 
+                                            data-recording-id="${recordingId}"
+                                            data-cost="${estimatedCost}">
+                                        Select
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Add click handlers for provider selection
+            document.querySelectorAll('.transcribe-with-provider').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const provider = this.dataset.provider;
+                    const cost = this.dataset.cost;
+                    const recordingId = this.dataset.recordingId;
+                    
+                    startTranscription(recordingId, provider, cost);
+                });
+            });
+        }
+        
+        function startTranscription(recordingId, provider, estimatedCost) {
+            // Show progress
+            document.getElementById('transcriptionProviderSelection').style.display = 'none';
+            document.getElementById('transcriptionProgress').style.display = 'block';
+            document.getElementById('selectedProvider').textContent = provider;
+            document.getElementById('estimatedCost').textContent = estimatedCost;
+            
+            // Make API call
+            const formData = new FormData();
+            formData.append('recording_id', recordingId);
+            formData.append('provider', provider);
+            formData.append('csrf_token', '<?= generateCSRFToken() ?>');
+            
+            fetch('/api/transcribe-recording.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show completion
+                    document.getElementById('transcriptionProgress').style.display = 'none';
+                    document.getElementById('transcriptionComplete').style.display = 'block';
+                    document.getElementById('completedProvider').textContent = data.provider;
+                    document.getElementById('actualCost').textContent = data.cost_estimate || estimatedCost;
+                    document.getElementById('transcribedDuration').textContent = (data.duration_minutes || 0).toFixed(1);
+                    
+                    // Refresh page after a delay to show new transcript button
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
+                } else {
+                    // Show error
+                    document.getElementById('transcriptionProgress').style.display = 'none';
+                    document.getElementById('transcriptionError').style.display = 'block';
+                    document.getElementById('errorMessage').textContent = data.error || 'Unknown error occurred';
+                }
+            })
+            .catch(error => {
+                document.getElementById('transcriptionProgress').style.display = 'none';
+                document.getElementById('transcriptionError').style.display = 'block';
+                document.getElementById('errorMessage').textContent = 'Network error: ' + error.message;
+            });
+        }
+        
+        function loadTranscript(recordingId) {
+            document.getElementById('transcriptContent').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading transcript...</span>
+                    </div>
+                    <p>Loading transcript...</p>
+                </div>
+            `;
+            
+            fetch(`/api/get-transcript.php?recording_id=${recordingId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('transcriptContent').innerHTML = `
+                            <div class="transcript-info mb-3">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>Provider:</strong> ${data.provider}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Generated:</strong> ${new Date(data.generated_at).toLocaleDateString()}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Words:</strong> ${data.word_count.toLocaleString()}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Cost:</strong> $${(data.cost || 0).toFixed(4)}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="transcript-text">
+                                <div class="border p-3 bg-light" style="max-height: 400px; overflow-y: auto;">
+                                    <pre style="white-space: pre-wrap; margin: 0;">${data.transcript}</pre>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        document.getElementById('transcriptContent').innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle"></i>
+                                ${data.error}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('transcriptContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Error loading transcript: ${error.message}
+                        </div>
+                    `;
+                });
+        }
+        
+        function showToast(message, type = 'info') {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
     });
     </script>
 

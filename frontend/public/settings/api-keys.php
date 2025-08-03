@@ -384,11 +384,13 @@ require_once '../../includes/header.php';
                                     <label class="form-label">Service Provider *</label>
                                     <select name="service_provider" class="form-select" required>
                                         <option value="">Select Provider</option>
-                                        <option value="whisper_local">Whisper (Local)</option>
-                                        <option value="whisper_api">Whisper API</option>
-                                        <option value="google_stt">Google Speech-to-Text</option>
-                                        <option value="azure_stt">Azure Speech</option>
-                                        <option value="aws_transcribe">AWS Transcribe</option>
+                                        <option value="openai_whisper">OpenAI Whisper API</option>
+                                        <option value="deepinfra_whisper">DeepInfra Whisper</option>
+                                        <option value="borgcloud">BorgCloud</option>
+                                        <option value="assemblyai">AssemblyAI</option>
+                                        <option value="groq_whisper">Groq Whisper</option>
+                                        <option value="replicate">Replicate</option>
+                                        <option value="huggingface">Hugging Face</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">

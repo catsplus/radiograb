@@ -16,7 +16,7 @@ Inter-script Communication:
 - It relies on `backend.config.database.Base` for ORM functionality.
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from backend.config.database import Base
@@ -107,6 +107,12 @@ class Recording(Base):
     uploaded_by = Column(String(100), nullable=True)  # User who uploaded (future auth)
     original_filename = Column(String(255), nullable=True)  # Original upload filename
     track_number = Column(Integer, nullable=True)  # Track order in playlist (NULL for regular recordings)
+    
+    # Transcription fields
+    transcript_file = Column(String(500), nullable=True)  # Path to transcript file
+    transcript_provider = Column(String(50), nullable=True)  # Provider used for transcription
+    transcript_generated_at = Column(DateTime(timezone=True), nullable=True)
+    transcript_cost = Column(Float, nullable=True)  # Cost of transcription
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
