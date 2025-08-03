@@ -65,7 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         <hr>
                         <div class="text-center">
-                            <a href="/register.php">Create Account</a>
+                            <a href="/register.php">Create Account</a> | 
+                            <a href="/forgot-password.php">Forgot Password?</a>
                         </div>
                     </div>
                 </div>
