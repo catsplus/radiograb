@@ -226,15 +226,56 @@ require_once '../../includes/header.php';
                     </button>
                     
                     <div class="collapse" id="s3Form">
-                        <form method="POST" class="border p-3 rounded">
+                        <!-- Provider Selection Templates -->
+                        <div class="alert alert-info mb-3">
+                            <h6><i class="fas fa-info-circle"></i> Choose Your S3 Provider</h6>
+                            <p class="mb-2">RadioGrab supports any S3-compatible storage service:</p>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 mb-2 s3-template" 
+                                            data-provider="aws">
+                                        <i class="fab fa-aws"></i> AWS S3
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 mb-2 s3-template" 
+                                            data-provider="digitalocean">
+                                        <i class="fab fa-digital-ocean"></i> DigitalOcean
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 mb-2 s3-template" 
+                                            data-provider="wasabi">
+                                        🗄️ Wasabi
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 mb-2 s3-template" 
+                                            data-provider="backblaze">
+                                        ☁️ Backblaze B2
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="text-muted">Click a provider above to auto-fill configuration</small>
+                        </div>
+                        
+                        <form method="POST" class="border p-3 rounded" id="s3ConfigForm">
                             <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                             <input type="hidden" name="action" value="save_s3_key">
                             
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Service Name *</label>
-                                    <input type="text" name="service_name" class="form-control" 
-                                           placeholder="e.g., AWS S3, Wasabi, DigitalOcean Spaces" required>
+                                    <label class="form-label">Service Provider *</label>
+                                    <select name="service_provider" class="form-select" id="serviceProvider">
+                                        <option value="">Select Provider</option>
+                                        <option value="aws">AWS S3</option>
+                                        <option value="digitalocean">DigitalOcean Spaces</option>
+                                        <option value="wasabi">Wasabi</option>
+                                        <option value="backblaze">Backblaze B2</option>
+                                        <option value="linode">Linode Object Storage</option>
+                                        <option value="vultr">Vultr Object Storage</option>
+                                        <option value="custom">Other S3-Compatible</option>
+                                    </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Configuration Name *</label>
@@ -243,31 +284,44 @@ require_once '../../includes/header.php';
                                 </div>
                             </div>
                             
+                            <!-- Hidden service_name field that gets auto-filled -->
+                            <input type="hidden" name="service_name" id="serviceName" value="">
+                            
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Access Key ID *</label>
-                                    <input type="text" name="access_key_id" class="form-control" required>
+                                    <input type="text" name="access_key_id" class="form-control" id="accessKeyId" required>
+                                    <small class="form-text text-muted">Your S3 access key from your provider</small>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Secret Access Key *</label>
-                                    <input type="password" name="secret_access_key" class="form-control" required>
+                                    <input type="password" name="secret_access_key" class="form-control" id="secretAccessKey" required>
+                                    <small class="form-text text-muted">Keep this secure - it's your private key</small>
                                 </div>
                             </div>
                             
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Bucket Name *</label>
-                                    <input type="text" name="bucket_name" class="form-control" required>
+                                    <input type="text" name="bucket_name" class="form-control" id="bucketName" required>
+                                    <small class="form-text text-muted">Must be created in your S3 provider first</small>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Region</label>
-                                    <input type="text" name="region" class="form-control" value="us-east-1">
+                                    <input type="text" name="region" class="form-control" id="region" value="us-east-1">
+                                    <small class="form-text text-muted">Geographic region for your bucket</small>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Endpoint URL</label>
-                                    <input type="url" name="endpoint_url" class="form-control" 
+                                    <input type="url" name="endpoint_url" class="form-control" id="endpointUrl"
                                            placeholder="Leave blank for AWS S3">
+                                    <small class="form-text text-muted">Required for non-AWS providers</small>
                                 </div>
+                            </div>
+                            
+                            <!-- Provider-specific help text -->
+                            <div id="providerHelp" class="alert alert-light" style="display: none;">
+                                <div id="helpContent"></div>
                             </div>
                             
                             <div class="row">
@@ -700,6 +754,125 @@ require_once '../../includes/header.php';
     background-color: #0d6efd;
     border-color: #0d6efd;
 }
+
+.s3-template.active {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // S3 Provider Templates
+    const providerTemplates = {
+        aws: {
+            name: 'AWS S3',
+            region: 'us-east-1',
+            endpoint: '',
+            help: `
+                <h6><i class="fab fa-aws"></i> AWS S3 Setup</h6>
+                <ol>
+                    <li>Go to <a href="https://s3.console.aws.amazon.com/" target="_blank">AWS S3 Console</a></li>
+                    <li>Create a bucket with a unique name</li>
+                    <li>Go to <a href="https://console.aws.amazon.com/iam/" target="_blank">IAM Console</a> → Users → Create API keys</li>
+                    <li>Copy your Access Key ID and Secret Access Key</li>
+                </ol>
+                <p><strong>Estimated Cost:</strong> $0.023/GB/month + $0.0004/1000 requests</p>
+            `
+        },
+        digitalocean: {
+            name: 'DigitalOcean Spaces',
+            region: 'nyc3',
+            endpoint: 'https://nyc3.digitaloceanspaces.com',
+            help: `
+                <h6><i class="fab fa-digital-ocean"></i> DigitalOcean Spaces Setup</h6>
+                <ol>
+                    <li>Go to <a href="https://cloud.digitalocean.com/spaces" target="_blank">DigitalOcean Spaces</a></li>
+                    <li>Create a Space in your preferred region</li>
+                    <li>Go to API → Spaces Keys → Generate New Key</li>
+                    <li>Copy your Access Key and Secret Key</li>
+                </ol>
+                <p><strong>Pricing:</strong> $5/month for 250GB + 1TB transfer (great value!)</p>
+            `
+        },
+        wasabi: {
+            name: 'Wasabi',
+            region: 'us-east-1',
+            endpoint: 'https://s3.wasabisys.com',
+            help: `
+                <h6>🗄️ Wasabi Setup</h6>
+                <ol>
+                    <li>Go to <a href="https://wasabi.com/" target="_blank">Wasabi Console</a></li>
+                    <li>Create a bucket in your preferred region</li>
+                    <li>Go to Access Keys → Create New Access Key</li>
+                    <li>Copy your Access Key and Secret Key</li>
+                </ol>
+                <p><strong>Pricing:</strong> $6.99/month for 1TB (cheapest option!)</p>
+            `
+        },
+        backblaze: {
+            name: 'Backblaze B2',
+            region: 'us-west-001',
+            endpoint: 'https://s3.us-west-001.backblazeb2.com',
+            help: `
+                <h6>☁️ Backblaze B2 Setup</h6>
+                <ol>
+                    <li>Go to <a href="https://www.backblaze.com/b2/" target="_blank">Backblaze B2</a></li>
+                    <li>Create a bucket</li>
+                    <li>Go to App Keys → Create a New Application Key</li>
+                    <li>Use the S3-compatible endpoint</li>
+                </ol>
+                <p><strong>Pricing:</strong> $0.005/GB/month (pay only for what you use!)</p>
+            `
+        }
+    };
+    
+    // Handle provider template buttons
+    document.querySelectorAll('.s3-template').forEach(button => {
+        button.addEventListener('click', function() {
+            const provider = this.dataset.provider;
+            const template = providerTemplates[provider];
+            
+            if (template) {
+                // Update form fields
+                document.getElementById('serviceProvider').value = provider;
+                document.getElementById('serviceName').value = template.name;
+                document.getElementById('region').value = template.region;
+                document.getElementById('endpointUrl').value = template.endpoint;
+                
+                // Show help text
+                const helpDiv = document.getElementById('providerHelp');
+                const helpContent = document.getElementById('helpContent');
+                helpContent.innerHTML = template.help;
+                helpDiv.style.display = 'block';
+                
+                // Update button states
+                document.querySelectorAll('.s3-template').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+    
+    // Handle provider dropdown change
+    document.getElementById('serviceProvider').addEventListener('change', function() {
+        const provider = this.value;
+        const template = providerTemplates[provider];
+        
+        if (template) {
+            document.getElementById('serviceName').value = template.name;
+            document.getElementById('region').value = template.region;
+            document.getElementById('endpointUrl').value = template.endpoint;
+            
+            const helpDiv = document.getElementById('providerHelp');
+            const helpContent = document.getElementById('helpContent');
+            helpContent.innerHTML = template.help;
+            helpDiv.style.display = 'block';
+        } else {
+            document.getElementById('providerHelp').style.display = 'none';
+        }
+    });
+});
+</script>
 
 <?php require_once '../../includes/footer.php'; ?>

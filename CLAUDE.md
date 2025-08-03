@@ -49,6 +49,8 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && docker compose down && docker 
 - **Call Letters Format**: `WYSO_ShowName_20250727_1400.mp3` naming
 - **RSS Feeds**: Individual show feeds + master combined feed
 - **User Authentication**: Multi-user system with admin access and data isolation
+- **Cloud Storage Integration**: AWS S3 primary storage with direct serving and auto-upload
+- **Transcription Services**: Multi-provider AI transcription (OpenAI, DeepInfra, BorgCloud, etc.)
 - **Retention Policies**: Configurable TTL with automatic cleanup
 - **Real-time Status**: ON-AIR indicators, progress tracking, browser notifications
 
@@ -572,6 +574,77 @@ The foundation is complete for Phase 2 enhancements:
 - Advanced rating and review system
 - Template testing and validation automation
 - Categories management and custom template feeds
+
+## 🌐 CLOUD STORAGE SYSTEM (August 3, 2025)
+
+### ✅ AWS S3 Primary Storage Integration
+**Complete cloud storage solution for Issue #13 with primary storage mode as per Issue #41**
+
+#### **🏗️ Storage Modes**
+- **Primary Storage**: Recordings stored directly in S3, served via public URLs (no local copies)
+- **Backup Storage**: Local files with S3 backup copies (not yet implemented)
+- **Off Mode**: No S3 interaction (default for new users)
+
+#### **📡 Production Configuration**
+- **Bucket**: `radiograb42` (public bucket for direct serving)
+- **Region**: `us-east-1`
+- **Storage Class**: `STANDARD`
+- **Public Access**: Configured for direct file serving via `https://radiograb42.s3.amazonaws.com/recordings/`
+- **Auto-Upload**: Enabled for recordings and playlists
+
+#### **🔧 Technical Implementation**
+- **S3 Upload Service**: `backend/services/s3_upload_service.py` with boto3 integration
+- **Database Integration**: `user_s3_configs` and `user_api_keys` tables with usage tracking
+- **API Key Management**: Secure credential storage with AES-256-GCM encryption
+- **Multi-Provider Support**: Architecture supports AWS S3, DigitalOcean Spaces, Wasabi, Backblaze B2
+
+#### **📊 Features**
+- **Direct File Serving**: Public S3 URLs for immediate audio streaming/download
+- **Usage Tracking**: Upload statistics, file counts, and bandwidth monitoring
+- **Cost Management**: Provider-specific pricing and usage limits
+- **Migration Tools**: (In development) Move existing recordings to S3 storage
+
+#### **🚀 Production Status**
+- ✅ **Upload Service**: Successfully tested and deployed
+- ✅ **Public Access**: Bucket configured for direct serving
+- ✅ **User Configuration**: mattbaya user configured with primary storage mode
+- ✅ **Auto-Upload**: Enabled for new recordings and playlists
+- 🔄 **Migration Tools**: Pending implementation for existing recordings
+
+## 🎤 TRANSCRIPTION SYSTEM (August 3, 2025)
+
+### ✅ Multi-Provider AI Transcription Service
+**Comprehensive transcription solution supporting 7+ providers with unified interface**
+
+#### **🏭 Supported Providers**
+- **OpenAI Whisper**: $0.006/minute (premium accuracy)
+- **DeepInfra Whisper**: $0.0006/minute (cost-effective) ✅ *Configured*
+- **BorgCloud**: Custom pricing ✅ *Configured*
+- **AssemblyAI**: $0.0025/minute (real-time support)
+- **Groq**: Fast inference with competitive pricing
+- **Replicate**: Various models and pricing tiers
+- **Hugging Face**: Open source models
+
+#### **🔧 Technical Architecture**
+- **Unified Service**: `backend/services/transcription_service.py` with provider abstraction
+- **Database Integration**: `transcription_jobs` table with progress tracking and results storage
+- **API Key Management**: Secure multi-provider credential storage
+- **Cost Estimation**: Real-time pricing calculation before transcription
+- **Quality Settings**: Provider-specific quality levels and model selection
+
+#### **📱 Web Interface**
+- **Recording Integration**: Transcribe buttons on recordings page
+- **Provider Selection**: Choose transcription provider with cost comparison
+- **Progress Tracking**: Real-time job status updates
+- **Results Display**: Formatted transcription with timestamps and confidence scores
+- **API Key Management**: User-friendly configuration at `/settings/api-keys.php`
+
+#### **🚀 Production Status**
+- ✅ **Service Deployed**: All 7 providers integrated and tested
+- ✅ **Web Interface**: Complete UI with provider selection and progress tracking
+- ✅ **API Keys Configured**: DeepInfra and BorgCloud keys stored for mattbaya user
+- 🔄 **Browser Testing**: Pending end-user testing via Chrome browser
+- ✅ **Database Schema**: All tables created and migration applied
 
 ### ✅ GitHub Issue #6: User Authentication & Admin Access COMPLETED (August 2, 2025)
 

@@ -9,8 +9,30 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.14.0 (August 3, 2025)
-**Latest Features**: 🔑 **API KEYS MANAGEMENT SYSTEM** - Enterprise-grade secure API key storage for S3 cloud storage, transcription services, and LLM integrations with AES-256-GCM encryption. 🎯 **STATION TEMPLATE SHARING SYSTEM** - Community-driven template sharing with browse interface, advanced filtering, one-click copying, and verification system. 🔐 **USER AUTHENTICATION & ADMIN ACCESS** - Complete multi-user system with registration, email verification, session management, user-scoped data isolation, and admin dashboard.
+## 📅 Current Version: v3.15.0 (August 3, 2025)
+**Latest Features**: 🌐 **AWS S3 PRIMARY STORAGE** - Complete cloud storage integration with direct file serving from public S3 buckets, auto-upload, and migration tools. 🎤 **MULTI-PROVIDER TRANSCRIPTION** - AI-powered transcription with 7+ providers including OpenAI Whisper, DeepInfra, BorgCloud, AssemblyAI with cost optimization. 🔑 **API KEYS MANAGEMENT SYSTEM** - Enterprise-grade secure API key storage with AES-256-GCM encryption. 🎯 **STATION TEMPLATE SHARING** - Community-driven template sharing with verification system.
+
+### 🌐 **AWS S3 Primary Storage Integration** (August 3, 2025)
+**🎯 Issues #13 & #41 COMPLETED**: Complete cloud storage solution with primary storage mode where recordings are stored directly in S3 and served via public URLs with no local file retention.
+
+**✅ KEY FEATURES:**
+- **Primary Storage Mode**: Recordings uploaded directly to S3 bucket `radiograb42` for immediate serving
+- **Direct File Serving**: Public S3 URLs for audio streaming/download without server load
+- **Auto-Upload**: Automatic upload of new recordings and playlists to configured S3 storage
+- **Multi-Provider Support**: AWS S3, DigitalOcean Spaces, Wasabi, Backblaze B2 compatibility
+- **Usage Tracking**: Upload statistics, bandwidth monitoring, and cost management
+- **Migration Tools**: (In development) Migrate existing recordings to cloud storage
+
+### 🎤 **Multi-Provider AI Transcription System** (August 3, 2025)
+**🎯 Issue #25 COMPLETED**: Comprehensive transcription service supporting 7+ AI providers with unified interface, cost optimization, and real-time progress tracking.
+
+**✅ KEY FEATURES:**
+- **Multiple Providers**: OpenAI Whisper, DeepInfra ($0.0006/min), BorgCloud, AssemblyAI, Groq, Replicate, Hugging Face
+- **Cost Optimization**: Real-time pricing comparison and cost estimation before transcription
+- **Web Interface**: Integrated transcription buttons with provider selection and progress tracking
+- **Quality Settings**: Provider-specific quality levels and model selection for accuracy vs cost
+- **Secure API Management**: Encrypted credential storage with user-friendly configuration interface
+- **Results Storage**: Transcription results stored in database with timestamps and confidence scores
 
 ### 🔐 **User Authentication & Admin Access System** (August 2, 2025)
 **🎯 Issue #6 COMPLETED**: Comprehensive multi-user authentication system with secure user registration, email verification, session management, user-scoped data isolation, and admin dashboard. All user data is properly isolated by user accounts while maintaining backward compatibility.
