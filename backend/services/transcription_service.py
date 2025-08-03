@@ -121,17 +121,20 @@ class TranscriptionService:
                 config = query.first()
                 
                 if config:
-                    # Decrypt and return configuration
-                    from frontend.includes.ApiKeyManager import ApiKeyManager
-                    api_manager = ApiKeyManager(db)
-                    decrypted = api_manager.decryptCredentials(config.encrypted_credentials)
-                    
-                    return {
-                        'api_key_id': config.id,
-                        'provider': json.loads(config.service_configuration)['service_provider'],
-                        'credentials': decrypted,
-                        'config': json.loads(config.service_configuration)
-                    }
+                    # Parse credentials (stored as JSON)
+                    try:
+                        credentials = json.loads(config.encrypted_credentials)
+                        service_config = json.loads(config.service_configuration) if config.service_configuration else {}
+                        
+                        return {
+                            'api_key_id': config.id,
+                            'provider': service_config.get('service_provider', provider),
+                            'credentials': credentials,
+                            'config': service_config
+                        }
+                    except json.JSONDecodeError as e:
+                        logger.error(f"Invalid JSON in credentials for user {user_id}, provider {provider}: {e}")
+                        return None
                     
                 return None
                 
