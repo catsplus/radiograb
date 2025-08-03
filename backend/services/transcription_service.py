@@ -46,8 +46,8 @@ class TranscriptionService:
             'name': 'DeepInfra Whisper',
             'cost_per_minute': 0.0006,
             'api_format': 'openai_compatible',
-            'endpoint': 'https://api.deepinfra.com/v1/inference/openai/whisper-large',
-            'models': ['whisper-large'],
+            'endpoint': 'https://api.deepinfra.com/v1/inference/openai/whisper-large-v3',
+            'models': ['whisper-large-v3'],
             'max_file_size': 100 * 1024 * 1024,  # 100MB
             'supported_formats': ['mp3', 'wav', 'flac', 'm4a']
         },
@@ -299,10 +299,10 @@ class TranscriptionService:
             
             with open(audio_file, 'rb') as f:
                 files = {
-                    'file': (audio_file.name, f, 'audio/mpeg')
+                    'audio': (audio_file.name, f, 'audio/mpeg')
                 }
                 data = {
-                    'model': 'whisper-large',
+                    'model': 'openai/whisper-large-v3',
                     'language': config.get('language_code', 'en'),
                     'response_format': 'text'
                 }
