@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y \
     python3-certbot-nginx \
     wget \
     gnupg \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Google Chrome for reliable Selenium WebDriver support
