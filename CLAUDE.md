@@ -191,6 +191,9 @@ ssh radiograb@167.71.84.143 "docker exec -it radiograb-mysql-1 mysql -u radiogra
 - **requests**: HTTP client
 - **Pillow**: Image processing for logo optimization
 - **python-dateutil**: ISO timestamp parsing with timezone support
+- **boto3**: AWS S3 cloud storage integration
+- **deepinfra**: AI transcription service client (DeepInfra Whisper API)
+- **cryptography**: API key encryption and security
 
 ## 🔐 SSL/SECURITY
 
@@ -643,8 +646,10 @@ The foundation is complete for Phase 2 enhancements:
 - ✅ **Service Deployed**: All 7 providers integrated and tested
 - ✅ **Web Interface**: Complete UI with provider selection and progress tracking
 - ✅ **API Keys Configured**: DeepInfra and BorgCloud keys stored for mattbaya user
+- ✅ **DeepInfra Verified**: Working transcription with `whisper-large-v3` model via `https://api.deepinfra.com/v1/inference/openai/whisper-large-v3`
+- ✅ **Test Results**: Successfully transcribed WERU radio recording with 1018 character output
+- ✅ **Database Schema**: All tables created with transcription columns added
 - 🔄 **Browser Testing**: Pending end-user testing via Chrome browser
-- ✅ **Database Schema**: All tables created and migration applied
 
 ### ✅ GitHub Issue #6: User Authentication & Admin Access COMPLETED (August 2, 2025)
 
