@@ -33,45 +33,42 @@ class S3UploadService:
         
     def get_user_s3_configs(self, user_id, active_only=True):
         """Get S3 configurations for a user"""
-        db = SessionLocal()
+        import mysql.connector
+        
         try:
-            from backend.models.api_keys import UserApiKey, UserS3Config
+            # Direct MySQL connection
+            db = mysql.connector.connect(
+                host='mysql',
+                port=3306,
+                user='radiograb',
+                password='radiograb_pass_2024',
+                database='radiograb'
+            )
+            cursor = db.cursor(dictionary=True)
             
-            query = db.query(UserS3Config, UserApiKey.encrypted_credentials).join(
-                UserApiKey, UserS3Config.api_key_id == UserApiKey.id
-            ).filter(UserS3Config.user_id == user_id)
+            query = """
+                SELECT s3c.*, ak.encrypted_credentials
+                FROM user_s3_configs s3c
+                JOIN user_api_keys ak ON s3c.api_key_id = ak.id
+                WHERE s3c.user_id = %s
+            """
+            params = [user_id]
             
             if active_only:
-                query = query.filter(
-                    UserS3Config.is_active == True,
-                    UserApiKey.is_active == True
-                )
+                query += " AND s3c.is_active = 1 AND ak.is_active = 1"
             
-            results = query.order_by(UserS3Config.created_at).all()
+            query += " ORDER BY s3c.created_at"
             
-            # Convert to dict format
-            configs = []
-            for config, encrypted_creds in results:
-                config_dict = {
-                    'id': config.id,
-                    'api_key_id': config.api_key_id,
-                    'user_id': config.user_id,
-                    'config_name': config.config_name,
-                    'bucket_name': config.bucket_name,
-                    'region': config.region,
-                    'endpoint_url': config.endpoint_url,
-                    'path_prefix': config.path_prefix,
-                    'storage_class': config.storage_class,
-                    'auto_upload_recordings': config.auto_upload_recordings,
-                    'auto_upload_playlists': config.auto_upload_playlists,
-                    'encrypted_credentials': encrypted_creds
-                }
-                configs.append(config_dict)
-                
-            return configs
+            cursor.execute(query, params)
+            results = cursor.fetchall()
+            
+            return results
             
         finally:
-            db.close()
+            if 'cursor' in locals():
+                cursor.close()
+            if 'db' in locals():
+                db.close()
     
     def create_s3_client(self, credentials, config):
         """Create S3 client with user credentials"""
@@ -149,17 +146,29 @@ class S3UploadService:
             upload_time = (datetime.now() - start_time).total_seconds()
             
             # Update S3 config stats
-            db = SessionLocal()
+            import mysql.connector
             try:
-                from backend.models.api_keys import UserS3Config
-                db.query(UserS3Config).filter(UserS3Config.id == config['id']).update({
-                    'total_uploaded_bytes': UserS3Config.total_uploaded_bytes + file_size,
-                    'total_uploaded_files': UserS3Config.total_uploaded_files + 1,
-                    'last_upload_at': datetime.now()
-                })
+                db = mysql.connector.connect(
+                    host='mysql',
+                    port=3306,
+                    user='radiograb',
+                    password='radiograb_pass_2024',
+                    database='radiograb'
+                )
+                cursor = db.cursor()
+                cursor.execute("""
+                    UPDATE user_s3_configs 
+                    SET total_uploaded_bytes = total_uploaded_bytes + %s,
+                        total_uploaded_files = total_uploaded_files + 1,
+                        last_upload_at = NOW()
+                    WHERE id = %s
+                """, [file_size, config['id']])
                 db.commit()
             finally:
-                db.close()
+                if 'cursor' in locals():
+                    cursor.close()
+                if 'db' in locals():
+                    db.close()
             
             logger.info(f"Successfully uploaded {local_file_path} to S3 as {remote_key}")
             
