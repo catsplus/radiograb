@@ -10,6 +10,7 @@ class Database {
     private $password;
     private $database;
     private $connection;
+    private static $instance;
     
     public function __construct() {
         // Load configuration from environment or config file
@@ -80,6 +81,20 @@ class Database {
     public function delete($table, $where, $params = []) {
         $sql = "DELETE FROM {$table} WHERE {$where}";
         return $this->query($sql, $params);
+    }
+    
+    public function execute($sql, $params = []) {
+        return $this->query($sql, $params);
+    }
+    
+    /**
+     * Singleton pattern for getInstance() compatibility
+     */
+    public static function getInstance() {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
 }
 
