@@ -322,4 +322,14 @@ function get_csrf_input() {
     $token = generateCSRFToken();
     return '<input type="hidden" name="csrf_token" value="' . h($token) . '">';
 }
+
+/**
+ * Get base URL for the application
+ */
+function getBaseUrl() {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    $host = $_SERVER['HTTP_HOST'];
+    $script = dirname($_SERVER['SCRIPT_NAME']);
+    return $protocol . $host . rtrim($script, '/api');
+}
 ?>
