@@ -98,6 +98,11 @@ if (!isset($active_nav)) {
                     <li class="nav-item">
                         <a class="nav-link <?= $active_nav === 'feeds' ? 'active' : '' ?>" href="/feeds.php">RSS Feeds</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?= $active_nav === 'api-keys' ? 'active' : '' ?>" href="/settings/api-keys.php">
+                            <i class="fas fa-key"></i> API Keys
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
