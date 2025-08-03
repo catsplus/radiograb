@@ -194,6 +194,7 @@ ssh radiograb@167.71.84.143 "docker exec -it radiograb-mysql-1 mysql -u radiogra
 - **boto3**: AWS S3 cloud storage integration
 - **deepinfra**: AI transcription service client (DeepInfra Whisper API)
 - **cryptography**: API key encryption and security
+- **rclone**: Multi-backend remote storage (Google Drive, SFTP, Dropbox, OneDrive)
 
 ## 🔐 SSL/SECURITY
 
@@ -612,7 +613,45 @@ The foundation is complete for Phase 2 enhancements:
 - ✅ **Public Access**: Bucket configured for direct serving
 - ✅ **User Configuration**: mattbaya user configured with primary storage mode
 - ✅ **Auto-Upload**: Enabled for new recordings and playlists
-- 🔄 **Migration Tools**: Pending implementation for existing recordings
+- ✅ **Migration Tools**: User interface at `/migrate-to-s3.php`
+
+## 📡 RCLONE REMOTE STORAGE SYSTEM (August 3, 2025)
+
+### ✅ Multi-Backend Remote Storage Integration
+**Complete remote storage solution for Issue #42 supporting Google Drive, SFTP, Dropbox, and more**
+
+#### **🏗️ Supported Backends**
+- **Google Drive**: Unlimited storage with Google Workspace accounts
+- **SFTP**: Upload to any SFTP server including VPS and dedicated servers
+- **Dropbox**: Up to 2TB storage on paid plans
+- **Microsoft OneDrive**: Up to 1TB on Microsoft 365 plans
+- **Extensible**: Supports all rclone backends (Box, pCloud, WebDAV, FTP, etc.)
+
+#### **📊 Storage Roles**
+- **Primary**: Upload recordings publicly (replaces local files)
+- **Backup**: Copy recordings after local recording (keeps local files)
+- **Off**: Don't use this remote for automatic uploads
+
+#### **🔧 Technical Implementation**
+- **Rclone Service**: `backend/services/rclone_service.py` with multi-backend support
+- **Database Integration**: `user_rclone_remotes` table with role-based configuration
+- **Configuration Management**: User-specific rclone config files in `/var/radiograb/rclone/`
+- **Web Interface**: Complete UI at `/settings/rclone-remotes.php`
+
+#### **📱 Web Interface Features**
+- **Backend Templates**: Pre-configured setup instructions for popular services
+- **Test & Validate**: Connection testing before saving configurations
+- **Usage Statistics**: Track uploaded files, data transfer, and success rates
+- **Role Management**: Configure each remote as primary, backup, or off
+- **Setup Wizards**: Step-by-step configuration with documentation links
+
+#### **🚀 Production Status**
+- ✅ **Service Architecture**: Complete rclone integration with all major backends
+- ✅ **Database Schema**: Tables and views for remote management and usage tracking
+- ✅ **Web Interface**: Full-featured management interface with backend templates
+- ✅ **API Endpoints**: Test, save, and delete remote configurations
+- ✅ **Docker Integration**: Rclone binary installed in all containers
+- 🔄 **Auto-Upload Integration**: Ready for post-recording upload automation
 
 ## 🎤 TRANSCRIPTION SYSTEM (August 3, 2025)
 

@@ -42,6 +42,9 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearm
     apt-get install -y google-chrome-stable && \
     rm -rf /var/lib/apt/lists/*
 
+# Install rclone for remote storage support (Issue #42)
+RUN curl https://rclone.org/install.sh | bash
+
 # Create application directory
 WORKDIR /opt/radiograb
 
@@ -54,7 +57,7 @@ RUN python3 -m venv venv && \
     pip install --no-cache-dir -r requirements.txt
 
 # Create necessary directories
-RUN mkdir -p /var/radiograb/{recordings,feeds,logs,temp} && \
+RUN mkdir -p /var/radiograb/{recordings,feeds,logs,temp,rclone} && \
     mkdir -p /var/log/supervisor && \
     mkdir -p /run/php
 

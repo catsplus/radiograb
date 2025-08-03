@@ -49,3 +49,6 @@ deepinfra>=0.1.0
 
 # API key encryption and security
 cryptography>=41.0.0
+
+# Remote storage integration (Issue #42)
+# Note: rclone binary must be installed separately via package manager
