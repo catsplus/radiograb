@@ -17,8 +17,8 @@ from botocore.exceptions import ClientError, NoCredentialsError
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 # Import database modules
-from frontend.includes.Database import Database
-from frontend.includes.ApiKeyManager import ApiKeyManager
+from backend.config.database import SessionLocal
+from backend.models.station import Recording, Show
 
 # Configure logging
 logging.basicConfig(
@@ -29,31 +29,56 @@ logger = logging.getLogger(__name__)
 
 class S3UploadService:
     def __init__(self):
-        self.db = Database()
-        self.api_key_manager = ApiKeyManager(self.db)
+        pass
         
     def get_user_s3_configs(self, user_id, active_only=True):
         """Get S3 configurations for a user"""
-        query = """
-            SELECT s3c.*, ak.encrypted_credentials
-            FROM user_s3_configs s3c
-            JOIN user_api_keys ak ON s3c.api_key_id = ak.id
-            WHERE s3c.user_id = ?
-        """
-        params = [user_id]
-        
-        if active_only:
-            query += " AND s3c.is_active = 1 AND ak.is_active = 1"
-        
-        query += " ORDER BY s3c.created_at"
-        
-        return self.db.fetchAll(query, params)
+        db = SessionLocal()
+        try:
+            from backend.models.api_keys import UserApiKey, UserS3Config
+            
+            query = db.query(UserS3Config, UserApiKey.encrypted_credentials).join(
+                UserApiKey, UserS3Config.api_key_id == UserApiKey.id
+            ).filter(UserS3Config.user_id == user_id)
+            
+            if active_only:
+                query = query.filter(
+                    UserS3Config.is_active == True,
+                    UserApiKey.is_active == True
+                )
+            
+            results = query.order_by(UserS3Config.created_at).all()
+            
+            # Convert to dict format
+            configs = []
+            for config, encrypted_creds in results:
+                config_dict = {
+                    'id': config.id,
+                    'api_key_id': config.api_key_id,
+                    'user_id': config.user_id,
+                    'config_name': config.config_name,
+                    'bucket_name': config.bucket_name,
+                    'region': config.region,
+                    'endpoint_url': config.endpoint_url,
+                    'path_prefix': config.path_prefix,
+                    'storage_class': config.storage_class,
+                    'auto_upload_recordings': config.auto_upload_recordings,
+                    'auto_upload_playlists': config.auto_upload_playlists,
+                    'encrypted_credentials': encrypted_creds
+                }
+                configs.append(config_dict)
+                
+            return configs
+            
+        finally:
+            db.close()
     
     def create_s3_client(self, credentials, config):
         """Create S3 client with user credentials"""
         try:
-            # Get decrypted credentials
-            creds = self.api_key_manager.decryptCredentials(credentials['encrypted_credentials'])
+            # Get decrypted credentials - decode from base64 JSON
+            import base64
+            creds = json.loads(base64.b64decode(credentials).decode('utf-8'))
             
             session = boto3.Session(
                 aws_access_key_id=creds['access_key_id'],
@@ -99,7 +124,7 @@ class S3UploadService:
                 return {'success': False, 'error': f'S3 configuration "{config_name}" not found'}
             
             # Create S3 client
-            s3_client = self.create_s3_client(config, config)
+            s3_client = self.create_s3_client(config['encrypted_credentials'], config)
             if not s3_client:
                 return {'success': False, 'error': 'Failed to create S3 client'}
             
@@ -123,28 +148,18 @@ class S3UploadService:
             
             upload_time = (datetime.now() - start_time).total_seconds()
             
-            # Log successful upload
-            self.api_key_manager.logApiUsage(
-                user_id=user_id,
-                api_key_id=config['api_key_id'],
-                service_type='s3_storage',
-                operation_type='upload',
-                metrics={
-                    'bytes_processed': file_size,
-                    'duration_seconds': int(upload_time),
-                    'success': True,
-                    'response_time_ms': int(upload_time * 1000)
-                }
-            )
-            
             # Update S3 config stats
-            self.db.execute("""
-                UPDATE user_s3_configs 
-                SET total_uploaded_bytes = total_uploaded_bytes + ?,
-                    total_uploaded_files = total_uploaded_files + 1,
-                    last_upload_at = NOW()
-                WHERE id = ?
-            """, [file_size, config['id']])
+            db = SessionLocal()
+            try:
+                from backend.models.api_keys import UserS3Config
+                db.query(UserS3Config).filter(UserS3Config.id == config['id']).update({
+                    'total_uploaded_bytes': UserS3Config.total_uploaded_bytes + file_size,
+                    'total_uploaded_files': UserS3Config.total_uploaded_files + 1,
+                    'last_upload_at': datetime.now()
+                })
+                db.commit()
+            finally:
+                db.close()
             
             logger.info(f"Successfully uploaded {local_file_path} to S3 as {remote_key}")
             
@@ -160,18 +175,7 @@ class S3UploadService:
             error_msg = f"S3 upload failed: {str(e)}"
             logger.error(error_msg)
             
-            # Log failed upload
-            if 'config' in locals() and config:
-                self.api_key_manager.logApiUsage(
-                    user_id=user_id,
-                    api_key_id=config['api_key_id'],
-                    service_type='s3_storage',
-                    operation_type='upload',
-                    metrics={
-                        'success': False,
-                        'error_message': error_msg
-                    }
-                )
+            # Log failed upload (simplified for now)
             
             return {'success': False, 'error': error_msg}
             
