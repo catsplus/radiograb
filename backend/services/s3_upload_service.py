@@ -75,7 +75,28 @@ class S3UploadService:
         try:
             # Get decrypted credentials - decode from base64 JSON
             import base64
+            from botocore.config import Config as BotocoreConfig
+            
             creds = json.loads(base64.b64decode(credentials).decode('utf-8'))
+            
+            # Configure for Backblaze B2 compatibility (boto3 >= 1.35.99 fix)
+            client_config = BotocoreConfig(
+                signature_version='s3v4',
+                s3={
+                    'addressing_style': 'path'
+                }
+            )
+            
+            # Add checksum fix for boto3 >= 1.35.99 with Backblaze B2
+            if config.get('endpoint_url') and 'backblazeb2.com' in config['endpoint_url']:
+                client_config = BotocoreConfig(
+                    signature_version='s3v4',
+                    s3={
+                        'addressing_style': 'path'
+                    },
+                    s3_request_checksum_calculation='when_required',
+                    s3_response_checksum_validation='when_required'
+                )
             
             session = boto3.Session(
                 aws_access_key_id=creds['access_key_id'],
@@ -85,9 +106,9 @@ class S3UploadService:
             
             # Use custom endpoint if specified (for S3-compatible services)
             if config['endpoint_url']:
-                s3_client = session.client('s3', endpoint_url=config['endpoint_url'])
+                s3_client = session.client('s3', endpoint_url=config['endpoint_url'], config=client_config)
             else:
-                s3_client = session.client('s3')
+                s3_client = session.client('s3', config=client_config)
                 
             return s3_client
             
