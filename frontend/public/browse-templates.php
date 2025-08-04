@@ -12,10 +12,8 @@ require_once '../includes/StationTemplateService.php';
 
 $auth = new UserAuth($db);
 
-// Require authentication
-requireAuth($auth);
-
-$current_user = $auth->getCurrentUser();
+// Get current user if authenticated (optional for browsing)
+$current_user = $auth->isAuthenticated() ? $auth->getCurrentUser() : null;
 $user_id = $auth->getCurrentUserId();
 
 $templateService = new StationTemplateService($db, $user_id);
