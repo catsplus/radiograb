@@ -4,25 +4,109 @@
 
 This document establishes comprehensive testing requirements for all RadioGrab development work. Every code change must be thoroughly tested using real user workflows to ensure reliability and quality.
 
-## 🚨 Core Testing Principles
+## 🚨 CRITICAL TESTING REQUIREMENTS
 
-### **1. Always Test as a Real User**
+### **🔥 MANDATORY: Test EVERYTHING - No Exceptions**
+**YOU MUST TEST ALL LINKS, ALL PAGES, AND ALL FEATURES WITHOUT EXCEPTION.**
+
+- **Test ALL navigation menu links** - click every single link in the main menu
+- **Test ALL page functionality** - every button, form, modal, dropdown, filter, search
+- **Test ALL user workflows** - complete end-to-end user journeys 
+- **Test ALL interactive elements** - hover effects, clicks, form submissions, validations
+- **Test ALL error conditions** - invalid inputs, missing data, network failures
+- **DO NOT assume API calls working means the page works** - test the actual user interface
+- **DO NOT skip any pages or features** - comprehensive means COMPREHENSIVE
+
+### **1. Always Test as a Real User Using Chrome/Chromium Browser**
 - Use the actual web browser interface at https://radiograb.svaha.com
-- Follow complete user workflows from start to finish
+- Follow complete user workflows from start to finish  
 - Never assume functionality works - verify it through actual usage
 - Test using the same methods and interfaces that end users would use
+- **Click every single link and button on every page**
+- **Fill out and submit every form with both valid and invalid data**
 
-### **2. Test Every Change**
-- Test immediately after implementing each feature/fix
-- Don't batch testing - verify each component as you build it
-- Test both the new functionality and existing features to ensure no regressions
-- If you find issues during testing, fix them before proceeding to the next task
+### **2. Systematic Page-by-Page Testing Protocol**
+- **Test immediately after implementing each feature/fix**
+- **Test ALL navigation links first** - ensure every menu item loads without errors
+- **Test ALL page functionality** - forms, buttons, modals, filters, search, etc.
+- **Test ALL workflows end-to-end** - complete user journeys from start to finish
+- **Create GitHub issues for ALL problems found** - do not fix immediately
+- **Continue testing other features** - complete full testing cycle before fixing
+- **Fix ALL issues only after complete testing cycle**
 
-### **3. Production Environment Testing**
-- Always test on the live production site (https://radiograb.svaha.com)
-- Use the deployed version, not just local development
-- Verify changes work in the actual Docker container environment
-- Test with real data and real user scenarios
+### **3. Production Environment Testing Requirements**
+- **Always test on the live production site** (https://radiograb.svaha.com)
+- **Use the deployed version, not just local development**
+- **Verify changes work in the actual Docker container environment**
+- **Test with real data and real user scenarios**
+- **Test both authenticated and unauthenticated user flows**
+
+## 🧪 COMPREHENSIVE TESTING CHECKLIST
+
+### **📋 Complete Page Testing Protocol**
+**EVERY page must be tested with this exact checklist:**
+
+1. **Page Load Test**
+   - ✅ Page loads without 500/404 errors
+   - ✅ All CSS and JavaScript resources load
+   - ✅ No console errors in browser dev tools
+   - ✅ Page renders correctly (no broken layout)
+
+2. **Navigation Test**  
+   - ✅ All navigation menu links work
+   - ✅ Breadcrumbs function correctly
+   - ✅ Back/forward browser buttons work
+   - ✅ All page-specific links and buttons work
+
+3. **Form Testing (if applicable)**
+   - ✅ Form loads without errors
+   - ✅ All form fields accept input
+   - ✅ Form validation works with invalid data
+   - ✅ Form submission works with valid data
+   - ✅ Success/error messages display correctly
+   - ✅ CSRF tokens function properly
+
+4. **Interactive Elements**
+   - ✅ All buttons clickable and functional
+   - ✅ All dropdowns open and close
+   - ✅ All modals open and close properly
+   - ✅ All filters and search features work
+   - ✅ All AJAX calls complete successfully
+
+5. **Authentication Test**
+   - ✅ Unauthenticated access works as intended
+   - ✅ Authenticated access works as intended  
+   - ✅ Proper redirects to login when required
+   - ✅ Access control enforced correctly
+
+### **📋 Page-by-Page Testing Requirements**
+**Test EVERY page in this exact order:**
+
+#### **🏠 Public Pages (Test Unauthenticated)**
+- [ ] **Dashboard** (/) - Statistics display, links work
+- [ ] **Stations** (/stations.php) - Station cards, actions, filters
+- [ ] **Shows** (/shows.php) - Show listings, filtering, sorting  
+- [ ] **Playlists** (/playlists.php) - Playlist management
+- [ ] **RSS Feeds** (/feeds.php) - Feed listings, copy URLs, tabs
+- [ ] **Browse Templates** (/browse-templates.php) - Template browsing
+- [ ] **Login** (/login.php) - Form submission, validation
+- [ ] **Forgot Password** (/forgot-password.php) - Password reset flow
+
+#### **➕ Form Pages (Test All Form Functions)**
+- [ ] **Add Station** (/add-station.php) - Form validation, discovery, testing
+- [ ] **Edit Station** (/edit-station.php?id=X) - Pre-population, updates
+- [ ] **Add Show** (/add-show.php) - Show creation, scheduling
+- [ ] **Edit Show** (/edit-show.php?id=X) - Show modification
+
+#### **🔒 Protected Pages (Test Authenticated)**  
+- [ ] **Recordings** (/recordings.php) - Audio listings, playback
+- [ ] **API Keys** (/settings/api-keys.php) - Key management
+- [ ] **Admin Panel** (/admin/dashboard.php) - Admin functions
+
+#### **🔧 API Endpoints (Test Via Browser)**
+- [ ] **Station Discovery** (/api/discover-station.php) - Via Add Station form
+- [ ] **RSS Feeds** (/api/enhanced-feeds.php) - Via RSS page links
+- [ ] **Test Recording** (/api/test-recording.php) - Via station buttons
 
 ## 📋 Testing Requirements by Component Type
 
