@@ -517,7 +517,7 @@ document.addEventListener("DOMContentLoaded", function() {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
-            body: `url=${encodeURIComponent(url)}&csrf_token=${getCSRFToken()}`
+            body: "url=" + encodeURIComponent(url) + "&csrf_token=" + getCSRFToken()
         })
         .then(response => response.json())
         .then(data => {
@@ -543,7 +543,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
     function testStream(url) {
         testStreamBtn.disabled = true;
-        testStreamBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Testing...`;
+        testStreamBtn.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i> Testing...";
         
         const resultDiv = document.getElementById("stream-test-result");
         resultDiv.innerHTML = "";
@@ -553,23 +553,23 @@ document.addEventListener("DOMContentLoaded", function() {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
-            body: `stream_url=${encodeURIComponent(url)}&csrf_token=${getCSRFToken()}`
+            body: "stream_url=" + encodeURIComponent(url) + "&csrf_token=" + getCSRFToken()
         })
         .then(response => response.json())
         .then(data => {
             testStreamBtn.disabled = false;
-            testStreamBtn.innerHTML = `<i class="fas fa-play"></i> Test`;
+            testStreamBtn.innerHTML = "<i class=\"fas fa-play\"></i> Test";
             
             if (data.success) {
-                resultDiv.innerHTML = `<small class="text-success"><i class="fas fa-check"></i> Stream is accessible</small>`;
+                resultDiv.innerHTML = "<small class=\"text-success\"><i class=\"fas fa-check\"></i> Stream is accessible</small>";
             } else {
-                resultDiv.innerHTML = `<small class="text-danger"><i class="fas fa-times"></i> ${data.error || "Stream test failed"}</small>`;
+                resultDiv.innerHTML = "<small class=\"text-danger\"><i class=\"fas fa-times\"></i> " + (data.error || "Stream test failed") + "</small>";
             }
         })
         .catch(error => {
             testStreamBtn.disabled = false;
-            testStreamBtn.innerHTML = `<i class="fas fa-play"></i> Test`;
-            resultDiv.innerHTML = `<small class="text-danger"><i class="fas fa-times"></i> Test failed</small>`;
+            testStreamBtn.innerHTML = "<i class=\"fas fa-play\"></i> Test";
+            resultDiv.innerHTML = "<small class=\"text-danger\"><i class=\"fas fa-times\"></i> Test failed</small>";
         });
     }
     
@@ -590,22 +590,22 @@ document.addEventListener("DOMContentLoaded", function() {
     
     function showDiscoveryResults(results) {
         const content = document.getElementById("discovery-content");
-        let html = "<div class=\\"row\\">";
+        let html = "<div class=\"row\">";
         
         if (results.name) {
-            html += `<div class=\\"col-md-6\\"><strong>Name:</strong> ${results.name}</div>`;
+            html += "<div class=\"col-md-6\"><strong>Name:</strong> " + results.name + "</div>";
         }
         if (results.call_letters) {
-            html += `<div class=\\"col-md-6\\"><strong>Call Letters:</strong> ${results.call_letters}</div>`;
+            html += "<div class=\"col-md-6\"><strong>Call Letters:</strong> " + results.call_letters + "</div>";
         }
         if (results.stream_url) {
-            html += `<div class=\\"col-12 mt-2\\"><strong>Stream URL:</strong><br><code>${results.stream_url}</code></div>`;
+            html += "<div class=\"col-12 mt-2\"><strong>Stream URL:</strong><br><code>" + results.stream_url + "</code></div>";
         }
         if (results.logo_url) {
-            html += `<div class=\\"col-12 mt-2\\"><strong>Logo URL:</strong><br><code>${results.logo_url}</code></div>`;
+            html += "<div class=\"col-12 mt-2\"><strong>Logo URL:</strong><br><code>" + results.logo_url + "</code></div>";
         }
         if (results.calendar_url) {
-            html += `<div class=\\"col-12 mt-2\\"><strong>Calendar URL:</strong><br><code>${results.calendar_url}</code></div>`;
+            html += "<div class=\"col-12 mt-2\"><strong>Calendar URL:</strong><br><code>" + results.calendar_url + "</code></div>";
         }
         
         html += "</div>";
@@ -713,11 +713,9 @@ document.addEventListener("DOMContentLoaded", function() {
     function showAlert(message, type) {
         // Create a temporary alert
         const alertDiv = document.createElement("div");
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.innerHTML = `
-            ${message.replace(/\\n/g, "<br>")}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
+        alertDiv.className = "alert alert-" + type + " alert-dismissible fade show";
+        alertDiv.innerHTML = message.replace(/\\n/g, "<br>") + 
+            "<button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\"></button>";
         
         const form = document.getElementById("add-station-form");
         form.parentNode.insertBefore(alertDiv, form);
