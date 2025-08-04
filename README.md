@@ -9,19 +9,21 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.15.0 (August 3, 2025)
-**Latest Features**: 🌐 **AWS S3 PRIMARY STORAGE** - Complete cloud storage integration with direct file serving from public S3 buckets, auto-upload, and migration tools. 🎤 **MULTI-PROVIDER TRANSCRIPTION** - AI-powered transcription with 7+ providers including OpenAI Whisper, DeepInfra, BorgCloud, AssemblyAI with cost optimization. 🔑 **API KEYS MANAGEMENT SYSTEM** - Enterprise-grade secure API key storage with AES-256-GCM encryption. 🎯 **STATION TEMPLATE SHARING** - Community-driven template sharing with verification system.
+## 📅 Current Version: v3.16.0 (August 4, 2025)
+**Latest Features**: 🌐 **BACKBLAZE B2 PRIMARY STORAGE** - Complete cloud storage integration with Backblaze B2 as primary storage provider offering 75% cost savings over AWS S3. 🎤 **MULTI-PROVIDER TRANSCRIPTION** - AI-powered transcription with 7+ providers including OpenAI Whisper, DeepInfra, BorgCloud, AssemblyAI with cost optimization. 🔑 **API KEYS MANAGEMENT SYSTEM** - Enterprise-grade secure API key storage with AES-256-GCM encryption. 🎯 **STATION TEMPLATE SHARING** - Community-driven template sharing with verification system.
 
-### 🌐 **AWS S3 Primary Storage Integration** (August 3, 2025)
-**🎯 Issues #13 & #41 COMPLETED**: Complete cloud storage solution with primary storage mode where recordings are stored directly in S3 and served via public URLs with no local file retention.
+### 🌐 **Backblaze B2 Primary Storage Integration** (August 4, 2025)
+**🎯 Issues #13 & #41 COMPLETED**: Complete cloud storage solution with Backblaze B2 as primary storage provider, offering significant cost savings over traditional cloud providers while maintaining full S3 compatibility.
 
 **✅ KEY FEATURES:**
-- **Primary Storage Mode**: Recordings uploaded directly to S3 bucket `radiograb42` for immediate serving
-- **Direct File Serving**: Public S3 URLs for audio streaming/download without server load
-- **Auto-Upload**: Automatic upload of new recordings and playlists to configured S3 storage
-- **Multi-Provider Support**: AWS S3, DigitalOcean Spaces, Wasabi, Backblaze B2 compatibility
+- **Primary Storage Mode**: Recordings uploaded directly to Backblaze B2 bucket `radiograb` for immediate serving
+- **Cost Optimization**: $6/TB/month + $1/TB egress vs AWS S3 ~$23/TB/month (75% savings)
+- **Direct File Serving**: Public B2 URLs for audio streaming/download without server load
+- **Auto-Upload**: Automatic upload of new recordings and playlists to configured B2 storage
+- **S3 Compatibility**: Full S3 API compatibility using boto3 with custom endpoint configuration
+- **CLI Authentication**: B2 CLI-generated application keys for reliable authentication (web dashboard keys incompatible)
 - **Usage Tracking**: Upload statistics, bandwidth monitoring, and cost management
-- **Migration Tools**: (In development) Migrate existing recordings to cloud storage
+- **Migration Tools**: Migrate existing recordings to cloud storage with batch upload capabilities
 
 ### 🎤 **Multi-Provider AI Transcription System** (August 3, 2025)
 **🎯 Issue #25 COMPLETED**: Comprehensive transcription service supporting 7+ AI providers with unified interface, cost optimization, and real-time progress tracking.
@@ -179,6 +181,12 @@ See [CHANGELOG.md](CHANGELOG.md) for full details.
 - Docker and Docker Compose
 - A server with internet access
 - Domain name (for SSL/HTTPS) *optional*
+
+### System Dependencies
+- **Python Dependencies**: Specified in `requirements.txt`
+- **AWS CLI**: Cloud storage administration and debugging (`awscli>=1.32.0`)
+- **Backblaze B2 CLI**: Required for B2 application key management (`b2-cli`)
+- **Chromium Browser**: JavaScript-aware web scraping (installed via package manager)
 
 ### Installation
 
