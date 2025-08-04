@@ -336,11 +336,5 @@ function formatDurationForRSS($seconds) {
     return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
 }
 
-function getBaseUrl() {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-    $host = $_SERVER['HTTP_HOST'];
-    $script = dirname($_SERVER['SCRIPT_NAME']);
-    return $protocol . $host . rtrim($script, '/api');
-}
 
 ?>
