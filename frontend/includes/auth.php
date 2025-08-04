@@ -100,7 +100,7 @@ class UserAuth {
             'email_verified' => true,
             'email_verification_token' => null,
             'email_verification_expires' => null
-        ], 'id = ?', [$user['id']]);
+        ], 'id = :user_id', ['user_id' => $user['id']]);
         
         $this->logActivity($user['id'], 'email_verified', 'user', $user['id']);
         
@@ -205,7 +205,7 @@ class UserAuth {
         // Update session activity
         $this->db->update('user_sessions', [
             'last_activity' => date('Y-m-d H:i:s')
-        ], 'id = ?', [$_SESSION['session_id']]);
+        ], 'id = :session_id', ['session_id' => $_SESSION['session_id']]);
         
         return true;
     }
@@ -402,7 +402,7 @@ class UserAuth {
         if ($existing) {
             $this->db->update('user_preferences', [
                 'preference_value' => $value
-            ], 'user_id = ? AND preference_key = ?', [$user_id, $key]);
+            ], 'user_id = :user_id AND preference_key = :key', ['user_id' => $user_id, 'key' => $key]);
         } else {
             $this->db->insert('user_preferences', [
                 'user_id' => $user_id,
