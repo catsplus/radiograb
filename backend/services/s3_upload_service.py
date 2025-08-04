@@ -92,10 +92,9 @@ class S3UploadService:
                 client_config = BotocoreConfig(
                     signature_version='s3v4',
                     s3={
-                        'addressing_style': 'path'
-                    },
-                    s3_request_checksum_calculation='when_required',
-                    s3_response_checksum_validation='when_required'
+                        'addressing_style': 'path',
+                        'payload_signing_enabled': False
+                    }
                 )
             
             session = boto3.Session(
