@@ -42,16 +42,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $call_letters = trim($_POST['call_letters'] ?? '');
     
     $errors = [];
+    $success_messages = [];
+    $warnings = [];
     
     // Validation
     if (empty($name)) {
         $errors[] = 'Station name is required';
     }
     
+    // Enhanced URL validation with auto-protocol testing (Issue #44)
     if (empty($website_url)) {
         $errors[] = 'Website URL is required';
-    } elseif (!isValidUrl($website_url)) {
-        $errors[] = 'Invalid website URL format';
+    } else {
+        $url_result = normalizeAndValidateUrl($website_url);
+        if (!$url_result['valid']) {
+            $errors[] = $url_result['error'];
+        } else {
+            // Use the normalized URL
+            $website_url = $url_result['url'];
+            
+            // Show helpful message about protocol detection
+            if (isset($url_result['protocol'])) {
+                switch ($url_result['protocol']) {
+                    case 'https_auto':
+                        $success_messages[] = 'Automatically detected HTTPS protocol for website URL';
+                        break;
+                    case 'http_fallback':
+                        $success_messages[] = 'Using HTTP protocol (HTTPS not available for this site)';
+                        break;
+                    case 'https_assumed':
+                        if (isset($url_result['warning'])) {
+                            $warnings[] = $url_result['warning'];
+                        }
+                        break;
+                }
+            }
+        }
     }
     
     if (!empty($stream_url) && !isValidUrl($stream_url)) {
@@ -142,6 +168,28 @@ require_once '../includes/header.php';
                 <ul class="mb-0">
                     <?php foreach ($errors as $error): ?>
                         <li><?= h($error) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <!-- Success Messages -->  
+        <?php if (!empty($success_messages)): ?>
+            <div class="alert alert-success">
+                <ul class="mb-0">
+                    <?php foreach ($success_messages as $message): ?>
+                        <li><?= h($message) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <!-- Warning Messages -->
+        <?php if (!empty($warnings)): ?>
+            <div class="alert alert-warning">
+                <ul class="mb-0">
+                    <?php foreach ($warnings as $warning): ?>
+                        <li><?= h($warning) ?></li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -429,8 +477,9 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
         
-        if (!isValidUrl(url)) {
-            showAlert("Please enter a valid URL (starting with http:// or https://)", "warning");
+        // Allow URLs without protocol - backend will handle protocol detection (Issue #44)
+        if (!url.match(/^https?:\/\//) && !url.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}/) && !url.match(/^www\./)) {
+            showAlert("Please enter a valid website URL (e.g., example.com or www.example.com)", "warning");
             return;
         }
         
@@ -476,6 +525,10 @@ document.addEventListener("DOMContentLoaded", function() {
             discoverBtn.disabled = false;
             
             if (data.success) {
+                // Show protocol detection info if available (Issue #44)
+                if (data.protocol_info && data.protocol_info.message) {
+                    showAlert(data.protocol_info.message, data.protocol_info.type || 'info');
+                }
                 showDiscoveryResults(data.results);
             } else {
                 showDiscoveryError(data.error || "Discovery failed");

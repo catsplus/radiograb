@@ -17,18 +17,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Please enter a valid email address.';
         } else {
             // Check if user exists
-            $stmt = $db->prepare("SELECT id, username, email FROM users WHERE email = ? AND is_active = 1");
-            $stmt->execute([$email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $user = $db->fetchOne("SELECT id, username, email FROM users WHERE email = ? AND is_active = 1", [$email]);
             
             if ($user) {
                 // Generate reset token
                 $reset_token = bin2hex(random_bytes(32));
                 $expires_at = date('Y-m-d H:i:s', strtotime('+1 hour'));
                 
-                // Store reset token
-                $stmt = $db->prepare("INSERT INTO password_reset_tokens (user_id, token, expires_at, created_at) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE token = ?, expires_at = ?, created_at = NOW()");
-                $stmt->execute([$user['id'], $reset_token, $expires_at, $reset_token, $expires_at]);
+                // Store reset token (create table if needed)
+                try {
+                    $db->execute("CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        user_id INT NOT NULL,
+                        token VARCHAR(255) NOT NULL UNIQUE,
+                        expires_at DATETIME NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        used_at DATETIME NULL,
+                        INDEX idx_user_id (user_id),
+                        INDEX idx_token (token),
+                        INDEX idx_expires_at (expires_at),
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+                } catch (Exception $table_error) {
+                    // Table might already exist, continue
+                }
+                
+                $db->execute("INSERT INTO password_reset_tokens (user_id, token, expires_at, created_at) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE token = ?, expires_at = ?, created_at = NOW()", [$user['id'], $reset_token, $expires_at, $reset_token, $expires_at]);
                 
                 // Send email
                 $reset_link = "https://radiograb.svaha.com/reset-password.php?token=" . $reset_token;

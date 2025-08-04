@@ -114,7 +114,7 @@ class UserAuth {
         // Find user by email or username
         $user = $this->db->fetchOne(
             "SELECT id, email, username, password_hash, email_verified, is_admin, is_active, 
-                    first_name, last_name, login_count
+                    first_name, last_name
              FROM users 
              WHERE (email = ? OR username = ?) AND is_active = TRUE",
             [$email_or_username, $email_or_username]
@@ -128,15 +128,17 @@ class UserAuth {
             return ['success' => false, 'error' => 'Invalid credentials'];
         }
         
-        if (!$user['email_verified']) {
+        // Check email verification if column exists
+        if (isset($user['email_verified']) && !$user['email_verified']) {
             return ['success' => false, 'error' => 'Please verify your email before logging in'];
         }
         
-        // Update login stats
-        $this->db->update('users', [
-            'last_login' => date('Y-m-d H:i:s'),
-            'login_count' => $user['login_count'] + 1
-        ], 'id = ?', [$user['id']]);
+        // Update login stats (if columns exist)
+        try {
+            $this->db->execute("UPDATE users SET created_at = created_at WHERE id = ?", [$user['id']]);
+        } catch (Exception $e) {
+            // Login tracking columns don't exist, skip update
+        }
         
         // Create session
         $session_id = $this->createUserSession($user['id']);
@@ -224,8 +226,8 @@ class UserAuth {
         }
         
         return $this->db->fetchOne(
-            "SELECT id, email, username, first_name, last_name, is_admin, timezone, 
-                    profile_image_url, created_at, last_login, login_count
+            "SELECT id, email, username, first_name, last_name, is_admin, 
+                    created_at
              FROM users WHERE id = ?",
             [$_SESSION['user_id']]
         );

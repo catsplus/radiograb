@@ -32,10 +32,32 @@ if (!$website_url) {
     exit;
 }
 
-// Validate URL format
-if (!filter_var($website_url, FILTER_VALIDATE_URL)) {
-    echo json_encode(['success' => false, 'error' => 'Invalid URL format']);
+// Enhanced URL validation with auto-protocol testing (Issue #44)
+$url_result = normalizeAndValidateUrl($website_url);
+if (!$url_result['valid']) {
+    echo json_encode(['success' => false, 'error' => $url_result['error']]);
     exit;
+} else {
+    // Use the normalized URL and provide info about protocol detection
+    $website_url = $url_result['url'];
+    $protocol_info = [];
+    
+    if (isset($url_result['protocol'])) {
+        switch ($url_result['protocol']) {
+            case 'https_auto':
+                $protocol_info['message'] = 'Automatically detected HTTPS protocol';
+                $protocol_info['type'] = 'success';
+                break;
+            case 'http_fallback':
+                $protocol_info['message'] = 'Using HTTP protocol (HTTPS not available)';
+                $protocol_info['type'] = 'info';
+                break;
+            case 'https_assumed':
+                $protocol_info['message'] = 'Using HTTPS protocol (connectivity not verified)';
+                $protocol_info['type'] = 'warning';
+                break;
+        }
+    }
 }
 
 try {
@@ -109,6 +131,7 @@ try {
     // Format the response for the frontend
     $response = [
         'success' => true,
+        'protocol_info' => $protocol_info ?? null,
         'discovered' => [
             'station_name' => $discovery_result['station_name'] ?? '',
             'call_letters' => $discovery_result['call_letters'] ?? '',

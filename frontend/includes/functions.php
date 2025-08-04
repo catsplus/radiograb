@@ -167,6 +167,83 @@ function isValidUrl($url) {
 }
 
 /**
+ * Normalize and validate URL with automatic protocol testing
+ * Issue #44 - Auto-test https: and http, don't make user enter it
+ */
+function normalizeAndValidateUrl($input_url) {
+    $input_url = trim($input_url);
+    
+    if (empty($input_url)) {
+        return ['valid' => false, 'url' => null, 'error' => 'URL is required'];
+    }
+    
+    // If URL already has protocol, validate it as-is first
+    if (preg_match('/^https?:\/\//', $input_url)) {
+        if (isValidUrl($input_url)) {
+            return ['valid' => true, 'url' => $input_url, 'protocol' => 'provided'];
+        } else {
+            return ['valid' => false, 'url' => null, 'error' => 'Invalid URL format'];
+        }
+    }
+    
+    // Remove any leading protocol-like strings that might be incomplete
+    $clean_url = preg_replace('/^(https?:?\/?\/?)/', '', $input_url);
+    
+    // Try HTTPS first (most sites support it now)
+    $https_url = 'https://' . $clean_url;
+    if (isValidUrl($https_url)) {
+        // Test if HTTPS actually works
+        if (testUrlConnectivity($https_url)) {
+            return ['valid' => true, 'url' => $https_url, 'protocol' => 'https_auto'];
+        }
+    }
+    
+    // Try HTTP as fallback
+    $http_url = 'http://' . $clean_url;
+    if (isValidUrl($http_url)) {
+        // Test if HTTP works
+        if (testUrlConnectivity($http_url)) {
+            return ['valid' => true, 'url' => $http_url, 'protocol' => 'http_fallback'];
+        }
+    }
+    
+    // If neither works, return the HTTPS version for consistency (most common)
+    if (isValidUrl($https_url)) {
+        return [
+            'valid' => true, 
+            'url' => $https_url, 
+            'protocol' => 'https_assumed',
+            'warning' => 'Could not verify connectivity, assuming HTTPS'
+        ];
+    }
+    
+    return ['valid' => false, 'url' => null, 'error' => 'Invalid URL format'];
+}
+
+/**
+ * Test URL connectivity with quick timeout
+ * Used by normalizeAndValidateUrl to verify protocols work
+ */
+function testUrlConnectivity($url, $timeout = 5) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_NOBODY, true); // HEAD request only
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For testing only
+    curl_setopt($ch, CURLOPT_USERAGENT, 'RadioGrab Station Discovery Bot/1.0');
+    
+    $result = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    // Consider 200-399 as success (includes redirects)
+    return $http_code >= 200 && $http_code < 400;
+}
+
+/**
  * Generate CSRF token
  */
 function generateCSRFToken() {
