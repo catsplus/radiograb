@@ -441,7 +441,7 @@ require_once '../includes/header.php';
     </div>
 
     <?php
-$additional_js = '
+$additional_js = <<<'EOD'
 <script src="/assets/js/radiograb.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
@@ -730,6 +730,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return document.querySelector("input[name=csrf_token]").value;
     }
 });
-</script>';
+</script>
+EOD;
 require_once '../includes/footer.php';
 ?>
