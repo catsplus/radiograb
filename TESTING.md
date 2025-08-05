@@ -41,6 +41,23 @@ This document establishes comprehensive testing requirements for all RadioGrab d
 - **Test with real data and real user scenarios**
 - **Test both authenticated and unauthenticated user flows**
 
+### **🚨 CRITICAL: File Deployment Issues Protocol**
+**When ANY error indicates incorrect file deployment (parse errors, missing functions, etc.):**
+
+1. **IMMEDIATELY stop all testing**
+2. **Perform FULL deployment** - `./deploy-from-git.sh` (NOT --quick)
+3. **Wait for complete container rebuild** (10+ minutes if needed)
+4. **Verify all containers are healthy** before continuing
+5. **NEVER use shortcuts when deployment issues detected**
+6. **Only continue testing after FULL system restart**
+
+**Examples of deployment-related errors that trigger FULL rebuild:**
+- PHP Parse errors (syntax errors in deployed files)
+- Function redeclaration errors  
+- Missing function/class errors
+- File not found errors for files that exist in repo
+- Any error suggesting files weren't properly updated
+
 ## 🧪 COMPREHENSIVE TESTING CHECKLIST
 
 ### **📋 Complete Page Testing Protocol**
