@@ -209,12 +209,12 @@ require_once '../includes/header.php';
                             <div class="mb-3">
                                 <label for="website_url" class="form-label">Station Website URL *</label>
                                 <div class="input-group">
-                                    <input type="url" 
+                                    <input type="text" 
                                            class="form-control" 
                                            id="website_url" 
                                            name="website_url" 
                                            value="<?= h($_POST['website_url'] ?? '') ?>"
-                                           placeholder="https://example-radio.com"
+                                           placeholder="wjffradio.org or https://example-radio.com"
                                            required
                                            autocomplete="url">
                                     <button type="button" 
@@ -226,7 +226,7 @@ require_once '../includes/header.php';
                                 </div>
                                 <div class="form-text">
                                     Enter the radio station's website URL. We'll try to automatically find streaming information.
-                                    <br><strong>Example:</strong> https://kexp.org or https://wnyc.org
+                                    <br><strong>Examples:</strong> wjffradio.org, kexp.org, or https://wnyc.org
                                 </div>
                             </div>
 
