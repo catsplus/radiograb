@@ -1,5 +1,4 @@
 """
-"""
 Manages the local storage of station logos.
 
 This service downloads station logos from their websites or Facebook pages,
