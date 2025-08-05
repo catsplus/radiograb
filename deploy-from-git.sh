@@ -7,14 +7,22 @@
 set -e
 
 # Parse command line arguments
-QUICK_MODE=false
-if [[ "$1" == "--quick" ]] || [[ "$1" == "-q" ]]; then
-    QUICK_MODE=true
+FORCE_REBUILD=false
+SMART_MODE=true
+
+if [[ "$1" == "--force" ]] || [[ "$1" == "--full" ]]; then
+    FORCE_REBUILD=true
+    SMART_MODE=false
+    echo "🔨 RadioGrab Force Full Rebuild"
+    echo "==============================="
+elif [[ "$1" == "--quick" ]] || [[ "$1" == "-q" ]]; then
+    SMART_MODE=false
     echo "🏃 RadioGrab Quick Deployment (Documentation/Config Only)"
     echo "========================================================"
 else
-    echo "🚀 RadioGrab Full Deployment from Git"
-    echo "================================="
+    echo "🧠 RadioGrab Smart Deployment (Default)"
+    echo "======================================"
+    echo "Analyzes changes and restarts only what's needed"
 fi
 
 # Change to radiograb directory
@@ -47,41 +55,102 @@ echo "📝 Recent commits:"
 git log --oneline -5
 echo
 
-# Rebuild containers with new code
-if [[ "$QUICK_MODE" == "true" ]]; then
-    # Check if any code files changed
+# Deployment strategy based on mode and changes
+if [[ "$SMART_MODE" == "true" ]]; then
+    echo "🧠 Analyzing changes for smart deployment..."
+    
+    # Get changed files
+    CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+    if [[ -z "$CHANGED_FILES" ]]; then
+        CHANGED_FILES=$(git diff --name-only HEAD origin/main 2>/dev/null || echo "")
+    fi
+    
+    # Categorize changes
+    DOCKER_CHANGES=$(echo "$CHANGED_FILES" | grep -E '^(docker/|Dockerfile|docker-compose\.yml)' || true)
+    CONFIG_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(conf|ini|sh)$' || true)
+    PHP_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.php$' || true)
+    PYTHON_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.py$' || true)
+    JS_CSS_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(js|css)$' || true)
+    DOCS_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(md|txt)$' || true)
+    
+    # Smart deployment logic
+    if [[ -n "$DOCKER_CHANGES" ]]; then
+        echo "   🔨 Docker changes detected - full rebuild required"
+        docker compose down
+        docker compose up -d --build
+        RESTART_TYPE="full_rebuild"
+    elif [[ -n "$CONFIG_CHANGES" ]]; then
+        echo "   🔄 Config changes detected - restarting all containers"
+        docker compose restart
+        RESTART_TYPE="restart_all"
+    else
+        echo "   📝 Code-only changes - smart restart"
+        RESTART_TYPE="smart"
+        
+        if [[ -n "$PHP_CHANGES" ]] || [[ -n "$JS_CSS_CHANGES" ]]; then
+            echo "      Restarting web container (PHP/JS/CSS changes)"
+            docker compose restart radiograb-web-1
+        fi
+        
+        if [[ -n "$PYTHON_CHANGES" ]]; then
+            echo "      Restarting backend containers (Python changes)"
+            docker compose restart radiograb-recorder-1 radiograb-rss-updater-1 radiograb-housekeeping-1
+        fi
+        
+        if [[ -n "$DOCS_CHANGES" ]] && [[ -z "$PHP_CHANGES" ]] && [[ -z "$PYTHON_CHANGES" ]] && [[ -z "$JS_CSS_CHANGES" ]]; then
+            echo "      Documentation-only changes - no restart needed"
+            RESTART_TYPE="none"
+        fi
+    fi
+elif [[ "$FORCE_REBUILD" == "true" ]]; then
+    echo "🔨 Force rebuild: Rebuilding all Docker containers..."
+    docker compose down
+    docker compose up -d --build
+    RESTART_TYPE="full_rebuild"
+else
+    # Quick mode - check for code changes
     CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
     CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(php|py|js|css|html)$' || true)
     
     if [[ -n "$CODE_CHANGES" ]]; then
         echo "📝 Quick mode: Code changes detected, performing full rebuild..."
-        echo "   Changed files: $CODE_CHANGES"
         docker compose down
         docker compose up -d --build
+        RESTART_TYPE="full_rebuild"
     else
         echo "📝 Quick mode: Only config/docs changed, restarting containers..."
         docker compose restart
+        RESTART_TYPE="restart_all"
     fi
-else
-    echo "🔄 Full rebuild: Rebuilding Docker containers..."
-    docker compose down
-    docker compose up -d --build
 fi
 
-# Wait for containers to be healthy
-echo "⏳ Waiting for containers to start..."
-sleep 10
-
-# Wait for database to be ready
-echo "⏳ Waiting for database to be ready..."
-for i in {1..30}; do
+# Wait for services based on restart type
+if [[ "$RESTART_TYPE" == "full_rebuild" ]]; then
+    echo "⏳ Waiting for full rebuild to complete..."
+    sleep 15
+    
+    echo "⏳ Waiting for database to be ready..."
+    for i in {1..30}; do
+        if docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 -e "SELECT 1;" radiograb > /dev/null 2>&1; then
+            echo "   ✅ Database is ready"
+            break
+        fi
+        echo "   ... waiting for database (attempt $i/30)"
+        sleep 5
+    done
+elif [[ "$RESTART_TYPE" == "restart_all" ]] || [[ "$RESTART_TYPE" == "smart" ]]; then
+    echo "⏳ Waiting for containers to restart..."
+    sleep 5
+    
+    # Quick database check for web/backend restarts
     if docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 -e "SELECT 1;" radiograb > /dev/null 2>&1; then
         echo "   ✅ Database is ready"
-        break
+    else
+        echo "   ⚠️  Database may still be starting..."
     fi
-    echo "   ... waiting for database (attempt $i/30)"
-    sleep 5
-done
+else
+    echo "ℹ️  No restart needed - containers running normally"
+fi
 
 # Check container status
 echo "🩺 Container health check:"
@@ -134,13 +203,30 @@ else
 fi
 
 echo
-if [[ "$QUICK_MODE" == "true" ]]; then
-    echo "✅ Quick deployment complete!"
-    echo "📝 For code changes, use: ./deploy-from-git.sh (full rebuild)"
-else
-    echo "✅ Full deployment complete!"
-    echo "📝 For docs/config changes, use: ./deploy-from-git.sh --quick"
-fi
+echo "✅ Deployment complete!"
+echo "📊 Deployment summary: $RESTART_TYPE"
+
+case "$RESTART_TYPE" in
+    "full_rebuild")
+        echo "   🔨 Full container rebuild performed"
+        ;;
+    "restart_all")
+        echo "   🔄 All containers restarted"
+        ;;
+    "smart")
+        echo "   🧠 Smart restart - only affected containers"
+        ;;
+    "none")
+        echo "   📝 No restart needed (docs only)"
+        ;;
+esac
+
+echo
+echo "🚀 Available deployment modes:"
+echo "   ./deploy-from-git.sh           # Smart deployment (default)"
+echo "   ./deploy-from-git.sh --force   # Force full rebuild"
+echo "   ./deploy-from-git.sh --quick   # Quick restart mode"
+echo
 echo "🌐 Site: https://radiograb.svaha.com"
 echo "📊 Check containers: docker compose ps"
 echo "📋 View logs: docker logs radiograb-web-1"
