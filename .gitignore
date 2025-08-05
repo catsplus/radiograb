@@ -3,6 +3,9 @@
 .env.local
 .env.production
 
+# Local configuration (sensitive info)
+config/local-env.conf
+
 # Logs
 *.log
 logs/

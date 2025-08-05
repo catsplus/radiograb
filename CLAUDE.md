@@ -2,6 +2,11 @@
 
 ## 🚨 PRODUCTION SERVER & DEPLOYMENT 🚨
 
+### Local Configuration
+- **Local Environment File**: `config/local-env.conf` (gitignored, contains sensitive access info)
+- **GitHub Access**: SSH access available for repository operations (`mattbaya/radiograb`)
+- **GitHub Issues**: Direct access to issue tracking and management
+
 ### Server Details
 - **Domain**: https://radiograb.svaha.com
 - **Server**: 167.71.84.143 (AlmaLinux 9)
