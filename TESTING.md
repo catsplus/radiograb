@@ -90,11 +90,17 @@ This document establishes comprehensive testing requirements for all RadioGrab d
    - ✅ All filters and search features work
    - ✅ All AJAX calls complete successfully
 
-5. **Authentication Test**
-   - ✅ Unauthenticated access works as intended
+5. **Authentication & Database Connection Tests**
+   - ✅ Database connection works (no "Database error" messages)
+   - ✅ Login form loads without database errors
+   - ✅ Login form accepts credentials and validates properly
+   - ✅ Registration form works (if applicable)
+   - ✅ Password reset flow functions (if applicable)
    - ✅ Authenticated access works as intended  
    - ✅ Proper redirects to login when required
    - ✅ Access control enforced correctly
+   - ✅ Session management works (login/logout cycle)
+   - ✅ Admin access controls function properly
 
 ### **📋 Page-by-Page Testing Requirements**
 **Test EVERY page in this exact order:**
@@ -195,13 +201,41 @@ Shows Page Filtering (station_id=3 example):
 - ✅ Loading states in UI during API calls
 
 ### **🔐 Authentication and Security**
-**Verify security measures:**
-- ✅ Login/logout functionality
-- ✅ Session timeout behavior
-- ✅ CSRF protection
-- ✅ Permission-based access control
-- ✅ Password validation and requirements
-- ✅ Failed login attempt handling
+**CRITICAL: Authentication Must Be Tested First - Before All Other Features**
+
+**Database Connection Testing:**
+- ✅ Login page loads without "Database error" messages
+- ✅ Registration page loads without database errors
+- ✅ Password reset page functions without database errors
+- ✅ All database-dependent pages load successfully
+
+**Login System Testing:**
+- ✅ Login form displays and accepts input
+- ✅ Valid credentials authenticate successfully
+- ✅ Invalid credentials show appropriate error message
+- ✅ User is redirected to appropriate page after login
+- ✅ Session persists across page refreshes and navigation
+- ✅ Logout functionality clears session properly
+
+**Registration Testing (if enabled):**
+- ✅ Registration form validates input properly
+- ✅ Password requirements are enforced
+- ✅ User creation succeeds with valid data
+- ✅ Email verification flow works (if enabled)
+- ✅ Duplicate email/username handling works
+
+**Access Control Testing:**
+- ✅ Protected pages redirect to login when unauthenticated
+- ✅ Authenticated users can access appropriate pages
+- ✅ Admin-only pages restrict non-admin users
+- ✅ CSRF protection works on forms
+- ✅ Session timeout behavior is appropriate
+
+**User Experience Testing:**
+- ✅ Login/logout process is intuitive
+- ✅ Error messages are clear and helpful
+- ✅ Password reset flow is user-friendly
+- ✅ User profile/settings pages function correctly
 
 ## 🧪 Comprehensive Testing Workflows
 

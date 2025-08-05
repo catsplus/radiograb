@@ -36,13 +36,11 @@ echo
 echo "💾 Stashing local changes..."
 git stash push -m "Auto-stash before deployment $(date)" || true
 
-# Pull latest changes
-echo "⬇️  Pulling latest changes from GitHub..."
-if git pull origin main --rebase; then
-    echo "   ✅ Successfully pulled latest changes from GitHub"
-else
-    echo "   ⚠️  Failed to pull from GitHub, using local repository"
-fi
+# CRITICAL: Force full synchronization with remote repository
+echo "⬇️  Forcing complete sync with GitHub repository..."
+git fetch --all --prune
+git reset --hard origin/main
+echo "   ✅ Repository completely synchronized with GitHub"
 
 # Show what changed
 echo "📝 Recent commits:"
@@ -73,6 +71,17 @@ fi
 # Wait for containers to be healthy
 echo "⏳ Waiting for containers to start..."
 sleep 10
+
+# Wait for database to be ready
+echo "⏳ Waiting for database to be ready..."
+for i in {1..30}; do
+    if docker exec radiograb-mysql-1 mysql -u radiograb -pradiograb_pass_2024 -e "SELECT 1;" radiograb > /dev/null 2>&1; then
+        echo "   ✅ Database is ready"
+        break
+    fi
+    echo "   ... waiting for database (attempt $i/30)"
+    sleep 5
+done
 
 # Check container status
 echo "🩺 Container health check:"
