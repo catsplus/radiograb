@@ -79,18 +79,51 @@ SyntaxError: invalid syntax
 **Impact**: Users confused about why they were redirected
 **Solution**: Better messaging and return-path functionality
 
+### 🔐 Issue #6: XSS Vulnerability in URL Parameters
+**GitHub Issue**: [#60](https://github.com/mattbaya/radiograb/issues/60)
+**Priority**: High 
+**Problem**: Shows page vulnerable to XSS attacks through URL parameters
+**Impact**: Users could execute malicious JavaScript, session hijacking, account compromise
+**Test Case**: `/shows.php?test=<script>alert('test')</script>`
+**Root Cause**: URL parameters not properly sanitized before use
+
+### 🔐 Issue #7: SQL Injection in station_id Parameter (CRITICAL)
+**GitHub Issue**: [#61](https://github.com/mattbaya/radiograb/issues/61)
+**Priority**: Critical
+**Problem**: Shows page vulnerable to SQL injection through station_id parameter
+**Impact**: Complete database compromise, data theft, unauthorized access
+**Test Case**: `/shows.php?station_id='OR'1'='1`
+**Root Cause**: Parameters not using parameterized queries
+
+### 🔐 Issue #8: Authentication System Complete Failure (CRITICAL)
+**GitHub Issue**: [#62](https://github.com/mattbaya/radiograb/issues/62)
+**Priority**: Critical
+**Problem**: Registration and login both fail with database errors
+**Impact**: No users can register or log in, blocks all authenticated functionality
+**Test Results**: Registration returns "Database query failed", login returns "Invalid credentials"
+**Root Cause**: Core authentication system broken
+
+### 🔗 Issue #9: Broken Links in Registration Form
+**GitHub Issue**: [#63](https://github.com/mattbaya/radiograb/issues/63)
+**Priority**: Medium
+**Problem**: Terms of Service and Privacy Policy links return 404 errors
+**Impact**: Users cannot review legal documents they're required to agree to
+**Missing Pages**: `/terms.php` and `/privacy.php`
+**Root Cause**: Referenced pages don't exist
+
 **Testing Notes**: 
 - This is EXACTLY the type of critical bug that should have been caught in user testing
 - Any attempt to add stations like KEXP, WNYC, WFMU would have failed
 - Affects core functionality of the application
 
 ## 📊 Testing Statistics
-- **Pages tested**: 7/20+ (Dashboard, Add Station, Shows, Stations, Login redirect, RSS Feeds, Edit Station)
-- **Forms tested**: 3/10+ (Add Station, Shows filtering, Edit Station)
-- **Real stations tested**: Preparation complete (syntax error fixed)
-- **GitHub Issues created**: 4 ⭐ VICTORIES!
-- **Critical issues found**: 1 (syntax error)
-- **Issues fixed**: 1 (syntax error)
+- **Pages tested**: 15/20+ (Dashboard, Add Station, Shows, Stations, Login, RSS Feeds, Edit Station, Custom Feeds, Browse Templates, Settings, 404 handling, Playlists, Terms/Privacy, Forgot Password, CSRF API)
+- **Forms tested**: 8/10+ (Add Station, Shows filtering, Edit Station, Login, Registration, Custom Feeds, Forgot Password, Search forms)
+- **Security tests**: 8 different attack vectors tested (XSS, SQL injection, invalid IDs, malicious URLs, authentication bypass, broken links)
+- **Real stations tested**: KEXP, WFMU, wjffradio.org (after syntax fix)
+- **GitHub Issues created**: 9 ⭐ VICTORIES! (Including 3 critical security/functionality issues)
+- **Critical issues found**: 5 (syntax error, XSS vulnerability, SQL injection, authentication failure, station discovery failure)
+- **Issues fixed**: 1 (syntax error only - others documented for fixing)
 
 ## 🎯 Testing Methodology Validation
 
