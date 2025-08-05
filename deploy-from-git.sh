@@ -1,7 +1,13 @@
 #!/bin/bash
 #
 # RadioGrab Git-Based Deployment Script
-# Streamlines deployment by pulling from GitHub and rebuilding containers
+# 
+# PRINCIPLE: ALWAYS pull ALL files from GitHub (complete sync for safety)
+# SMART DEPLOYMENT: Only restart containers based on what files changed
+# 
+# - All modes pull complete repository (git reset --hard origin/main)
+# - Smart mode analyzes changes to determine restart strategy
+# - Reduces downtime while maintaining file sync reliability
 #
 
 set -e
@@ -22,7 +28,7 @@ elif [[ "$1" == "--quick" ]] || [[ "$1" == "-q" ]]; then
 else
     echo "🧠 RadioGrab Smart Deployment (Default)"
     echo "======================================"
-    echo "Analyzes changes and restarts only what's needed"
+    echo "ALWAYS pulls ALL files, but only restarts containers that need it"
 fi
 
 # Change to radiograb directory
@@ -44,11 +50,12 @@ echo
 echo "💾 Stashing local changes..."
 git stash push -m "Auto-stash before deployment $(date)" || true
 
-# CRITICAL: Force full synchronization with remote repository
-echo "⬇️  Forcing complete sync with GitHub repository..."
+# CRITICAL: Always force COMPLETE synchronization with remote repository
+echo "⬇️  Forcing COMPLETE sync with GitHub repository..."
+echo "   (Smart deployment still pulls ALL files for safety)"
 git fetch --all --prune
 git reset --hard origin/main
-echo "   ✅ Repository completely synchronized with GitHub"
+echo "   ✅ Repository completely synchronized with ALL files from GitHub"
 
 # Show what changed
 echo "📝 Recent commits:"
@@ -56,6 +63,7 @@ git log --oneline -5
 echo
 
 # Deployment strategy based on mode and changes
+# NOTE: ALL modes pull complete repository for safety - "smart" only affects container restarts
 if [[ "$SMART_MODE" == "true" ]]; then
     echo "🧠 Analyzing changes for smart deployment..."
     

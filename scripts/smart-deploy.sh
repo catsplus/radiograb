@@ -68,11 +68,13 @@ else
     fi
 fi
 
-# Perform git sync
-echo "⬇️  Syncing with GitHub..."
+# Perform COMPLETE git sync (always pull all files for safety)
+echo "⬇️  Syncing ALL files with GitHub..."
+echo "   (Smart deployment = smart restarts, but ALWAYS pulls all files)"
 git stash push -m "Auto-stash before smart deploy $(date)" || true
+git fetch --all --prune
 git reset --hard origin/main
-echo "   ✅ Code synchronized"
+echo "   ✅ ALL files synchronized with GitHub"
 
 # Execute deployment strategy
 if [ "$NEEDS_REBUILD" = true ]; then
