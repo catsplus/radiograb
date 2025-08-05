@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $active = isset($_POST['active']) ? 1 : 0;
     $retention_days = (int)($_POST['retention_days'] ?? 30);
     $default_ttl_type = $_POST['default_ttl_type'] ?? 'days';
-    $stream_only = isset($_POST['stream_only']) ? 1 : 0;
+    $stream_mode = trim($_POST['stream_mode'] ?? 'inherit');
     $content_type = $_POST['content_type'] ?? 'unknown';
     $is_syndicated = isset($_POST['is_syndicated']) ? 1 : 0;
     
@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'active' => $active,
                         'retention_days' => $retention_days,
                         'default_ttl_type' => $default_ttl_type,
-                        'stream_only' => $stream_only,
+                        'stream_mode' => $stream_mode,
                         'content_type' => $content_type,
                         'is_syndicated' => $is_syndicated,
                         'updated_at' => date('Y-m-d H:i:s')
@@ -373,18 +373,40 @@ require_once '../includes/header.php';
                                         </div>
                                     </div>
                                     
-                                    <div class="alert alert-info">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="stream_only" name="stream_only" 
-                                                   <?= ($show['stream_only'] ?? false) ? 'checked' : '' ?>>
-                                            <label class="form-check-label" for="stream_only">
-                                                <strong><i class="fas fa-streaming"></i> Stream-Only Mode</strong>
-                                            </label>
-                                        </div>
-                                        <div class="form-text mt-2">
-                                            <i class="fas fa-info-circle"></i> 
-                                            When enabled, recordings can only be streamed through the web interface. Download links are hidden for DMCA compliance.
-                                            <br><strong>Recommended for:</strong> Music shows, syndicated content, or copyrighted material.
+                                    <div class="mb-3">
+                                        <label for="stream_mode" class="form-label">
+                                            <i class="fas fa-stream"></i> Streaming & Download Mode
+                                        </label>
+                                        <select class="form-select" id="stream_mode" name="stream_mode">
+                                            <?php
+                                            $stream_modes = [
+                                                'inherit' => 'Inherit from Station - Use station\'s default setting',
+                                                'allow_downloads' => 'Allow Downloads - Users can download and stream',
+                                                'stream_only' => 'Stream Only - No downloads (DMCA compliant)'
+                                            ];
+                                            
+                                            // Handle backwards compatibility with old stream_only field
+                                            $current_mode = $show['stream_mode'] ?? 'inherit';
+                                            if (empty($current_mode) || $current_mode === 'inherit') {
+                                                if (isset($show['stream_only']) && $show['stream_only']) {
+                                                    $current_mode = 'stream_only';
+                                                } else {
+                                                    $current_mode = 'inherit';
+                                                }
+                                            }
+                                            
+                                            foreach ($stream_modes as $mode => $label) {
+                                                $selected = ($mode === $current_mode) ? 'selected' : '';
+                                                echo "<option value=\"$mode\" $selected>$label</option>";
+                                            }
+                                            ?>
+                                        </select>
+                                        <div class="form-text">
+                                            <small>
+                                                <strong>Inherit:</strong> Use the station's default streaming policy<br>
+                                                <strong>Allow Downloads:</strong> Users can download recordings (suitable for talk/news/educational content)<br>
+                                                <strong>Stream Only:</strong> Users can only stream recordings (recommended for music content and DMCA compliance)
+                                            </small>
                                         </div>
                                     </div>
                                 </div>

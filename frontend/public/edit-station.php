@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $website_url = trim($_POST['website_url'] ?? '');
     $frequency = trim($_POST['frequency'] ?? '');
     $location = trim($_POST['location'] ?? '');
+    $default_stream_mode = trim($_POST['default_stream_mode'] ?? 'inherit');
     
     $errors = [];
     
@@ -96,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'website_url' => $website_url ?: null,
                 'frequency' => $frequency ?: null,
                 'location' => $location ?: null,
+                'default_stream_mode' => $default_stream_mode,
                 'updated_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [$station_id]);
             
@@ -275,6 +277,39 @@ require_once '../includes/header.php';
                                 ?>
                             </select>
                             <div class="form-text">Time zone for show schedules and recordings</div>
+                        </div>
+
+                        <!-- Streaming Controls Section -->
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-3">
+                                <i class="fas fa-stream"></i> Streaming & Download Controls
+                            </h6>
+                            <div class="mb-3">
+                                <label for="default_stream_mode" class="form-label">Default Stream Mode</label>
+                                <select class="form-select" id="default_stream_mode" name="default_stream_mode">
+                                    <?php
+                                    $stream_modes = [
+                                        'inherit' => 'Inherit (Use system default)',
+                                        'allow_downloads' => 'Allow Downloads - Users can download and stream',
+                                        'stream_only' => 'Stream Only - No downloads (DMCA compliant)'
+                                    ];
+                                    
+                                    $selected_mode = $station['default_stream_mode'] ?: 'inherit';
+                                    
+                                    foreach ($stream_modes as $mode => $label) {
+                                        $selected = ($mode === $selected_mode) ? 'selected' : '';
+                                        echo "<option value=\"$mode\" $selected>$label</option>";
+                                    }
+                                    ?>
+                                </select>
+                                <div class="form-text">
+                                    <small>
+                                        <strong>Allow Downloads:</strong> Users can download recordings (suitable for talk/news/educational content)<br>
+                                        <strong>Stream Only:</strong> Users can only stream recordings (recommended for music content and DMCA compliance)<br>
+                                        <strong>Inherit:</strong> Use system-wide default setting
+                                    </small>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="d-flex justify-content-between">
