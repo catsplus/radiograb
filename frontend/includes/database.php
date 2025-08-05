@@ -17,7 +17,7 @@ class Database {
         $this->host = $_SERVER['DB_HOST'] ?? 'localhost';
         $this->port = $_SERVER['DB_PORT'] ?? '3306';
         $this->username = $_SERVER['DB_USER'] ?? 'radiograb';
-        $this->password = $_SERVER['DB_PASSWORD'] ?? 'radiograb_password';
+        $this->password = $_SERVER['DB_PASSWORD'] ?? 'radiograb_pass_2024';
         $this->database = $_SERVER['DB_NAME'] ?? 'radiograb';
     }
     
