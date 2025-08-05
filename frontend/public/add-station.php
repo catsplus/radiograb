@@ -478,8 +478,9 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         
         // Allow URLs without protocol - backend will handle protocol detection (Issue #44)
-        if (!url.match(/^https?:\/\//) && !url.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}/) && !url.match(/^www\./)) {
-            showAlert("Please enter a valid website URL (e.g., example.com or www.example.com)", "warning");
+        // Accept domains like: example.com, www.example.com, subdomain.example.com, or full URLs
+        if (!url.match(/^https?:\/\//) && !url.match(/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/)) {
+            showAlert("Please enter a valid website URL (e.g., wjffradio.org or www.example.com)", "warning");
             return;
         }
         
