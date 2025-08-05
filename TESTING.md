@@ -23,17 +23,30 @@ Your goal is to BREAK the site and FIND errors - every bug found is a VICTORY! A
 - **DO NOT skip any pages or features** - comprehensive means COMPREHENSIVE
 - **ACTIVELY TRY TO BREAK THINGS** - test boundary conditions, unusual inputs, error scenarios
 
-### **1. Always Test as a Real User Using Chrome/Chromium Browser**
-- Use the actual web browser interface at https://radiograb.svaha.com
-- Follow complete user workflows from start to finish  
-- Never assume functionality works - verify it through actual usage
-- Test using the same methods and interfaces that end users would use
-- **Click every single link and button on every page**
-- **Fill out and submit every form with both valid and invalid data**
-- **Test real radio stations** (KEXP, WNYC, WFMU, local stations, etc.)
-- **Test edge cases** (empty forms, malicious input, broken URLs, non-existent stations)
-- **Test discovery features** (auto-discovery buttons, manual entry, error handling)
-- **Test all interactive elements** (modals, dropdowns, filters, search, pagination)
+### **1. MANDATORY: Test as a Real User Using Chrome/Chromium Browser**
+**🚨 CRITICAL: ALL testing MUST be done through actual browser interaction - NO API testing shortcuts!**
+
+- **Use the actual web browser interface at https://radiograb.svaha.com**
+- **Follow complete user workflows from start to finish exactly as users would**
+- **Never assume functionality works - verify it through actual browser clicks and form submissions**
+- **Test using ONLY the same methods and interfaces that end users would use**
+- **Click every single link and button on every page like a real user**
+- **Fill out and submit every form with both valid and invalid data using browser forms**
+- **Test real radio stations** (KEXP, WNYC, WFMU, local stations, etc.) **through the Add Station form**
+- **Test edge cases** (empty forms, malicious input, broken URLs) **by typing them into browser forms**
+- **Test discovery features** (auto-discovery buttons, manual entry, error handling) **by clicking buttons in browser**
+- **Test all interactive elements** (modals, dropdowns, filters, search, pagination) **by interacting in browser**
+
+**❌ DO NOT TEST:**
+- Direct API endpoints with curl/Postman unless specifically testing API functionality
+- Backend services directly via command line
+- Database queries directly
+
+**✅ DO TEST:**
+- Browser forms exactly as users fill them out
+- Button clicks exactly as users click them  
+- Navigation exactly as users navigate
+- Real user workflows from start to finish
 
 ### **2. Systematic Page-by-Page Testing Protocol**
 - **Test immediately after implementing each feature/fix**
@@ -66,15 +79,22 @@ Your goal is to BREAK the site and FIND errors - every bug found is a VICTORY! A
 - **Malformed URLs** - Test with invalid formats, special characters
 
 #### **🔥 GitHub Issue Creation Protocol** 
-**CRITICAL: Every bug found must become a GitHub issue immediately:**
+**CRITICAL: Every bug found must become a GitHub issue immediately - NO EXCEPTIONS:**
 
 **When you find ANY problem during testing:**
-1. **Stop testing immediately**
+1. **IMMEDIATELY create a GitHub issue** - do not wait, do not batch issues
 2. **Document the exact problem** (URL, steps to reproduce, expected vs actual behavior)
-3. **Create a GitHub issue** with detailed reproduction steps
+3. **Use detailed reproduction steps** - include user workflow context
 4. **Label the issue appropriately** (bug, enhancement, critical, etc.)
 5. **Continue testing other features** - do NOT fix immediately
 6. **Only fix issues after completing full testing cycle**
+
+**🚨 MANDATORY: Create issues AS YOU GO during testing**
+- **Create issue immediately when problem found** - don't wait until end of testing
+- **One issue per bug** - don't combine multiple problems
+- **Include priority assessment** (critical, high, medium, low)
+- **Reference the testing session** in issue description
+- **Use GitHub CLI**: `gh issue create --title "Problem title" --body "Detailed description" --label bug`
 
 **Example GitHub Issue Format:**
 ```
@@ -93,16 +113,47 @@ Description:
 ```
 
 #### **💥 Destructive Testing Scenarios**
+**🚨 CRITICAL: Since this is a TEST ENVIRONMENT, be AGGRESSIVE - DELETE, EDIT, and BREAK everything!**
+
 **Try to break things with these test cases:**
+
+#### **🔥 Form Security Testing**
 - Submit forms with empty required fields
-- Submit forms with extremely long text (1000+ characters)
-- Submit forms with HTML/JavaScript code in text fields
-- Submit forms with special characters (quotes, semicolons, Unicode)
+- Submit forms with extremely long text (1000+ characters)  
+- Submit forms with HTML/JavaScript code: `<script>alert('XSS')</script>`
+- Submit forms with SQL injection attempts: `'; DROP TABLE users; --`
+- Submit forms with special characters (quotes, semicolons, Unicode, null bytes)
+- Test file upload vulnerabilities (if applicable)
+
+#### **🗑️ Data Manipulation Testing (TEST ENVIRONMENT ONLY)**
+- **Delete stations, shows, recordings** - test delete functionality
+- **Edit existing data with malicious input** - try to corrupt database
+- **Create duplicate entries** - test uniqueness constraints
+- **Modify critical system data** - test data integrity
+- **Test data export/import** - can you break file formats?
+
+#### **🔐 Access Control Testing**
 - Try to access protected pages without authentication
 - Test with invalid IDs in URLs (/edit-station.php?id=999999)
-- Test with SQL injection attempts in form fields
+- Try to access admin functions as regular user
+- Test session hijacking scenarios
+- Try to access other users' data
+
+#### **⚡ Performance & Stress Testing**
 - Test concurrent operations (multiple form submissions)
-- Test network interruption scenarios (slow connections)
+- Submit forms rapidly to test rate limiting
+- Upload large files (if applicable)
+- Test with slow network connections
+- Create excessive amounts of data to test limits
+
+#### **🌐 Browser & Client Testing**
+- Test with JavaScript disabled
+- Test with cookies disabled
+- Test on different browsers and mobile devices
+- Test with ad blockers and privacy extensions
+- Test with browser developer tools modifications
+
+**🎯 GOAL: Every system has limits - find them all!**
 
 ### **4. Production Environment Testing Requirements**
 - **Always test on the live production site** (https://radiograb.svaha.com)
