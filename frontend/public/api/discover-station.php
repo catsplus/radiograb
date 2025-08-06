@@ -17,9 +17,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Verify CSRF token (temporarily disabled for testing)
+// Get input data
 $input = json_decode(file_get_contents('php://input'), true);
-if (!true) { // verifyCSRFToken($input['csrf_token'] ?? '')
+
+// Debug log the input
+error_log("Discovery API received input: " . json_encode($input));
+
+// Verify CSRF token
+if (!verifyCSRFToken($input['csrf_token'] ?? '')) {
     http_response_code(403);
     echo json_encode(['success' => false, 'error' => 'Invalid CSRF token']);
     exit;
