@@ -9,8 +9,8 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.16.0 (August 4, 2025)
-**Latest Features**: 🌐 **BACKBLAZE B2 PRIMARY STORAGE** - Complete cloud storage integration with Backblaze B2 as primary storage provider offering 75% cost savings over AWS S3. 🎤 **MULTI-PROVIDER TRANSCRIPTION** - AI-powered transcription with 7+ providers including OpenAI Whisper, DeepInfra, BorgCloud, AssemblyAI with cost optimization. 🔑 **API KEYS MANAGEMENT SYSTEM** - Enterprise-grade secure API key storage with AES-256-GCM encryption. 🎯 **STATION TEMPLATE SHARING** - Community-driven template sharing with verification system.
+## 📅 Current Version: v3.17.0 (August 5, 2025)
+**Latest Features**: 🔐 **USER AUTHENTICATION SYSTEM** - Complete login/registration with secure session management and HTTPS enforcement. 🎵 **STREAMING CONTROLS** - DMCA compliance with station/show-level download controls. 🌐 **BACKBLAZE B2 PRIMARY STORAGE** - Complete cloud storage integration with Backblaze B2 as primary storage provider offering 75% cost savings over AWS S3. 🎤 **MULTI-PROVIDER TRANSCRIPTION** - AI-powered transcription with 7+ providers including OpenAI Whisper, DeepInfra, BorgCloud, AssemblyAI with cost optimization.
 
 ### 🌐 **Backblaze B2 Primary Storage Integration** (August 4, 2025)
 **🎯 Issues #13 & #41 COMPLETED**: Complete cloud storage solution with Backblaze B2 as primary storage provider, offering significant cost savings over traditional cloud providers while maintaining full S3 compatibility.
@@ -36,15 +36,18 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **Secure API Management**: Encrypted credential storage with user-friendly configuration interface
 - **Results Storage**: Transcription results stored in database with timestamps and confidence scores
 
-### 🔐 **User Authentication & Admin Access System** (August 2, 2025)
-**🎯 Issue #6 COMPLETED**: Comprehensive multi-user authentication system with secure user registration, email verification, session management, user-scoped data isolation, and admin dashboard. All user data is properly isolated by user accounts while maintaining backward compatibility.
+### 🔐 **User Authentication & Security System** (August 5, 2025)
+**🎯 Issues #6 & Security COMPLETED**: Complete authentication system with secure login/registration, HTTPS enforcement, and streaming content controls for DMCA compliance.
 
 **✅ KEY FEATURES:**
-- **User Registration**: Email verification workflow with modern UI and password strength validation
-- **Secure Authentication**: Login/logout with session management and CSRF protection
-- **Data Isolation**: All stations, shows, and recordings scoped to individual user accounts
-- **Admin Dashboard**: System administration with user management and activity monitoring
-- **Database Migration**: Successfully deployed with existing data preservation
+- **HTTPS Enforcement**: All HTTP traffic automatically redirected to HTTPS with proper SSL configuration
+- **Secure Authentication**: User registration with email verification, login/logout with bcrypt password hashing
+- **Session Management**: Database-backed sessions with proper expiration and cleanup
+- **User Management**: Complete user preferences, activity logging, and admin controls
+- **CSRF Protection**: Cross-site request forgery protection on all forms and sensitive operations
+- **Streaming Controls**: Station and show-level download/stream-only controls for DMCA compliance
+- **Password Security**: Bcrypt hashing with secure verification and proper error handling
+- **Database Migration**: All authentication tables properly deployed to production
 
 ### 🎯 **Station Template Sharing System** (August 2, 2025)
 **🌐 Issue #38 Phase 1 COMPLETED**: Community-driven station template sharing system that allows users to browse, copy, and contribute verified station configurations, dramatically reducing setup time for new stations.
