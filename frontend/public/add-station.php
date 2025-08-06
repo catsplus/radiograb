@@ -596,6 +596,26 @@ document.addEventListener("DOMContentLoaded", function() {
         const content = document.getElementById("discovery-content");
         let html = "<div class=\"row\">";
         
+        // Show logo preview if available
+        if (results.logo_url) {
+            html += "<div class=\"col-12 mb-3\">";
+            html += "<div class=\"d-flex align-items-center\">";
+            html += "<div class=\"me-3\">";
+            html += "<img src=\"" + results.logo_url + "\" alt=\"Discovered Logo\" ";
+            html += "style=\"max-width: 80px; max-height: 80px; border-radius: 4px; border: 1px solid #ddd;\" ";
+            html += "onerror=\"this.style.display='none'; this.nextElementSibling.style.display='block';\">";
+            html += "<div style=\"display: none; width: 80px; height: 60px; border: 1px dashed #ccc; ";
+            html += "border-radius: 4px; align-items: center; justify-content: center; ";
+            html += "color: #666; font-size: 12px;\">Logo not available</div>";
+            html += "</div>";
+            html += "<div>";
+            html += "<strong>Logo Preview:</strong><br>";
+            html += "<small class=\"text-muted\">" + results.logo_url + "</small>";
+            html += "</div>";
+            html += "</div>";
+            html += "</div>";
+        }
+        
         if (results.name) {
             html += "<div class=\"col-md-6\"><strong>Name:</strong> " + results.name + "</div>";
         }
@@ -604,9 +624,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         if (results.stream_url) {
             html += "<div class=\"col-12 mt-2\"><strong>Stream URL:</strong><br><code>" + results.stream_url + "</code></div>";
-        }
-        if (results.logo_url) {
-            html += "<div class=\"col-12 mt-2\"><strong>Logo URL:</strong><br><code>" + results.logo_url + "</code></div>";
         }
         if (results.calendar_url) {
             html += "<div class=\"col-12 mt-2\"><strong>Calendar URL:</strong><br><code>" + results.calendar_url + "</code></div>";
