@@ -183,13 +183,80 @@ body {
     margin-bottom: 1.5rem;
 }
 
+/* Station Logo Base Styles */
 .station-logo {
-    width: 60px;
-    height: 60px;
     border-radius: 8px;
     object-fit: contain;
     background-color: #f8f9fa;
     border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+/* Station Logo Size Variants */
+.station-logo-xs {
+    width: 32px;
+    height: 32px;
+}
+
+.station-logo-sm {
+    width: 40px;
+    height: 40px;
+}
+
+.station-logo-md {
+    width: 60px;
+    height: 60px;
+}
+
+.station-logo-lg {
+    width: 80px;
+    height: 80px;
+}
+
+.station-logo-xl {
+    width: 100px;
+    height: 100px;
+}
+
+/* Logo Container for Aspect Ratio */
+.logo-container {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.logo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+}
+
+/* Logo Quality Enhancement */
+.station-logo,
+.logo-container img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: auto;
+}
+
+/* Hover Effects */
+.station-logo:hover,
+.logo-container:hover {
+    transform: scale(1.05);
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.15);
+}
+
+/* Default Logo Styling */
+.station-logo[src*="default-station-logo"],
+.logo-container img[src*="default-station-logo"] {
+    opacity: 0.7;
+    background-color: #e9ecef;
 }
 
 .show-time {

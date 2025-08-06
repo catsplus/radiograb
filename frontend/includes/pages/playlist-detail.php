@@ -79,9 +79,9 @@ $active_nav = 'playlists';
                 <div class="col-md-2">
                     <img src="<?= h($playlist['image_url'] ?: '/assets/images/default-station-logo.png') ?>" 
                          alt="<?= h($playlist_title) ?>" 
-                         class="img-fluid rounded shadow"
-                         style="max-height: 120px; width: auto;"
-                         onerror="this.src='/assets/images/default-station-logo.png'">
+                         class="station-logo station-logo-xl img-fluid rounded shadow"
+                         onerror="this.src='/assets/images/default-station-logo.png'"
+                         loading="lazy">
                 </div>
                 <div class="col-md-8">
                     <?php if (isset($playlist['username'])): ?>

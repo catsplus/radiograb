@@ -179,8 +179,9 @@ require_once '../includes/header.php';
                                             <div class="d-flex align-items-center">
                                                 <img src="<?= h(getStationLogo(['logo_url' => $station['logo_url']])) ?>" 
                                                      alt="<?= h($station['name']) ?>" 
-                                                     class="me-3"
-                                                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                                     class="station-logo station-logo-sm me-3"
+                                                     onerror="this.src='/assets/images/default-station-logo.png'"
+                                                     loading="lazy">
                                                 <div>
                                                     <h6 class="mb-0"><?= h($station['name']) ?></h6>
                                                     <small class="text-muted"><?= h($station['call_letters']) ?></small>

@@ -110,8 +110,9 @@ if (isset($error)): ?>
                                 <div class="d-flex align-items-start mb-3">
                                     <img src="<?= h(getStationLogo($station)) ?>" 
                                          alt="<?= h($station['name']) ?>" 
-                                         class="station-logo me-3"
-                                         onerror="this.src='/assets/images/default-station-logo.png'">
+                                         class="station-logo station-logo-md me-3"
+                                         onerror="this.src='/assets/images/default-station-logo.png'"
+                                         loading="lazy">
                                     <div class="flex-grow-1">
                                         <h5 class="card-title mb-1"><?= h($station['name']) ?></h5>
                                         <small class="text-muted"><?= h($station['website_url']) ?></small>

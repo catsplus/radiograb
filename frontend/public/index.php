@@ -415,9 +415,9 @@ if (isset($error)): ?>
                                             <div class="me-3">
                                                 <img src="<?= h(getStationLogo(['logo_url' => $show['logo_url']])) ?>" 
                                                      alt="<?= h($show['station_name']) ?>" 
-                                                     class="station-logo-small"
-                                                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;"
-                                                     onerror="this.src='/assets/images/default-station-logo.png'">
+                                                     class="station-logo station-logo-sm"
+                                                     onerror="this.src='/assets/images/default-station-logo.png'"
+                                                     loading="lazy">
                                             </div>
                                             <div>
                                                 <h6 class="mb-1">

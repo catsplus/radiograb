@@ -337,9 +337,9 @@ require_once '../includes/header.php';
                     <div class="d-flex align-items-center mb-3" id="station-preview">
                         <img src="<?= h($station['logo_url'] ?: '/assets/images/default-station-logo.png') ?>" 
                              alt="Station Logo" 
-                             class="station-logo me-3"
-                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;"
-                             onerror="this.src='/assets/images/default-station-logo.png'">
+                             class="station-logo station-logo-md me-3"
+                             onerror="this.src='/assets/images/default-station-logo.png'"
+                             loading="lazy">
                         <div>
                             <h6 class="mb-1"><?= h($station['name']) ?></h6>
                             <small class="text-muted"><?= h($station['call_letters']) ?></small>

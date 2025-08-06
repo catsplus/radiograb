@@ -89,9 +89,9 @@ $active_nav = 'shows';
                 <div class="col-md-2">
                     <img src="<?= h($show['image_url'] ?: $show['logo_url'] ?: '/assets/images/default-station-logo.png') ?>" 
                          alt="<?= h($show['name']) ?>" 
-                         class="img-fluid rounded shadow"
-                         style="max-height: 120px; width: auto;"
-                         onerror="this.src='/assets/images/default-station-logo.png'">
+                         class="station-logo station-logo-xl img-fluid rounded shadow"
+                         onerror="this.src='/assets/images/default-station-logo.png'"
+                         loading="lazy">
                 </div>
                 <div class="col-md-8">
                     <nav aria-label="breadcrumb">

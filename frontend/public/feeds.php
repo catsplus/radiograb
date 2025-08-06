@@ -281,8 +281,9 @@ require_once '../includes/header.php';
                                     <div class="d-flex align-items-start mb-3">
                                         <img src="<?= h(getStationLogo(['logo_url' => $station['logo_url']])) ?>" 
                                              alt="<?= h($station['name']) ?>" 
-                                             class="station-logo me-3"
-                                             onerror="this.src='/assets/images/default-station-logo.png'">
+                                             class="station-logo station-logo-md me-3"
+                                             onerror="this.src='/assets/images/default-station-logo.png'"
+                                             loading="lazy">
                                         <div class="flex-grow-1">
                                             <h5 class="card-title mb-1"><?= h($station['name']) ?></h5>
                                             <small class="text-muted"><?= h($station['call_letters']) ?></small>
@@ -401,8 +402,9 @@ require_once '../includes/header.php';
                                             <div class="d-flex align-items-start mb-3">
                                                 <img src="<?= h(getStationLogo($show)) ?>" 
                                                      alt="<?= h($show['station_name']) ?>" 
-                                                     class="station-logo me-3"
-                                                     onerror="this.src='/assets/images/default-station-logo.png'">
+                                                     class="station-logo station-logo-md me-3"
+                                                     onerror="this.src='/assets/images/default-station-logo.png'"
+                                                     loading="lazy">
                                                 <div class="flex-grow-1">
                                                     <h5 class="card-title mb-1"><?= h($show['name']) ?></h5>
                                                     <small class="text-muted"><?= h($show['station_name']) ?></small>

@@ -253,9 +253,9 @@ require_once '../includes/header.php';
                                 <?php if ($template['logo_url']): ?>
                                     <img src="<?= h($template['logo_url']) ?>" 
                                          alt="<?= h($template['name']) ?>"
-                                         class="station-logo me-3"
-                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;"
-                                         onerror="this.src='/assets/images/default-station-logo.png'">
+                                         class="station-logo station-logo-sm me-3"
+                                         onerror="this.src='/assets/images/default-station-logo.png'"
+                                         loading="lazy">
                                 <?php endif; ?>
                                 
                                 <div class="flex-grow-1">

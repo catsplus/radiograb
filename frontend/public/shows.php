@@ -653,8 +653,8 @@ require_once '../includes/header.php';
                                             <div class="d-flex align-items-center">
                                                 <img src="<?= h(getStationLogo(['logo_url' => $show['logo_url']])) ?>" 
                                                      alt="<?= h($show['station_name']) ?>" 
-                                                     class="me-2 rounded"
-                                                     style="width: 40px; height: 40px; object-fit: cover;"
+                                                     class="station-logo station-logo-sm me-2"
+                                                     loading="lazy"
                                                      onerror="this.src='/assets/images/default-station-logo.png'">
                                                 <div>
                                                     <h6 class="mb-1">
@@ -823,8 +823,9 @@ require_once '../includes/header.php';
                                     <?php if (!$show['image_url']): ?>
                                         <img src="<?= h(getStationLogo(['logo_url' => $show['logo_url']])) ?>" 
                                              alt="<?= h($show['station_name']) ?>" 
-                                             class="station-logo me-3"
-                                             onerror="this.src='/assets/images/default-station-logo.png'">
+                                             class="station-logo station-logo-lg me-3"
+                                             onerror="this.src='/assets/images/default-station-logo.png'"
+                                             loading="lazy">
                                     <?php endif; ?>
                                     <div class="flex-grow-1">
                                         <h5 class="card-title mb-1">

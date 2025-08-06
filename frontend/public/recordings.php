@@ -308,8 +308,9 @@ require_once '../includes/header.php';
                                         <div class="d-flex align-items-start">
                                             <img src="<?= h(getStationLogo(['logo_url' => $recording['logo_url']])) ?>" 
                                                  alt="<?= h($recording['station_name']) ?>" 
-                                                 class="station-logo me-3"
-                                                 onerror="this.src='/assets/images/default-station-logo.png'">
+                                                 class="station-logo station-logo-md me-3"
+                                                 onerror="this.src='/assets/images/default-station-logo.png'"
+                                                 loading="lazy">
                                             <div>
                                                 <h5 class="card-title mb-1">
                                                     <?= h($recording['title'] ?: $recording['show_name']) ?>
