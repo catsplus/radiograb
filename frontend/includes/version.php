@@ -13,7 +13,7 @@ function getCurrentVersion() {
     
     try {
         if (!$db) {
-            return 'v3.8.0'; // Fallback if no database connection
+            return 'v3.19.0'; // Fallback if no database connection
         }
         
         $result = $db->fetchOne("SELECT version FROM system_info WHERE key_name = 'current_version' LIMIT 1");
@@ -21,12 +21,12 @@ function getCurrentVersion() {
         if ($result && !empty($result['version'])) {
             return $result['version'];
         } else {
-            return 'v3.8.0'; // Fallback version
+            return 'v3.19.0'; // Fallback version
         }
         
     } catch (Exception $e) {
         error_log("Error getting version from database: " . $e->getMessage());
-        return 'v3.8.0'; // Fallback version
+        return 'v3.19.0'; // Fallback version
     }
 }
 
@@ -40,8 +40,8 @@ function getVersionInfo() {
     try {
         if (!$db) {
             return [
-                'version' => 'v3.8.0',
-                'description' => 'Playlist upload system and dedicated forms',
+                'version' => 'v3.19.0',
+                'description' => 'Enhanced Station Stream Discovery with Radio Browser API Integration',
                 'updated_at' => date('Y-m-d H:i:s')
             ];
         }
@@ -52,8 +52,8 @@ function getVersionInfo() {
             return $result;
         } else {
             return [
-                'version' => 'v3.8.0',
-                'description' => 'Playlist upload system and dedicated forms',
+                'version' => 'v3.19.0',
+                'description' => 'Enhanced Station Stream Discovery with Radio Browser API Integration',
                 'updated_at' => date('Y-m-d H:i:s')
             ];
         }

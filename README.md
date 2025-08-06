@@ -9,8 +9,22 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.18.0 (August 6, 2025)
-**Latest Features**: 🧪 **COMPREHENSIVE QA TESTING** - Professional testing with real radio station discovery (KEXP, WFMU, WNYC, wjffradio), security testing, and browser automation. 🔐 **ENHANCED AUTHENTICATION UX** - Conditional navigation, welcome messages, and seamless login/logout experience. 🌐 **BACKBLAZE B2 PRIMARY STORAGE** - Complete cloud storage integration offering 75% cost savings over AWS S3. 🎤 **MULTI-PROVIDER TRANSCRIPTION** - AI-powered transcription with 7+ providers and cost optimization.
+## 📅 Current Version: v3.19.0 (August 6, 2025)
+**Latest Features**: 🔍 **ENHANCED STATION STREAM DISCOVERY** - Complete station discovery with Radio Browser API integration for comprehensive stream URL detection (Issue #71 resolved). 🧪 **COMPREHENSIVE QA TESTING** - Professional testing with real radio station discovery (KEXP, WFMU, WNYC, wjffradio), security testing, and browser automation. 🔐 **ENHANCED AUTHENTICATION UX** - Conditional navigation, welcome messages, and seamless login/logout experience. 🌐 **BACKBLAZE B2 PRIMARY STORAGE** - Complete cloud storage integration offering 75% cost savings over AWS S3.
+
+### 🔍 **Enhanced Station Stream Discovery** (August 6, 2025)
+**🎯 Issue #71 RESOLVED**: Complete station discovery now includes comprehensive stream URL detection using Radio Browser API integration. This resolves cases where stations would discover all metadata (call letters, logo, calendar) but miss the essential stream URL.
+
+**✅ KEY FEATURES:**
+- **Radio Browser API Integration**: 50,000+ verified US radio stations as fallback source when website streams not found
+- **Domain-Only URL Support**: Enter `wjffradio.org` and it automatically becomes `https://wjffradio.org`
+- **Multi-Strategy Search**: Station name → Call letters → Frequency → Location combinations for comprehensive discovery
+- **Confidence Scoring**: Intelligent matching algorithm with weighted scoring (call letters 80%, frequency 70%, etc.)
+- **Stream Compatibility Testing**: Automatically tests discovered streams with streamripper/ffmpeg/wget for recording compatibility
+- **Generic Implementation**: Works for ANY radio station worldwide - no hardcoded URLs or station-specific code
+- **Perfect Integration**: All existing website discovery functionality preserved and enhanced
+
+**Real-World Example**: wjffradio.org now discovers complete metadata AND stream URL `https://stream.pacificaservice.org:9000/wjff` with 100% confidence matching.
 
 ### 🌐 **Backblaze B2 Primary Storage Integration** (August 4, 2025)
 **🎯 Issues #13 & #41 COMPLETED**: Complete cloud storage solution with Backblaze B2 as primary storage provider, offering significant cost savings over traditional cloud providers while maintaining full S3 compatibility.

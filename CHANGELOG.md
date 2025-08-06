@@ -1,5 +1,32 @@
 # RadioGrab Changelog
 
+## [3.19.0] - 2025-08-06 - Enhanced Station Stream Discovery & Radio Browser API Integration
+
+### 🔍 Enhanced Station Stream Discovery (Issue #71 RESOLVED)
+- **Radio Browser API Integration**: Comprehensive fallback using 50,000+ verified US radio stations when website streams not found
+- **Domain-Only URL Support**: Automatic protocol detection (`wjffradio.org` → `https://wjffradio.org`)
+- **Multi-Strategy Search**: Progressive search using station name → call letters → frequency → location combinations
+- **Confidence Scoring**: Intelligent matching algorithm with weighted scoring (call letters 80%, frequency 70%, location 50%)
+- **Stream Compatibility Testing**: Automatic testing of discovered streams with streamripper/ffmpeg/wget for recording compatibility
+- **Generic Implementation**: Works for ANY radio station worldwide - zero hardcoded URLs or station-specific code
+- **Perfect Integration**: All existing website discovery functionality preserved and enhanced
+
+### 🚀 Real-World Results
+- **wjffradio.org Success**: Now discovers complete metadata AND essential stream URL `https://stream.pacificaservice.org:9000/wjff`
+- **100% Confidence Matching**: Radio Browser call letters match provides perfect stream discovery
+- **Automatic Tool Detection**: ffmpeg recommended for 64kbps MP3 stream compatibility
+- **Complete Station Info**: Station name, call letters, frequency, location, logo, calendar, social media all discovered
+
+### 🔧 Technical Implementation
+- **RadioStreamDiscovery Integration**: Imports existing stream discovery class as fallback service
+- **URL Normalization**: Enhanced `_fetch_page()` with automatic HTTPS/HTTP protocol handling
+- **Fallback Chain**: Website discovery → Radio Browser API → Stream testing → Compatibility verification
+- **Error Recovery**: Graceful fallbacks when websites unreachable or streams incompatible
+- **Comprehensive Logging**: Debug information for troubleshooting discovery issues
+
+### 🐛 Issues Resolved
+- **Issue #71**: Add Station stream discovery incomplete - Radio Browser API integration provides comprehensive stream URL detection
+
 ## [3.18.0] - 2025-08-06 - Comprehensive QA Testing & Enhanced Authentication UX
 
 ### 🧪 Professional Quality Assurance Testing
