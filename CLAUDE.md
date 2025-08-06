@@ -57,6 +57,7 @@ git fetch --all && git reset --hard origin/main  # Forces complete file sync
 - **Test & On-Demand**: 10-second tests + manual recordings with duplicate prevention
 - **Call Letters Format**: `WYSO_ShowName_20250727_1400.mp3` naming
 - **RSS Feeds**: Individual show feeds + master combined feed
+- **Email System**: Full SMTP functionality for password resets and user verification
 - **User Authentication**: Multi-user system with admin access and data isolation
 - **Cloud Storage Integration**: AWS S3 primary storage with direct serving and auto-upload
 - **Transcription Services**: Multi-provider AI transcription (OpenAI, DeepInfra, BorgCloud, etc.)
@@ -234,6 +235,95 @@ SSL_EMAIL=admin@svaha.com
 - Security headers (HSTS, CSP)
 - A+ SSL Labs rating
 
+## 📧 EMAIL SYSTEM (COMPLETED August 6, 2025)
+
+### 🎯 **Full SMTP Email Functionality**
+RadioGrab now includes a complete email system for user authentication and notifications, implemented using msmtp SMTP relay in the Docker container.
+
+#### **Email Features**
+- **Password Reset**: HTML email templates with secure token-based password reset
+- **Email Verification**: User registration verification with 24-hour token expiration
+- **Admin Testing**: Comprehensive testing utility for email configuration verification
+- **Multiple Providers**: Support for Gmail, SendGrid, Amazon SES, Mailgun, and other SMTP providers
+
+#### **Technical Architecture**
+```bash
+# Email Components
+msmtp                    # Lightweight SMTP relay (installed in Docker)
+msmtp-mta               # Mail transfer agent compatibility
+mailutils               # Mail utilities and testing tools
+
+# Configuration Files
+docker/msmtprc          # SMTP configuration template with environment variables
+docker/start.sh         # Container startup with email configuration
+docker-compose.yml      # SMTP environment variable definitions
+```
+
+#### **Environment Variables**
+Add these to your `.env` file or docker-compose environment:
+```bash
+SMTP_HOST=smtp.gmail.com           # Your SMTP server
+SMTP_PORT=587                      # SMTP port (587 for TLS, 465 for SSL)
+SMTP_FROM=noreply@yourdomain.com   # From address for emails
+SMTP_USERNAME=your-email@gmail.com # SMTP authentication username
+SMTP_PASSWORD=your-app-password    # SMTP authentication password (use App Password for Gmail)
+```
+
+#### **Email Templates**
+- **Password Reset**: Professional HTML template with reset button and security information
+- **Email Verification**: Welcome template with verification link and 24-hour expiration
+- **Test Emails**: Admin diagnostic template with system information
+
+#### **Admin Testing Interface**
+Access `/admin/test-email.php` for:
+- **SMTP Configuration Status**: Display current email settings and authentication
+- **System Information**: PHP version, mail function availability, sendmail path
+- **Send Test Email**: Interactive testing with real email sending
+- **Troubleshooting Guide**: Common issues and solutions with environment setup
+
+#### **Email Integration Points**
+- **frontend/public/forgot-password.php**: Password reset email sending
+- **frontend/includes/auth.php**: Email verification during registration
+- **frontend/public/admin/test-email.php**: Admin testing and diagnostics
+
+#### **Container Configuration**
+```bash
+# Email service configuration in container startup
+envsubst < /etc/msmtprc.template > /etc/msmtprc  # Apply environment variables
+chmod 600 /etc/msmtprc                           # Secure permissions
+echo "sendmail_path = /usr/bin/msmtp -t" >> /etc/php/8.1/fpm/conf.d/99-radiograb.ini
+echo "sendmail_path = /usr/bin/msmtp -t" >> /etc/php/8.1/cli/conf.d/99-radiograb.ini
+```
+
+#### **Testing and Troubleshooting**
+```bash
+# Container email testing
+docker exec -it radiograb-web-1 bash
+echo "Test email body" | msmtp your-email@example.com
+
+# Check email logs
+docker exec radiograb-web-1 tail -f /var/log/msmtp.log
+
+# PHP mail function test
+docker exec radiograb-web-1 php -r "mail('test@example.com', 'Test', 'Body');"
+```
+
+#### **Security Features**
+- **TLS Encryption**: All SMTP connections use TLS/SSL encryption
+- **App Passwords**: Support for provider-specific app passwords (Gmail, etc.)
+- **Environment Variables**: All credentials stored securely in environment variables
+- **From Address Validation**: Legitimate from addresses matching domain configuration
+
+#### **Production Deployment**
+Email system requires full Docker rebuild for new packages:
+```bash
+# Deploy email system changes
+git add . && git commit -m "Update email system" && git push origin main
+ssh radiograb@167.71.84.143 "cd /opt/radiograb && ./deploy-from-git.sh"
+```
+
+For complete setup instructions, see `EMAIL_SETUP.md` with provider-specific configurations.
+
 ## 📋 COMMON OPERATIONS
 
 ### Container Management
@@ -257,6 +347,9 @@ curl -I https://radiograb.svaha.com/
 # Test recording with CSRF
 TOKEN=$(curl -s -c /tmp/cookies.txt "https://radiograb.svaha.com/api/get-csrf-token.php" | jq -r '.csrf_token')
 curl -b /tmp/cookies.txt -X POST "https://radiograb.svaha.com/api/test-recording.php" -d "action=test_recording&station_id=1&csrf_token=$TOKEN"
+
+# Test email functionality
+curl -I https://radiograb.svaha.com/admin/test-email.php
 ```
 
 ## 🖼️ FILE STRUCTURE

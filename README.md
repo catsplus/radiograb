@@ -9,8 +9,8 @@
 
 RadioGrab is a comprehensive radio show recording and podcast generation system that turns any radio station's programming into a personal podcast archive. It automatically schedules and records shows at specified times, discovers streaming URLs, and generates RSS feeds - all with a beautiful web interface.
 
-## 📅 Current Version: v3.19.0 (August 6, 2025)
-**Latest Features**: 🔍 **ENHANCED STATION STREAM DISCOVERY** - Complete station discovery with Radio Browser API integration for comprehensive stream URL detection (Issue #71 resolved). 🧪 **COMPREHENSIVE QA TESTING** - Professional testing with real radio station discovery (KEXP, WFMU, WNYC, wjffradio), security testing, and browser automation. 🔐 **ENHANCED AUTHENTICATION UX** - Conditional navigation, welcome messages, and seamless login/logout experience. 🌐 **BACKBLAZE B2 PRIMARY STORAGE** - Complete cloud storage integration offering 75% cost savings over AWS S3.
+## 📅 Current Version: v3.20.0 (August 6, 2025)
+**Latest Features**: 📧 **EMAIL SYSTEM COMPLETE** - Full SMTP functionality for password resets and user verification with msmtp integration, HTML templates, and admin testing. 🔍 **ENHANCED STATION STREAM DISCOVERY** - Complete station discovery with Radio Browser API integration for comprehensive stream URL detection (Issue #71 resolved). 🧪 **COMPREHENSIVE QA TESTING** - Professional testing with real radio station discovery (KEXP, WFMU, WNYC, wjffradio), security testing, and browser automation. 🔐 **ENHANCED AUTHENTICATION UX** - Conditional navigation, welcome messages, and seamless login/logout experience. 🌐 **BACKBLAZE B2 PRIMARY STORAGE** - Complete cloud storage integration offering 75% cost savings over AWS S3.
 
 ### 🔍 **Enhanced Station Stream Discovery** (August 6, 2025)
 **🎯 Issue #71 RESOLVED**: Complete station discovery now includes comprehensive stream URL detection using Radio Browser API integration. This resolves cases where stations would discover all metadata (call letters, logo, calendar) but miss the essential stream URL.
@@ -25,6 +25,21 @@ RadioGrab is a comprehensive radio show recording and podcast generation system 
 - **Perfect Integration**: All existing website discovery functionality preserved and enhanced
 
 **Real-World Example**: wjffradio.org now discovers complete metadata AND stream URL `https://stream.pacificaservice.org:9000/wjff` with 100% confidence matching.
+
+### 📧 **Email System Complete** (August 6, 2025)
+**🎯 Issue #69 RESOLVED**: RadioGrab now includes a complete email system for user authentication and notifications, implemented using msmtp SMTP relay in the Docker container for reliable email delivery.
+
+**✅ KEY FEATURES:**
+- **Password Reset Emails**: Professional HTML email templates with secure token-based password reset functionality
+- **Email Verification**: User registration verification with 24-hour token expiration and welcome emails
+- **SMTP Integration**: msmtp lightweight SMTP relay installed in Docker container with environment variable configuration
+- **Multiple Providers**: Support for Gmail, SendGrid, Amazon SES, Mailgun, and other SMTP providers with TLS encryption
+- **Admin Testing**: Comprehensive `/admin/test-email.php` interface for testing and troubleshooting email configuration
+- **HTML Templates**: Professional email templates with responsive design, security information, and proper branding
+- **Environment Configuration**: Flexible SMTP configuration using environment variables for production deployment
+- **Security Features**: TLS encryption, app password support (Gmail), secure credential storage, and legitimate from addresses
+
+**Technical Implementation**: Uses msmtp (lightweight SMTP relay) with PHP mail() function integration, environment variable configuration, and complete documentation in `EMAIL_SETUP.md`.
 
 ### 🌐 **Backblaze B2 Primary Storage Integration** (August 4, 2025)
 **🎯 Issues #13 & #41 COMPLETED**: Complete cloud storage solution with Backblaze B2 as primary storage provider, offering significant cost savings over traditional cloud providers while maintaining full S3 compatibility.
@@ -106,6 +121,7 @@ See [CHANGELOG.md](CHANGELOG.md) for full details.
 ## ✨ Features
 
 ### 🎯 **Core Functionality**
+- **📧 Complete Email System**: Full SMTP functionality with password reset emails, user verification, HTML templates, admin testing interface, and multi-provider support (Gmail, SendGrid, AWS SES, Mailgun)
 - **🧪 Professional QA Testing**: Comprehensive testing with real radio station discovery (KEXP, WFMU, WNYC, wjffradio), security analysis, and browser automation ensuring production-ready stability
 - **🔍 Global Search System**: Comprehensive search functionality across all content types (stations, shows, recordings, playlists) with advanced filtering, categorized results, and direct navigation links
 - **🎨 Enhanced User Interface**: Modern dashboard with hover animations, improved statistics cards, enhanced forms with real-time validation, and responsive design improvements
@@ -420,6 +436,11 @@ radiograb/
 | `DB_PASSWORD` | Application database password | `your_db_password` |
 | `SSL_DOMAIN` | Domain for SSL certificate | `your-domain.com` |
 | `SSL_EMAIL` | Email for Let's Encrypt | `admin@your-domain.com` |
+| `SMTP_HOST` | SMTP server for emails | `smtp.gmail.com` |
+| `SMTP_PORT` | SMTP port (587 for TLS) | `587` |
+| `SMTP_FROM` | From address for emails | `noreply@your-domain.com` |
+| `SMTP_USERNAME` | SMTP authentication username | *required* |
+| `SMTP_PASSWORD` | SMTP authentication password | *required* |
 
 ### Database Configuration
 RadioGrab uses MySQL 8.0 with a comprehensive 13-table schema:
