@@ -468,12 +468,12 @@ require_once '../includes/header.php';
                     <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'cards'])) ?>" 
                        class="btn <?= $view === 'cards' ? 'btn-primary' : 'btn-outline-primary' ?>" 
                        title="Card View">
-                        <i class="fas fa-th-large"></i>
+                        <i class="fas fa-th"></i>
                     </a>
                     <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'table'])) ?>" 
                        class="btn <?= $view === 'table' ? 'btn-primary' : 'btn-outline-primary' ?>" 
                        title="Table View">
-                        <i class="fas fa-table"></i>
+                        <i class="fas fa-list"></i>
                     </a>
                 </div>
                 <a href="/add-show.php<?= $station_id ? "?station_id=$station_id" : '' ?>" class="btn btn-primary">
