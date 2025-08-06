@@ -2,6 +2,11 @@
 /**
  * RadioGrab - Shared Header Template
  */
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once 'database.php'; // Load database connection
 require_once 'branding.php'; // Load branding functions
 require_once 'functions.php'; // Load utility functions
