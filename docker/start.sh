@@ -17,6 +17,26 @@ envsubst < /opt/radiograb/.env.template > /opt/radiograb/.env
 chown www-data:www-data /opt/radiograb/.env
 chmod 600 /opt/radiograb/.env
 
+# Configure msmtp for outgoing email
+echo "Configuring email service (msmtp)..."
+envsubst < /etc/msmtprc.template > /etc/msmtprc
+chmod 600 /etc/msmtprc
+chown root:root /etc/msmtprc
+
+# Configure PHP to use msmtp for mail()
+echo "sendmail_path = /usr/bin/msmtp -t" >> /etc/php/8.1/fpm/conf.d/99-radiograb.ini
+echo "sendmail_path = /usr/bin/msmtp -t" >> /etc/php/8.1/cli/conf.d/99-radiograb.ini
+
+# Log email configuration status
+if [ -n "${SMTP_USERNAME}" ]; then
+    echo "Email configured with SMTP server: ${SMTP_HOST}:${SMTP_PORT}"
+    echo "From address: ${SMTP_FROM}"
+    echo "Authentication: ${SMTP_USERNAME}"
+else
+    echo "Email configured with local delivery (no SMTP authentication)"
+    echo "From address: ${SMTP_FROM}"
+fi
+
 # Ensure all directories exist with proper permissions
 mkdir -p /var/radiograb/{recordings,feeds,logs,temp}
 chown -R www-data:www-data /var/radiograb

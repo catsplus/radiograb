@@ -36,6 +36,9 @@ RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
     unzip \
+    msmtp \
+    msmtp-mta \
+    mailutils \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Google Chrome for reliable Selenium WebDriver support
@@ -82,6 +85,13 @@ RUN sed -i 's/listen = \/run\/php\/php8.1-fpm.sock/listen = 127.0.0.1:9000/' /et
 # Copy custom PHP configuration for upload limits
 COPY docker/php-custom.ini /etc/php/8.1/fpm/conf.d/99-radiograb.ini
 COPY docker/php-custom.ini /etc/php/8.1/cli/conf.d/99-radiograb.ini
+
+# Configure msmtp for outgoing email
+COPY docker/msmtprc /etc/msmtprc.template
+RUN chmod 600 /etc/msmtprc.template && \
+    touch /var/log/msmtp.log && \
+    chown www-data:www-data /var/log/msmtp.log && \
+    chmod 600 /var/log/msmtp.log
 
 # Configure Supervisor  
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf

@@ -47,22 +47,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Send email
                 $reset_link = "https://radiograb.svaha.com/reset-password.php?token=" . $reset_token;
                 $subject = "RadioGrab Password Reset";
-                $email_body = "Hello " . htmlspecialchars($user['username']) . ",\n\n";
-                $email_body .= "You requested a password reset for your RadioGrab account.\n\n";
-                $email_body .= "Click the link below to reset your password:\n";
-                $email_body .= $reset_link . "\n\n";
-                $email_body .= "This link will expire in 1 hour.\n\n";
-                $email_body .= "If you didn't request this reset, please ignore this email.\n\n";
-                $email_body .= "Best regards,\nRadioGrab Team";
                 
-                // Send email using system mail
-                $headers = "From: RadioGrab <noreply@radiograb.svaha.com>\r\n";
+                // Create HTML email
+                $html_body = "
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='UTF-8'>
+                    <title>RadioGrab Password Reset</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                        .header { background: #007bff; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+                        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 5px 5px; }
+                        .button { background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; }
+                        .footer { text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h2>🔐 Password Reset Request</h2>
+                        </div>
+                        <div class='content'>
+                            <p>Hello <strong>" . htmlspecialchars($user['username']) . "</strong>,</p>
+                            
+                            <p>You requested a password reset for your RadioGrab account. Click the button below to reset your password:</p>
+                            
+                            <p style='text-align: center;'>
+                                <a href='" . htmlspecialchars($reset_link) . "' class='button'>Reset My Password</a>
+                            </p>
+                            
+                            <p>Or copy and paste this link into your browser:</p>
+                            <p style='word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 3px; font-family: monospace;'>" . htmlspecialchars($reset_link) . "</p>
+                            
+                            <p><strong>⏰ This link will expire in 1 hour.</strong></p>
+                            
+                            <p>If you didn't request this password reset, please ignore this email. Your password will remain unchanged.</p>
+                        </div>
+                        <div class='footer'>
+                            <p>Best regards,<br>The RadioGrab Team</p>
+                            <p><em>RadioGrab - Your Personal Radio Recording System</em></p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+                
+                // Headers for HTML email
+                $headers = "MIME-Version: 1.0\r\n";
+                $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                $headers .= "From: RadioGrab <noreply@radiograb.svaha.com>\r\n";
                 $headers .= "Reply-To: noreply@radiograb.svaha.com\r\n";
-                $headers .= "X-Mailer: PHP/" . phpversion();
+                $headers .= "X-Mailer: RadioGrab\r\n";
                 
-                if (mail($email, $subject, $email_body, $headers)) {
+                // Log email attempt for debugging
+                error_log("Attempting to send password reset email to: " . $email);
+                
+                if (mail($email, $subject, $html_body, $headers)) {
+                    error_log("Password reset email sent successfully to: " . $email);
                     $message = 'Password reset instructions have been sent to your email address.';
                 } else {
+                    error_log("Failed to send password reset email to: " . $email);
                     $error = 'Failed to send email. Please try again or contact support.';
                 }
             } else {

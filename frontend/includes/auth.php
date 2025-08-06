@@ -338,17 +338,19 @@ class UserAuth {
         $headers = [
             'MIME-Version: 1.0',
             'Content-type: text/html; charset=UTF-8',
-            'From: RadioGrab <noreply@radiograb.local>',
-            'Reply-To: noreply@radiograb.local',
-            'X-Mailer: PHP/' . phpversion()
+            'From: RadioGrab <noreply@radiograb.svaha.com>',
+            'Reply-To: noreply@radiograb.svaha.com',
+            'X-Mailer: RadioGrab'
         ];
         
-        // In production, you would use a proper email service
-        // For now, log the email content
-        error_log("Verification email for $email: $verify_url");
+        // Send email using configured mail system
+        error_log("Sending verification email to $email: $verify_url");
         
-        // Uncomment for actual email sending:
-        // mail($email, $subject, $message, implode("\r\n", $headers));
+        if (mail($email, $subject, $message, implode("\r\n", $headers))) {
+            error_log("Verification email sent successfully to: $email");
+        } else {
+            error_log("Failed to send verification email to: $email");
+        }
     }
     
     /**
