@@ -72,20 +72,27 @@ if (isset($error)): ?>
             </div>
         </div>
 
-        <!-- Stations Needing Attention Alert -->
+        <!-- Stations Needing Attention Alert (Less Intrusive) -->
         <div id="stationsNeedingAttention" style="display: none;" class="mb-4">
-            <div class="alert alert-warning">
+            <div class="alert alert-info alert-dismissible">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Stations Needing Attention</strong>
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Station Status Update Available</strong>
                         <span id="stationAlertSummary"></span>
                     </div>
-                    <button class="btn btn-sm btn-outline-warning" onclick="refreshStationVerification()">
-                        <i class="fas fa-sync"></i> Refresh Status
-                    </button>
+                    <div>
+                        <button class="btn btn-sm btn-outline-info me-2" onclick="toggleStationDetails()">
+                            <i class="fas fa-eye"></i> <span id="toggleDetailsText">Show Details</span>
+                        </button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
                 </div>
-                <div id="stationAlertDetails" class="mt-3" style="display: none;"></div>
+                <div id="stationAlertDetails" class="mt-3" style="display: none;">
+                    <hr>
+                    <p class="mb-2"><small class="text-muted"><i class="fas fa-lightbulb"></i> <strong>What does "Verify Station" do?</strong><br>
+                    Checks the station's website for updated show schedules and verifies the stream is working properly.</small></p>
+                </div>
             </div>
         </div>
 
@@ -188,8 +195,8 @@ if (isset($error)): ?>
                                                             data-station-id="<?= $station['id'] ?>"
                                                             data-station-name="<?= h($station['name']) ?>"
                                                             data-stream-url="<?= h($station['stream_url']) ?>"
-                                                            title="Re-check stream now">
-                                                        <i class="fas fa-sync"></i> Re-check
+                                                            title="Test stream connection (30-sec sample)">
+                                                        <i class="fas fa-play"></i> Test
                                                     </button>
                                                 <?php endif; ?>
                                             </small>
@@ -237,8 +244,8 @@ if (isset($error)): ?>
                                             <button class="btn btn-sm btn-outline-primary ms-2 verify-calendar"
                                                     data-station-id="<?= $station['id'] ?>"
                                                     data-station-name="<?= h($station['name']) ?>"
-                                                    title="Re-check calendar now">
-                                                <i class="fas fa-sync"></i> Re-check
+                                                    title="Check for updated show schedules">
+                                                <i class="fas fa-calendar-check"></i> Update
                                             </button>
                                         </small>
                                     </div>
@@ -269,10 +276,11 @@ if (isset($error)): ?>
                                             <i class="fas fa-microphone"></i> Shows
                                         </a>
                                         <button type="button" 
-                                                class="btn btn-outline-success btn-sm import-schedule"
+                                                class="btn btn-outline-primary btn-sm verify-station"
                                                 data-station-id="<?= $station['id'] ?>"
-                                                data-station-name="<?= h($station['name']) ?>">
-                                            <i class="fas fa-calendar-import"></i> Import
+                                                data-station-name="<?= h($station['name']) ?>"
+                                                title="Complete station verification: test stream + check schedule">
+                                            <i class="fas fa-shield-check"></i> Verify
                                         </button>
                                     </div>
                                     
@@ -401,7 +409,21 @@ $additional_js = '
                 document.getElementById("stationName").textContent = stationName;
             });
             
-            // Handle import schedule buttons
+            // Handle consolidated verify station buttons
+            document.querySelectorAll(".verify-station").forEach(btn => {
+                btn.addEventListener("click", async function() {
+                    const stationId = this.dataset.stationId;
+                    const stationName = this.dataset.stationName;
+                    
+                    if (!confirm(`Verify station "${stationName}" now?\n\nThis will test the stream and check for updated show schedules.`)) {
+                        return;
+                    }
+                    
+                    await performStationVerification(stationId, stationName, this);
+                });
+            });
+            
+            // Handle import schedule buttons (legacy - to be removed after testing)
             document.querySelectorAll(".import-schedule").forEach(btn => {
                 btn.addEventListener("click", function() {
                     currentStationId = this.dataset.stationId;
@@ -695,7 +717,7 @@ $additional_js = '
                 } finally {
                     // Re-enable button
                     this.disabled = false;
-                    this.innerHTML = "<i class=\"fas fa-sync\"></i> Re-check";
+                    this.innerHTML = "<i class=\"fas fa-play\"></i> Test";
                 }
             });
         });
@@ -893,7 +915,7 @@ $additional_js = '
                 } finally {
                     // Re-enable button
                     this.disabled = false;
-                    this.innerHTML = "<i class=\"fas fa-sync\"></i> Re-check";
+                    this.innerHTML = "<i class=\"fas fa-calendar-check\"></i> Update";
                 }
             });
         });
@@ -1029,12 +1051,13 @@ $additional_js = '
             }
         }
         
-        // Display station verification status
+        // Display station verification status (less intrusive)
         function displayStationVerificationStatus(stations, summary) {
+            // Only show alert for truly problematic stations (never checked or overdue)
+            // Remove "due_soon" to be less intrusive
             const needAttention = stations.filter(station => 
                 station.verification_status === "never" || 
-                station.verification_status === "overdue" || 
-                station.verification_status === "due_soon"
+                station.verification_status === "overdue"
             );
             
             if (needAttention.length === 0) {
@@ -1045,12 +1068,11 @@ $additional_js = '
             // Show the alert
             document.getElementById("stationsNeedingAttention").style.display = "block";
             
-            // Update summary text
+            // Update summary text (more user-friendly)
             const summaryElement = document.getElementById("stationAlertSummary");
             let summaryText = "";
-            if (summary.never > 0) summaryText += ` ${summary.never} Never Checked`;
-            if (summary.overdue > 0) summaryText += ` ${summary.overdue} Overdue`;
-            if (summary.due_soon > 0) summaryText += ` ${summary.due_soon} Due Soon`;
+            if (summary.never > 0) summaryText += ` - ${summary.never} station${summary.never > 1 ? 's' : ''} need initial setup`;
+            if (summary.overdue > 0) summaryText += ` - ${summary.overdue} station${summary.overdue > 1 ? 's' : ''} need updates`;
             summaryElement.textContent = summaryText;
             
             // Build details HTML
@@ -1073,11 +1095,11 @@ $additional_js = '
                                 <br>
                                 <small class="text-muted">${statusText}</small>
                             </div>
-                            <button class="btn btn-sm btn-outline-primary check-station-now"
+                            <button class="btn btn-sm btn-outline-primary verify-station-now"
                                     data-station-id="${station.id}"
                                     data-station-name="${station.name}"
-                                    title="Check this station now">
-                                <i class="fas fa-sync"></i> Check now
+                                    title="Verify this station now">
+                                <i class="fas fa-shield-check"></i> Verify
                             </button>
                         </div>
                     </div>
@@ -1088,49 +1110,101 @@ $additional_js = '
             document.getElementById("stationAlertDetails").innerHTML = detailsHtml;
             document.getElementById("stationAlertDetails").style.display = "block";
             
-            // Add event listeners to "Check now" buttons
-            document.querySelectorAll(".check-station-now").forEach(btn => {
+            // Add event listeners to "Verify" buttons in alert
+            document.querySelectorAll(".verify-station-now").forEach(btn => {
                 btn.addEventListener("click", async function() {
                     const stationId = this.dataset.stationId;
                     const stationName = this.dataset.stationName;
                     
-                    if (!confirm(`Check station "${stationName}" now?`)) {
+                    if (!confirm(`Verify station "${stationName}" now?\n\nThis will test the stream and check for updated show schedules.`)) {
                         return;
                     }
                     
-                    // Disable button and show loading
-                    this.disabled = true;
-                    this.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i> Checking...";
-                    
-                    try {
-                        const response = await fetch(`/api/schedule-verification.php?action=verify_station&station_id=${stationId}`, {
-                            method: "GET",
-                            credentials: "same-origin"
-                        });
-                        
-                        const result = await response.json();
-                        
-                        if (result.success) {
-                            alert(`Station check completed for ${stationName}!\n\nResult: ${result.output || "Verification completed successfully"}`);
-                            // Refresh the verification status
-                            setTimeout(() => {
-                                loadStationVerificationStatus();
-                                window.location.reload(); // Also refresh the page to show updated station info
-                            }, 1000);
-                        } else {
-                            alert(`Station check failed: ${result.error}`);
-                        }
-                        
-                    } catch (error) {
-                        console.error("Station check error:", error);
-                        alert("Network error occurred during station check");
-                    } finally {
-                        // Re-enable button
-                        this.disabled = false;
-                        this.innerHTML = "<i class=\"fas fa-sync\"></i> Check now";
-                    }
+                    await performStationVerification(stationId, stationName, this);
                 });
             });
+        }
+        
+        // Toggle station details visibility
+        function toggleStationDetails() {
+            const detailsDiv = document.getElementById("stationAlertDetails");
+            const toggleBtn = document.getElementById("toggleDetailsText");
+            
+            if (detailsDiv.style.display === "none") {
+                detailsDiv.style.display = "block";
+                toggleBtn.textContent = "Hide Details";
+            } else {
+                detailsDiv.style.display = "none";
+                toggleBtn.textContent = "Show Details";
+            }
+        }
+        
+        // Consolidated station verification function
+        async function performStationVerification(stationId, stationName, buttonElement) {
+            // Disable button and show loading
+            buttonElement.disabled = true;
+            buttonElement.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i> Verifying...";
+            
+            try {
+                // Step 1: Test stream
+                const csrfToken = await getCSRFToken();
+                if (!csrfToken) {
+                    throw new Error("Failed to get CSRF token");
+                }
+                
+                let streamResult = null;
+                try {
+                    const streamResponse = await fetch("/api/test-recording.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        credentials: "same-origin",
+                        body: new URLSearchParams({
+                            action: "test_recording",
+                            station_id: stationId,
+                            csrf_token: csrfToken
+                        })
+                    });
+                    streamResult = await streamResponse.json();
+                } catch (e) {
+                    console.log("Stream test skipped:", e.message);
+                }
+                
+                // Step 2: Verify schedule
+                const scheduleResponse = await fetch(`/api/schedule-verification.php?action=verify_station&station_id=${stationId}`, {
+                    method: "GET",
+                    credentials: "same-origin"
+                });
+                const scheduleResult = await scheduleResponse.json();
+                
+                // Show results
+                let message = `Station verification completed for ${stationName}!\n\n`;
+                if (streamResult && streamResult.success) {
+                    message += `✅ Stream test: Success (${streamResult.filename})\n`;
+                } else if (streamResult) {
+                    message += `⚠️ Stream test: ${streamResult.error || "Failed"}\n`;
+                }
+                
+                if (scheduleResult.success) {
+                    message += `✅ Schedule check: ${scheduleResult.output || "Success"}`;
+                } else {
+                    message += `⚠️ Schedule check: ${scheduleResult.error}`;
+                }
+                
+                alert(message);
+                
+                // Refresh page to show updated status
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+                
+            } catch (error) {
+                console.error("Station verification error:", error);
+                alert(`Station verification failed: ${error.message}`);
+            } finally {
+                // Re-enable button
+                buttonElement.disabled = false;
+                buttonElement.innerHTML = "<i class=\"fas fa-shield-check\"></i> Verify";
+            }
         }
         
         // Refresh station verification status
