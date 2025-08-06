@@ -103,9 +103,10 @@ class OnAirStatusManager {
 
     /**
      * Update station cards with recording status
+     * (Skip show cards - they're handled separately by updateShowCards)
      */
     updateStationCards() {
-        const stationCards = document.querySelectorAll('[data-station-call]');
+        const stationCards = document.querySelectorAll('[data-station-call]:not([data-show-id])');
         
         stationCards.forEach(card => {
             const callLetters = card.dataset.stationCall;
