@@ -29,6 +29,7 @@ from stream_tester import StreamTester
 from social_media_detector import SocialMediaDetector
 from facebook_logo_extractor import FacebookLogoExtractor
 from logo_storage_service import LogoStorageService
+from stream_discovery import RadioStreamDiscovery
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -88,6 +89,7 @@ class StationDiscovery:
         self.social_media_detector = SocialMediaDetector()
         self.facebook_extractor = FacebookLogoExtractor()
         self.logo_storage = LogoStorageService()
+        self.radio_browser = RadioStreamDiscovery()
     
     def discover_station(self, website_url: str) -> Dict:
         """
@@ -172,14 +174,49 @@ class StationDiscovery:
                                 result['stream_compatibility'] = 'compatible'
                                 break
             
+            # If no stream found on website or no compatible streams, try Radio Browser API as fallback
+            if not result['stream_url'] or result.get('stream_compatibility') == 'incompatible':
+                logger.info("🔍 No compatible website streams found, trying Radio Browser API fallback...")
+                radio_browser_stream = self._discover_stream_via_radio_browser(result)
+                if radio_browser_stream:
+                    result['stream_url'] = radio_browser_stream['stream_url']
+                    result['stream_urls'].append(radio_browser_stream['stream_url'])
+                    result['radio_browser_match'] = {
+                        'source': radio_browser_stream['source'],
+                        'confidence': radio_browser_stream['confidence'],
+                        'name': radio_browser_stream.get('name'),
+                        'bitrate': radio_browser_stream.get('bitrate'),
+                        'codec': radio_browser_stream.get('codec')
+                    }
+                    
+                    # Test the Radio Browser stream if testing enabled
+                    if self.test_streams:
+                        logger.info(f"Testing Radio Browser stream: {radio_browser_stream['stream_url']}")
+                        rb_test = self.stream_tester.test_stream_quick(radio_browser_stream['stream_url'])
+                        result['stream_test_results'] = rb_test
+                        result['recommended_recording_tool'] = rb_test.get('recommended_tool')
+                        result['stream_compatibility'] = 'compatible' if rb_test.get('compatible', False) else 'incompatible'
+                        
+                        if rb_test.get('compatible', False):
+                            logger.info(f"✅ Radio Browser stream compatible with {rb_test.get('recommended_tool')}")
+                        else:
+                            logger.warning(f"❌ Radio Browser stream not compatible")
+                    else:
+                        # If not testing, assume Radio Browser streams are compatible (they're usually verified)
+                        result['stream_compatibility'] = 'compatible'
+                        result['recommended_recording_tool'] = 'streamripper'  # Default for MP3 streams
+                        logger.info(f"✅ Radio Browser stream added (confidence: {radio_browser_stream['confidence']:.2f})")
+            
             # Find calendar/schedule information
             result['calendar_url'] = self._find_calendar_url(soup, website_url)
             
             logger.info(f"Discovery complete for {website_url}")
             if result.get('stream_compatibility') == 'compatible':
-                logger.info(f"✅ Stream compatible with {result.get('recommended_recording_tool')}")
+                logger.info(f"✅ Final result: Stream compatible with {result.get('recommended_recording_tool')}")
             elif result.get('stream_compatibility') == 'incompatible':
-                logger.warning(f"❌ No compatible recording tools found")
+                logger.warning(f"❌ Final result: No compatible recording tools found")
+            else:
+                logger.info(f"ℹ️ Final result: Stream compatibility unknown")
             
         except Exception as e:
             logger.error(f"Error discovering station {website_url}: {str(e)}")
@@ -190,6 +227,11 @@ class StationDiscovery:
     
     def _fetch_page(self, url: str) -> Optional[requests.Response]:
         """Fetch a web page with error handling and fallbacks"""
+        # Normalize URL - add scheme if missing
+        if not url.startswith(('http://', 'https://')):
+            # Try HTTPS first, then HTTP as fallback
+            url = f"https://{url}"
+            
         # Try different URL variations
         urls_to_try = [url]
         
@@ -943,6 +985,48 @@ class StationDiscovery:
             logger.warning(f"Error crawling player page {player_url}: {e}")
         
         return list(streams)
+    
+    def _discover_stream_via_radio_browser(self, result: Dict) -> Optional[Dict]:
+        """Use Radio Browser API to find stream URL when website discovery fails"""
+        try:
+            # Build search term from discovered station information
+            station_name = result.get('station_name')
+            if not station_name:
+                logger.warning("No station name available for Radio Browser search")
+                return None
+            
+            logger.info(f"Searching Radio Browser API for: {station_name}")
+            radio_stream = self.radio_browser.find_best_stream_match(station_name)
+            
+            if radio_stream and radio_stream.get('stream_url'):
+                logger.info(f"✅ Radio Browser found stream: {radio_stream['stream_url']} (confidence: {radio_stream.get('confidence', 0):.2f})")
+                return radio_stream
+            else:
+                # Try with call letters if available
+                call_letters = result.get('call_letters')
+                if call_letters:
+                    logger.info(f"Trying Radio Browser search with call letters: {call_letters}")
+                    radio_stream = self.radio_browser.find_best_stream_match(call_letters)
+                    if radio_stream and radio_stream.get('stream_url'):
+                        logger.info(f"✅ Radio Browser found stream via call letters: {radio_stream['stream_url']} (confidence: {radio_stream.get('confidence', 0):.2f})")
+                        return radio_stream
+                
+                # Try with frequency if available
+                frequency = result.get('frequency')
+                if frequency:
+                    search_term = f"{call_letters or station_name} {frequency}" if call_letters else f"{station_name} {frequency}"
+                    logger.info(f"Trying Radio Browser search with frequency: {search_term}")
+                    radio_stream = self.radio_browser.find_best_stream_match(search_term)
+                    if radio_stream and radio_stream.get('stream_url'):
+                        logger.info(f"✅ Radio Browser found stream via frequency: {radio_stream['stream_url']} (confidence: {radio_stream.get('confidence', 0):.2f})")
+                        return radio_stream
+                
+                logger.warning(f"❌ Radio Browser could not find stream for {station_name}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error in Radio Browser search: {e}")
+            return None
     
     def _find_calendar_url(self, soup: BeautifulSoup, base_url: str) -> Optional[str]:
         """Find calendar or schedule page URL"""
