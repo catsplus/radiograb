@@ -5,6 +5,11 @@
 require_once 'database.php'; // Load database connection
 require_once 'branding.php'; // Load branding functions
 require_once 'functions.php'; // Load utility functions
+require_once 'auth.php'; // Load authentication functions
+
+// Initialize authentication system
+$auth = new UserAuth($db);
+$is_authenticated = $auth->isAuthenticated();
 
 // If title is not set, use default
 if (!isset($page_title)) {
@@ -93,17 +98,41 @@ if (!isset($active_nav)) {
                     <li class="nav-item">
                         <a class="nav-link <?= $active_nav === 'playlists' ? 'active' : '' ?>" href="/playlists.php">Playlists</a>
                     </li>
+                    <?php if ($is_authenticated): ?>
                     <li class="nav-item">
                         <a class="nav-link <?= $active_nav === 'recordings' ? 'active' : '' ?>" href="/recordings.php">Recordings</a>
                     </li>
+                    <?php endif; ?>
                     <li class="nav-item">
                         <a class="nav-link <?= $active_nav === 'feeds' ? 'active' : '' ?>" href="/feeds.php">RSS Feeds</a>
                     </li>
+                    <?php if ($is_authenticated): ?>
                     <li class="nav-item">
                         <a class="nav-link <?= $active_nav === 'api-keys' ? 'active' : '' ?>" href="/settings/api-keys.php">
                             <i class="fas fa-key"></i> API Keys
                         </a>
                     </li>
+                    <?php endif; ?>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <?php if ($is_authenticated): ?>
+                        <li class="nav-item">
+                            <span class="navbar-text me-3">
+                                <i class="fas fa-user"></i> Welcome, <?= h($auth->getCurrentUser()['first_name'] ?? $auth->getCurrentUser()['username'] ?? 'User') ?>!
+                            </span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/logout.php">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </li>
+                    <?php else: ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/login.php">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>

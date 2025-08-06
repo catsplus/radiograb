@@ -516,9 +516,12 @@ document.addEventListener("DOMContentLoaded", function() {
         fetch("/api/discover-station.php", {
             method: "POST",
             headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
+                "Content-Type": "application/json",
             },
-            body: "url=" + encodeURIComponent(url) + "&csrf_token=" + getCSRFToken()
+            body: JSON.stringify({
+                website_url: url,
+                csrf_token: getCSRFToken()
+            })
         })
         .then(response => response.json())
         .then(data => {
@@ -530,7 +533,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (data.protocol_info && data.protocol_info.message) {
                     showAlert(data.protocol_info.message, data.protocol_info.type || 'info');
                 }
-                showDiscoveryResults(data.results);
+                showDiscoveryResults(data.discovered || data.results || data);
             } else {
                 showDiscoveryError(data.error || "Discovery failed");
             }
