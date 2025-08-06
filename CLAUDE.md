@@ -39,6 +39,10 @@ ssh radiograb@167.71.84.143 "cd /opt/radiograb && ./deploy-from-git.sh"
 # Emergency Direct Edit
 ssh radiograb@167.71.84.143 "nano /opt/radiograb/path/to/file"
 ssh radiograb@167.71.84.143 "cd /opt/radiograb && docker compose down && docker compose up -d --build"
+
+# CRITICAL: Always Use Complete Repository Sync
+git fetch --all && git reset --hard origin/main  # Forces complete file sync
+# Never use partial pulls - repo isn't large, always sync ALL files
 ```
 
 ## 🎯 CORE FEATURES
