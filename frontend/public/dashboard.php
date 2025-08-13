@@ -17,37 +17,123 @@ requireAuth($auth);
 $current_user = $auth->getCurrentUser();
 $user_id = $auth->getCurrentUserId();
 
-// Get user's statistics - adapt to existing database schema
+// Get user's statistics with user isolation (graceful fallback for missing user_id column)
 try {
-    $stats = [
-        'stations' => $db->fetchOne("SELECT COUNT(*) as count FROM stations WHERE user_id = ?", [$user_id])['count'],
-        'shows' => $db->fetchOne("SELECT COUNT(*) as count FROM shows")['count'], // No user_id in shows table yet
-        'recordings' => $db->fetchOne("SELECT COUNT(*) as count FROM recordings")['count'], // No user filtering yet
-        'storage_used' => $db->fetchOne("SELECT COALESCE(SUM(file_size_bytes), 0) as size FROM recordings")['size'] // No user filtering yet
-    ];
+    $user_stations_count = $db->fetchOne("SELECT COUNT(*) as count FROM stations WHERE user_id = ?", [$user_id])['count'];
     
-    // Recent recordings - no user filtering until shows table has user_id
-    $recent_recordings = $db->fetchAll("
-        SELECT r.*, s.name as show_name, st.name as station_name 
-        FROM recordings r 
-        JOIN shows s ON r.show_id = s.id 
-        JOIN stations st ON s.station_id = st.id 
-        ORDER BY r.recorded_at DESC 
-        LIMIT 5
-    ");
+    // Check if shows table has user_id column
+    $has_user_id_column = false;
+    try {
+        $db->fetchOne("SELECT user_id FROM shows LIMIT 1");
+        $has_user_id_column = true;
+    } catch (Exception $e) {
+        // user_id column doesn't exist yet
+    }
     
-    // Active shows - no user filtering until shows table has user_id
-    $active_shows = $db->fetchAll("
-        SELECT s.*, st.name as station_name, st.logo_url,
-               COUNT(r.id) as recording_count
-        FROM shows s 
-        JOIN stations st ON s.station_id = st.id 
-        LEFT JOIN recordings r ON s.id = r.show_id
-        WHERE s.active = 1
-        GROUP BY s.id 
-        ORDER BY s.name
-        LIMIT 10
-    ");
+    if ($has_user_id_column) {
+        // Full user isolation available
+        $stats = [
+            'stations' => $user_stations_count,
+            'shows' => $db->fetchOne("SELECT COUNT(*) as count FROM shows WHERE user_id = ?", [$user_id])['count'],
+            'recordings' => $db->fetchOne("
+                SELECT COUNT(*) as count 
+                FROM recordings r 
+                JOIN shows s ON r.show_id = s.id 
+                WHERE s.user_id = ?
+            ", [$user_id])['count'],
+            'storage_used' => $db->fetchOne("
+                SELECT COALESCE(SUM(r.file_size_bytes), 0) as size
+                FROM recordings r 
+                JOIN shows s ON r.show_id = s.id 
+                WHERE s.user_id = ?
+            ", [$user_id])['size']
+        ];
+        
+        // Recent recordings - only for user's shows
+        $recent_recordings = $db->fetchAll("
+            SELECT r.*, s.name as show_name, st.name as station_name 
+            FROM recordings r 
+            JOIN shows s ON r.show_id = s.id 
+            JOIN stations st ON s.station_id = st.id 
+            WHERE s.user_id = ?
+            ORDER BY r.recorded_at DESC 
+            LIMIT 5
+        ", [$user_id]);
+        
+        // Active shows - only user's shows
+        $active_shows = $db->fetchAll("
+            SELECT s.*, st.name as station_name, st.logo_url,
+                   COUNT(r.id) as recording_count
+            FROM shows s 
+            JOIN stations st ON s.station_id = st.id 
+            LEFT JOIN recordings r ON s.id = r.show_id
+            WHERE s.user_id = ? AND s.active = 1
+            GROUP BY s.id 
+            ORDER BY s.name
+            LIMIT 10
+        ", [$user_id]);
+    } else {
+        // Fallback: If user has 0 stations, show 0 for everything (logical isolation)
+        if ($user_stations_count == 0) {
+            $stats = [
+                'stations' => 0,
+                'shows' => 0,
+                'recordings' => 0,
+                'storage_used' => 0
+            ];
+            $recent_recordings = [];
+            $active_shows = [];
+        } else {
+            // User has stations but no user isolation yet - show their station's data
+            $stats = [
+                'stations' => $user_stations_count,
+                'shows' => $db->fetchOne("
+                    SELECT COUNT(*) as count 
+                    FROM shows s 
+                    JOIN stations st ON s.station_id = st.id 
+                    WHERE st.user_id = ?
+                ", [$user_id])['count'],
+                'recordings' => $db->fetchOne("
+                    SELECT COUNT(*) as count 
+                    FROM recordings r 
+                    JOIN shows s ON r.show_id = s.id 
+                    JOIN stations st ON s.station_id = st.id 
+                    WHERE st.user_id = ?
+                ", [$user_id])['count'],
+                'storage_used' => $db->fetchOne("
+                    SELECT COALESCE(SUM(r.file_size_bytes), 0) as size
+                    FROM recordings r 
+                    JOIN shows s ON r.show_id = s.id 
+                    JOIN stations st ON s.station_id = st.id 
+                    WHERE st.user_id = ?
+                ", [$user_id])['size']
+            ];
+            
+            // Recent recordings - only for user's stations
+            $recent_recordings = $db->fetchAll("
+                SELECT r.*, s.name as show_name, st.name as station_name 
+                FROM recordings r 
+                JOIN shows s ON r.show_id = s.id 
+                JOIN stations st ON s.station_id = st.id 
+                WHERE st.user_id = ?
+                ORDER BY r.recorded_at DESC 
+                LIMIT 5
+            ", [$user_id]);
+            
+            // Active shows - only for user's stations
+            $active_shows = $db->fetchAll("
+                SELECT s.*, st.name as station_name, st.logo_url,
+                       COUNT(r.id) as recording_count
+                FROM shows s 
+                JOIN stations st ON s.station_id = st.id 
+                LEFT JOIN recordings r ON s.id = r.show_id
+                WHERE st.user_id = ? AND s.active = 1
+                GROUP BY s.id 
+                ORDER BY s.name
+                LIMIT 10
+            ", [$user_id]);
+        }
+    }
     
 } catch (Exception $e) {
     $error = "Database error: " . $e->getMessage();
