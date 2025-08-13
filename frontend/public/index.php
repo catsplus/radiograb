@@ -60,7 +60,7 @@ switch ($route['type']) {
 }
 
 // Set page variables for shared template (dashboard)
-$page_title = 'RadioGrab Dashboard';
+$page_title = 'RadioGrab Dashboard (Efficient Deployment v2.0)';
 $active_nav = 'dashboard';
 
 // Add custom CSS for dashboard
