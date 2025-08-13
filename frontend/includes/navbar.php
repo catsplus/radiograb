@@ -60,9 +60,6 @@ if (!isset($active_nav)) {
                 <li class="nav-item">
                     <a class="nav-link <?= $active_nav === 'recordings' ? 'active' : '' ?>" href="/recordings.php">Recordings</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= $active_nav === 'feeds' ? 'active' : '' ?>" href="/feeds.php">RSS Feeds</a>
-                </li>
             </ul>
         </div>
     </div>
