@@ -6,6 +6,14 @@
 session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
+require_once '../includes/auth.php';
+
+// Require authentication
+$auth = new UserAuth($db);
+if (!$auth->isAuthenticated()) {
+    header('Location: /login.php');
+    exit;
+}
 
 // Set page variables for shared template
 $page_title = 'Stations';

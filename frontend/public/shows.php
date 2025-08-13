@@ -6,6 +6,14 @@
 session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
+require_once '../includes/auth.php';
+
+// Require authentication
+$auth = new UserAuth($db);
+if (!$auth->isAuthenticated()) {
+    header('Location: /login.php');
+    exit;
+}
 
 /**
  * Convert schedule pattern to human-readable format

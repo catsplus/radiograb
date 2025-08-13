@@ -7,7 +7,15 @@
 session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
+require_once '../includes/auth.php';
 require_once '../includes/router.php';
+
+// Require authentication for all content
+$auth = new UserAuth($db);
+if (!$auth->isAuthenticated()) {
+    header('Location: /login.php');
+    exit;
+}
 
 // Initialize router and check for friendly URLs
 $router = new RadioGrabRouter($db);
