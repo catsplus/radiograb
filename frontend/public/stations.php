@@ -1051,78 +1051,10 @@ $additional_js = '
             }
         }
         
-        // Display station verification status (less intrusive)
+        // Display station verification status (automatic testing runs every 2 hours)
         function displayStationVerificationStatus(stations, summary) {
-            // Only show alert for truly problematic stations (never checked or overdue)
-            // Remove "due_soon" to be less intrusive
-            const needAttention = stations.filter(station => 
-                station.verification_status === "never" || 
-                station.verification_status === "overdue"
-            );
-            
-            if (needAttention.length === 0) {
-                document.getElementById("stationsNeedingAttention").style.display = "none";
-                return;
-            }
-            
-            // Show the alert
-            document.getElementById("stationsNeedingAttention").style.display = "block";
-            
-            // Update summary text (more user-friendly)
-            const summaryElement = document.getElementById("stationAlertSummary");
-            let summaryText = "";
-            if (summary.never > 0) summaryText += ` - ${summary.never} station${summary.never > 1 ? 's' : ''} need initial setup`;
-            if (summary.overdue > 0) summaryText += ` - ${summary.overdue} station${summary.overdue > 1 ? 's' : ''} need updates`;
-            summaryElement.textContent = summaryText;
-            
-            // Build details HTML
-            let detailsHtml = "<div class=\"row\">";
-            needAttention.forEach(station => {
-                const statusIcon = station.verification_status === "never" ? "fas fa-question-circle text-muted" :
-                                 station.verification_status === "overdue" ? "fas fa-exclamation-triangle text-danger" :
-                                 "fas fa-clock text-warning";
-                
-                const statusText = station.verification_status === "never" ? "Never Checked" :
-                                 station.verification_status === "overdue" ? `Overdue (${station.days_since_check} days ago)` :
-                                 `Due Soon (${station.days_since_check} days ago)`;
-                
-                detailsHtml += `
-                    <div class="col-md-6 col-lg-4 mb-2">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <i class="${statusIcon}"></i>
-                                <span class="fw-bold">${station.name}</span>
-                                <br>
-                                <small class="text-muted">${statusText}</small>
-                            </div>
-                            <button class="btn btn-sm btn-outline-primary verify-station-now"
-                                    data-station-id="${station.id}"
-                                    data-station-name="${station.name}"
-                                    title="Verify this station now">
-                                <i class="fas fa-shield-check"></i> Verify
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            detailsHtml += "</div>";
-            
-            document.getElementById("stationAlertDetails").innerHTML = detailsHtml;
-            document.getElementById("stationAlertDetails").style.display = "block";
-            
-            // Add event listeners to "Verify" buttons in alert
-            document.querySelectorAll(".verify-station-now").forEach(btn => {
-                btn.addEventListener("click", async function() {
-                    const stationId = this.dataset.stationId;
-                    const stationName = this.dataset.stationName;
-                    
-                    if (!confirm(`Verify station "${stationName}" now?\n\nThis will test the stream and check for updated show schedules.`)) {
-                        return;
-                    }
-                    
-                    await performStationVerification(stationId, stationName, this);
-                });
-            });
+            // Automatic station testing runs every 2 hours, so no manual intervention needed
+            document.getElementById("stationsNeedingAttention").style.display = "none";
         }
         
         // Toggle station details visibility
