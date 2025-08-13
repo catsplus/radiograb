@@ -17,48 +17,37 @@ requireAuth($auth);
 $current_user = $auth->getCurrentUser();
 $user_id = $auth->getCurrentUserId();
 
-// Get user's statistics
+// Get user's statistics - adapt to existing database schema
 try {
     $stats = [
         'stations' => $db->fetchOne("SELECT COUNT(*) as count FROM stations WHERE user_id = ?", [$user_id])['count'],
-        'shows' => $db->fetchOne("SELECT COUNT(*) as count FROM shows WHERE user_id = ?", [$user_id])['count'],
-        'recordings' => $db->fetchOne("
-            SELECT COUNT(*) as count 
-            FROM recordings r 
-            JOIN shows s ON r.show_id = s.id 
-            WHERE s.user_id = ?
-        ", [$user_id])['count'],
-        'storage_used' => $db->fetchOne("
-            SELECT COALESCE(SUM(r.file_size_bytes), 0) as size
-            FROM recordings r 
-            JOIN shows s ON r.show_id = s.id 
-            WHERE s.user_id = ?
-        ", [$user_id])['size']
+        'shows' => $db->fetchOne("SELECT COUNT(*) as count FROM shows")['count'], // No user_id in shows table yet
+        'recordings' => $db->fetchOne("SELECT COUNT(*) as count FROM recordings")['count'], // No user filtering yet
+        'storage_used' => $db->fetchOne("SELECT COALESCE(SUM(file_size_bytes), 0) as size FROM recordings")['size'] // No user filtering yet
     ];
     
-    // Recent recordings
+    // Recent recordings - no user filtering until shows table has user_id
     $recent_recordings = $db->fetchAll("
         SELECT r.*, s.name as show_name, st.name as station_name 
         FROM recordings r 
         JOIN shows s ON r.show_id = s.id 
         JOIN stations st ON s.station_id = st.id 
-        WHERE s.user_id = ?
         ORDER BY r.recorded_at DESC 
         LIMIT 5
-    ", [$user_id]);
+    ");
     
-    // User's active shows
+    // Active shows - no user filtering until shows table has user_id
     $active_shows = $db->fetchAll("
         SELECT s.*, st.name as station_name, st.logo_url,
                COUNT(r.id) as recording_count
         FROM shows s 
         JOIN stations st ON s.station_id = st.id 
         LEFT JOIN recordings r ON s.id = r.show_id
-        WHERE s.user_id = ? AND s.active = 1
+        WHERE s.active = 1
         GROUP BY s.id 
         ORDER BY s.name
         LIMIT 10
-    ", [$user_id]);
+    ");
     
 } catch (Exception $e) {
     $error = "Database error: " . $e->getMessage();
