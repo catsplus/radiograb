@@ -25,6 +25,15 @@
 session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
+require_once '../includes/auth.php';
+
+// Require authentication
+$auth = new UserAuth($db);
+if (!$auth->isAuthenticated()) {
+    header('Location: /login.php?redirect=' . urlencode($_SERVER['REQUEST_URI']));
+    exit;
+}
+$current_user = $auth->getCurrentUser();
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -127,6 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'logo_url' => $logo_url ?: null,
                     'calendar_url' => $calendar_url ?: null,
                     'call_letters' => $call_letters ?: null,
+                    'user_id' => $current_user['id'],
                     'status' => 'active'
                 ]);
                 

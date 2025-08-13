@@ -9,6 +9,15 @@ header('Content-Type: application/json');
 session_start();
 require_once '../../includes/database.php';
 require_once '../../includes/functions.php';
+require_once '../../includes/auth.php';
+
+// Require authentication
+$auth = new UserAuth($db);
+if (!$auth->isAuthenticated()) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Authentication required']);
+    exit;
+}
 
 // Check if this is a POST request
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
