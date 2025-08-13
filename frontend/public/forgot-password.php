@@ -100,15 +100,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $headers .= "Reply-To: noreply@radiograb.svaha.com\r\n";
                 $headers .= "X-Mailer: RadioGrab\r\n";
                 
-                // Log email attempt for debugging
-                error_log("Attempting to send password reset email to: " . $email);
+                // Use new EmailService for OAuth2 support
+                require_once '../includes/EmailService.php';
                 
-                if (mail($email, $subject, $html_body, $headers)) {
-                    error_log("Password reset email sent successfully to: " . $email);
-                    $message = 'Password reset instructions have been sent to your email address.';
-                } else {
-                    error_log("Failed to send password reset email to: " . $email);
-                    $error = 'Failed to send email. Please try again or contact support.';
+                try {
+                    $emailService = new EmailService(true); // Enable debug mode
+                    $configStatus = $emailService->getConfigurationStatus();
+                    
+                    if ($configStatus['any_configured']) {
+                        // Log email attempt for debugging
+                        error_log("Attempting to send password reset email to: " . $email . " using " . $configStatus['auth_method']);
+                        
+                        if ($emailService->sendEmail($email, $subject, $html_body)) {
+                            error_log("Password reset email sent successfully to: " . $email);
+                            $message = 'Password reset instructions have been sent to your email address.';
+                        } else {
+                            error_log("Failed to send password reset email to: " . $email);
+                            $error = 'Failed to send email. Please try again or contact support.';
+                        }
+                    } else {
+                        // Email not configured - provide development/demo message
+                        error_log("Email not configured. Password reset token for {$email}: {$reset_token}");
+                        $message = 'Email system not configured. For this demo, you can manually reset your password by contacting the administrator or check the server logs for the reset token.';
+                    }
+                } catch (Exception $e) {
+                    error_log("EmailService error: " . $e->getMessage());
+                    $error = 'Email system error. Please try again or contact support.';
                 }
             } else {
                 // Don't reveal if email exists or not for security

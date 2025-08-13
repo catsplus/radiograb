@@ -86,12 +86,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             error_log("Admin email test: attempting to send to " . $test_email);
             
-            if (mail($test_email, $subject, $html_body, $headers)) {
-                error_log("Admin email test: SUCCESS - sent to " . $test_email);
-                $test_result = "Email test successful! Check your inbox at " . htmlspecialchars($test_email) . " for the test message.";
+            // Check if OAuth2 is configured, use EmailService if available
+            $oauth_configured = !empty($_ENV['GMAIL_CLIENT_ID']) && !empty($_ENV['GMAIL_CLIENT_SECRET']) && !empty($_ENV['GMAIL_REFRESH_TOKEN']);
+            
+            if ($oauth_configured && file_exists('../../includes/EmailService.php')) {
+                try {
+                    require_once '../../includes/EmailService.php';
+                    $emailService = new EmailService(true); // Enable debug
+                    
+                    if ($emailService->sendEmail($test_email, $subject, $html_body)) {
+                        error_log("Admin email test: SUCCESS (OAuth2) - sent to " . $test_email);
+                        $test_result = "Email test successful using OAuth2! Check your inbox at " . htmlspecialchars($test_email) . " for the test message.";
+                    } else {
+                        error_log("Admin email test: FAILED (OAuth2) - could not send to " . $test_email);
+                        $test_error = "OAuth2 email test failed. Check server logs for more details.";
+                    }
+                } catch (Exception $e) {
+                    error_log("Admin email test: OAuth2 Exception - " . $e->getMessage());
+                    $test_error = "OAuth2 error: " . $e->getMessage();
+                }
             } else {
-                error_log("Admin email test: FAILED - could not send to " . $test_email);
-                $test_error = "Email test failed. Check server logs for more details.";
+                // Fallback to traditional mail() function
+                if (mail($test_email, $subject, $html_body, $headers)) {
+                    error_log("Admin email test: SUCCESS (traditional) - sent to " . $test_email);
+                    $test_result = "Email test successful using traditional SMTP! Check your inbox at " . htmlspecialchars($test_email) . " for the test message.";
+                } else {
+                    error_log("Admin email test: FAILED (traditional) - could not send to " . $test_email);
+                    $test_error = "Traditional email test failed. Check server logs for more details.";
+                }
             }
         }
     }
@@ -138,7 +160,8 @@ $page_title = 'Email Test';
                                         <p class="mb-2"><strong>SMTP Host:</strong> <?= htmlspecialchars($_ENV['SMTP_HOST'] ?? 'localhost') ?></p>
                                         <p class="mb-2"><strong>SMTP Port:</strong> <?= htmlspecialchars($_ENV['SMTP_PORT'] ?? '587') ?></p>
                                         <p class="mb-2"><strong>From Address:</strong> <?= htmlspecialchars($_ENV['SMTP_FROM'] ?? 'noreply@radiograb.svaha.com') ?></p>
-                                        <p class="mb-0"><strong>Authentication:</strong> <?= !empty($_ENV['SMTP_USERNAME']) ? 'Configured (' . htmlspecialchars($_ENV['SMTP_USERNAME']) . ')' : 'Not configured' ?></p>
+                                        <p class="mb-2"><strong>Authentication:</strong> <?= !empty($_ENV['SMTP_USERNAME']) ? 'Configured (' . htmlspecialchars($_ENV['SMTP_USERNAME']) . ')' : 'Not configured' ?></p>
+                                        <p class="mb-0"><strong>OAuth2:</strong> <?= (!empty($_ENV['GMAIL_CLIENT_ID']) && !empty($_ENV['GMAIL_CLIENT_SECRET']) && !empty($_ENV['GMAIL_REFRESH_TOKEN'])) ? '✅ Configured' : '❌ Not configured' ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -212,7 +235,17 @@ $page_title = 'Email Test';
                                 </h2>
                                 <div id="collapseTwo" class="accordion-collapse collapse">
                                     <div class="accordion-body">
-                                        <p>Add these to your <code>.env</code> file or docker-compose environment:</p>
+                                        <p><strong>Option 1: OAuth2 (Recommended for Gmail)</strong></p>
+                                        <pre class="bg-light p-3 rounded">
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_FROM=noreply@yourdomain.com
+SMTP_USERNAME=your-email@gmail.com
+GMAIL_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GMAIL_CLIENT_SECRET=your-client-secret
+GMAIL_REFRESH_TOKEN=your-refresh-token</pre>
+                                        
+                                        <p><strong>Option 2: Traditional SMTP</strong></p>
                                         <pre class="bg-light p-3 rounded">
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -220,6 +253,37 @@ SMTP_FROM=noreply@yourdomain.com
 SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=your-app-password</pre>
                                         <p><strong>Note:</strong> For Gmail, use an App Password, not your regular password.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingThree">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                        OAuth2 Setup Instructions
+                                    </button>
+                                </h2>
+                                <div id="collapseThree" class="accordion-collapse collapse">
+                                    <div class="accordion-body">
+                                        <p><strong>To set up OAuth2 for Gmail:</strong></p>
+                                        <ol>
+                                            <li>Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
+                                            <li>Create a new project or select an existing one</li>
+                                            <li>Enable the Gmail API for your project</li>
+                                            <li>Go to "Credentials" → "Create Credentials" → "OAuth client ID"</li>
+                                            <li>Choose "Web application"</li>
+                                            <li>Add authorized redirect URI: <code>https://radiograb.svaha.com/oauth-callback</code></li>
+                                            <li>Copy the Client ID and Client Secret</li>
+                                            <li>Run the setup scripts in the /scripts/ directory:
+                                                <ul>
+                                                    <li><code>php scripts/setup-gmail-oauth.php CLIENT_ID CLIENT_SECRET</code></li>
+                                                    <li>Follow the authorization URL</li>
+                                                    <li><code>php scripts/get-refresh-token.php CLIENT_ID CLIENT_SECRET AUTH_CODE</code></li>
+                                                </ul>
+                                            </li>
+                                            <li>Add the OAuth credentials to your .env file</li>
+                                            <li>Restart the containers: <code>docker compose down && docker compose up -d</code></li>
+                                        </ol>
                                     </div>
                                 </div>
                             </div>
