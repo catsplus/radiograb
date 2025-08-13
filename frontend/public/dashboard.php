@@ -176,7 +176,7 @@ require_once '../includes/header.php';
                             <i class="fas fa-hdd fa-2x"></i>
                         </div>
                         <div>
-                            <h2><?= formatBytes($stats['storage_used']) ?></h2>
+                            <h2><?= formatFileSize($stats['storage_used']) ?></h2>
                             <p class="mb-0">Storage Used</p>
                         </div>
                     </div>
