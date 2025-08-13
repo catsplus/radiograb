@@ -66,9 +66,9 @@ if (!$url_result['valid']) {
 }
 
 try {
-    // Use the station discovery service
+    // Use the station discovery service with virtual environment
     $python_script = '/opt/radiograb/backend/services/station_discovery.py';
-    $command = "cd /opt/radiograb && python3 " . escapeshellarg($python_script) . " " . escapeshellarg($website_url) . " 2>&1";
+    $command = "cd /opt/radiograb && PYTHONPATH=/opt/radiograb /opt/radiograb/venv/bin/python " . escapeshellarg($python_script) . " " . escapeshellarg($website_url) . " 2>&1";
     
     $output = shell_exec($command);
     $output = trim($output);
