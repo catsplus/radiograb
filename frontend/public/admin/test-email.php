@@ -12,7 +12,7 @@ require_once '../../includes/auth.php';
 $auth = new UserAuth($db);
 
 // Require admin authentication
-if (!$auth->isLoggedIn() || !$auth->isAdmin()) {
+if (!$auth->isAuthenticated() || !$auth->isAdmin()) {
     header('Location: /login.php');
     exit;
 }
