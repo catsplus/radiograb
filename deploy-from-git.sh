@@ -113,9 +113,9 @@ elif [[ "$FILE_ONLY_MODE" == "true" ]]; then
         echo "   📄 Updating web files (PHP/JS/CSS)..."
         docker cp frontend/. radiograb-web-1:/opt/radiograb/frontend/
         echo "   🔄 Reloading PHP-FPM..."
-        docker exec radiograb-web-1 kill -USR2 $(docker exec radiograb-web-1 pgrep -f "php-fpm: master")
+        docker exec radiograb-web-1 kill -USR2 $(docker exec radiograb-web-1 pgrep -f "php-fpm: master") 2>/dev/null || docker compose restart web
         echo "   🔄 Reloading Nginx..."
-        docker exec radiograb-web-1 nginx -s reload
+        docker exec radiograb-web-1 nginx -s reload 2>/dev/null || docker compose restart web
     fi
     
     if [[ -n "$PYTHON_CHANGES" ]]; then
@@ -189,7 +189,7 @@ fi
 # Health check
 echo "🔍 Health check..."
 for i in {1..10}; do
-    if curl -s -o /dev/null -w "%{http_code}" http://localhost/ | grep -q "200"; then
+    if curl -s -o /dev/null -w "%{http_code}" https://radiograb.svaha.com/ | grep -q "200"; then
         echo "   ✅ Website is responding"
         break
     fi
