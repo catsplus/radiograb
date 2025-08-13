@@ -20,7 +20,16 @@
 session_start();
 require_once '../includes/database.php';
 require_once '../includes/functions.php';
+require_once '../includes/auth.php';
 
+// Require authentication
+$auth = new UserAuth($db);
+if (!$auth->isAuthenticated()) {
+    header('Location: /login.php');
+    exit;
+}
+$current_user = $auth->getCurrentUser();
+$user_id = $auth->getCurrentUserId();
 
 // Handle feed regeneration
 if (($_POST['action'] ?? '') === 'regenerate' && isset($_POST['show_id']) && !empty($_POST['show_id']) && is_numeric($_POST['show_id'])) {
@@ -91,10 +100,10 @@ try {
         FROM shows s 
         JOIN stations st ON s.station_id = st.id 
         LEFT JOIN recordings r ON s.id = r.show_id
-        WHERE s.active = 1
+        WHERE s.active = 1 AND s.user_id = ?
         GROUP BY s.id 
         ORDER BY s.name
-    ");
+    ", [$user_id]);
 } catch (Exception $e) {
     $error = "Database error: " . $e->getMessage();
     $shows = [];
@@ -264,10 +273,10 @@ require_once '../includes/header.php';
                         FROM stations st
                         LEFT JOIN shows s ON st.id = s.station_id AND s.active = 1 AND s.show_type != 'playlist'
                         LEFT JOIN recordings r ON s.id = r.show_id
-                        WHERE st.status = 'active'
+                        WHERE st.status = 'active' AND st.user_id = ?
                         GROUP BY st.id
                         ORDER BY st.name
-                    ");
+                    ", [$user_id]);
                 } catch (Exception $e) {
                     $stations = [];
                 }
@@ -493,10 +502,10 @@ require_once '../includes/header.php';
                         FROM shows s 
                         JOIN stations st ON s.station_id = st.id 
                         LEFT JOIN recordings r ON s.id = r.show_id
-                        WHERE s.active = 1 AND s.show_type = 'playlist'
+                        WHERE s.active = 1 AND s.show_type = 'playlist' AND s.user_id = ?
                         GROUP BY s.id 
                         ORDER BY s.name
-                    ");
+                    ", [$user_id]);
                 } catch (Exception $e) {
                     $playlists = [];
                 }
